@@ -1,85 +1,85 @@
 import React, { useState } from 'react';
 import {
-    PiCaretUpBold,
-    PiCaretDownBold,
-    PiPencilBold,
-    PiEyeBold,
-    PiTrashBold,
-    PiToggleLeftBold,
-    PiToggleRightBold,
-    PiUserBold,
-    PiEnvelopeBold,
-    PiShieldCheckBold
+  PiCaretUpBold,
+  PiCaretDownBold,
+  PiPencilBold,
+  PiEyeBold,
+  PiTrashBold,
+  PiToggleLeftBold,
+  PiToggleRightBold,
+  PiUserBold,
+  PiEnvelopeBold,
+  PiShieldCheckBold
 } from 'react-icons/pi';
 import UserStatusBadge from './UserStatusBadge';
 
 export default function UsersTable({
-    users = [],
-    onEdit,
-    onView,
-    onDelete,
-    onToggleStatus,
-    loading = false,
-    sortConfig = { key: null, direction: 'asc' },
-    onSort
+  users = [],
+  onEdit,
+  onView,
+  onDelete,
+  onToggleStatus,
+  loading = false,
+  sortConfig = { key: null, direction: 'asc' },
+  onSort
 }) {
-    const [selectedUsers, setSelectedUsers] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState([]);
 
-    // Handle sorting
-    const handleSort = (key) => {
-        let direction = 'asc';
-        if (sortConfig.key === key && sortConfig.direction === 'asc') {
-            direction = 'desc';
-        }
-        onSort({ key, direction });
-    };
+  // Handle sorting
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    onSort({ key, direction });
+  };
 
-    // Handle select all users
-    const handleSelectAll = (checked) => {
-        if (checked) {
-            setSelectedUsers(users.map(user => user.id));
-        } else {
-            setSelectedUsers([]);
-        }
-    };
+  // Handle select all users
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedUsers(users.map(user => user.id));
+    } else {
+      setSelectedUsers([]);
+    }
+  };
 
-    // Handle select single user
-    const handleSelectUser = (userId, checked) => {
-        if (checked) {
-            setSelectedUsers([...selectedUsers, userId]);
-        } else {
-            setSelectedUsers(selectedUsers.filter(id => id !== userId));
-        }
-    };
+  // Handle select single user
+  const handleSelectUser = (userId, checked) => {
+    if (checked) {
+      setSelectedUsers([...selectedUsers, userId]);
+    } else {
+      setSelectedUsers(selectedUsers.filter(id => id !== userId));
+    }
+  };
 
-    // Format date
-    const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString('es-ES', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-    };
+  // Format date
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
 
-    // Render sort icon
-    const renderSortIcon = (column) => {
-        if (sortConfig.key !== column) {
-            return <span className="sort-icon inactive"></span>;
-        }
+  // Render sort icon
+  const renderSortIcon = (column) => {
+    if (sortConfig.key !== column) {
+      return <span className="sort-icon inactive"></span>;
+    }
 
-        return (
-            <span className="sort-icon active">
-                {sortConfig.direction === 'asc' ? <PiCaretUpBold /> : <PiCaretDownBold />}
-            </span>
-        );
-    };
+    return (
+      <span className="sort-icon active">
+        {sortConfig.direction === 'asc' ? <PiCaretUpBold /> : <PiCaretDownBold />}
+      </span>
+    );
+  };
 
-    if (loading) {
-        return (
-            <div className="table-loading">
-                <div className="loading-spinner"></div>
-                <span>Cargando usuarios...</span>
-                <style jsx>{`
+  if (loading) {
+    return (
+      <div className="table-loading">
+        <div className="loading-spinner"></div>
+        <span>Cargando usuarios...</span>
+        <style jsx>{`
           .table-loading {
             display: flex;
             flex-direction: column;
@@ -102,17 +102,17 @@ export default function UsersTable({
             100% { transform: rotate(360deg); }
           }
         `}</style>
-            </div>
-        );
-    }
+      </div>
+    );
+  }
 
-    if (users.length === 0) {
-        return (
-            <div className="empty-state">
-                <PiUserBold className="empty-icon" />
-                <h3>No se encontraron usuarios</h3>
-                <p>No hay usuarios que coincidan con los criterios de búsqueda.</p>
-                <style jsx>{`
+  if (users.length === 0) {
+    return (
+      <div className="empty-state">
+        <PiUserBold className="empty-icon" />
+        <h3>No se encontraron usuarios</h3>
+        <p>No hay usuarios que coincidan con los criterios de búsqueda.</p>
+        <style jsx>{`
           .empty-state {
             text-align: center;
             padding: 3em 2em;
@@ -132,148 +132,150 @@ export default function UsersTable({
             font-size: 0.9em;
           }
         `}</style>
-            </div>
-        );
-    }
+      </div>
+    );
+  }
 
-    return (
-        <div className="table-container">
-            <div className="table-wrapper">
-                <table className="users-table">
-                    <thead>
-                        <tr>
-                            <th className="checkbox-column">
-                                <input
-                                    type="checkbox"
-                                    checked={selectedUsers.length === users.length && users.length > 0}
-                                    onChange={(e) => handleSelectAll(e.target.checked)}
-                                    className="table-checkbox"
-                                />
-                            </th>
-                            <th
-                                className="sortable-header"
-                                onClick={() => handleSort('name')}
-                            >
-                                <div className="header-content">
-                                    <PiUserBold className="header-icon" />
-                                    <span>Nombre</span>
-                                    {renderSortIcon('name')}
-                                </div>
-                            </th>
-                            <th
-                                className="sortable-header"
-                                onClick={() => handleSort('email')}
-                            >
-                                <div className="header-content">
-                                    <PiEnvelopeBold className="header-icon" />
-                                    <span>Email</span>
-                                    {renderSortIcon('email')}
-                                </div>
-                            </th>
-                            <th
-                                className="sortable-header"
-                                onClick={() => handleSort('role')}
-                            >
-                                <div className="header-content">
-                                    <PiShieldCheckBold className="header-icon" />
-                                    <span>Rol</span>
-                                    {renderSortIcon('role')}
-                                </div>
-                            </th>
-                            <th
-                                className="sortable-header"
-                                onClick={() => handleSort('isActive')}
-                            >
-                                <div className="header-content">
-                                    <span>Estado</span>
-                                    {renderSortIcon('isActive')}
-                                </div>
-                            </th>
-                            <th
-                                className="sortable-header"
-                                onClick={() => handleSort('createdAt')}
-                            >
-                                <div className="header-content">
-                                    <span>Fecha Registro</span>
-                                    {renderSortIcon('createdAt')}
-                                </div>
-                            </th>
-                            <th className="actions-column">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {users.map((user) => (
-                            <tr key={user.id} className="table-row">
-                                <td className="checkbox-column">
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedUsers.includes(user.id)}
-                                        onChange={(e) => handleSelectUser(user.id, e.target.checked)}
-                                        className="table-checkbox"
-                                    />
-                                </td>
-                                <td className="user-name">
-                                    <div className="user-info">
-                                        <div className="user-avatar">
-                                            {user.name?.charAt(0)?.toUpperCase() || 'U'}
-                                        </div>
-                                        <div className="user-details">
-                                            <span className="name">{user.name || 'Sin nombre'}</span>
-                                            <span className="username">@{user.username || user.email?.split('@')[0]}</span>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td className="user-email">{user.email}</td>
-                                <td className="user-role">
-                                    <span className={`role-badge ${user.role?.toLowerCase()}`}>
-                                        {user.role || 'Usuario'}
-                                    </span>
-                                </td>
-                                <td className="user-status">
-                                    <UserStatusBadge isActive={user.isActive} size="small" />
-                                </td>
-                                <td className="user-date">
-                                    {user.createdAt ? formatDate(user.createdAt) : 'N/A'}
-                                </td>
-                                <td className="user-actions">
-                                    <div className="actions-group">
-                                        <button
-                                            onClick={() => onView(user)}
-                                            className="action-button view"
-                                            title="Ver detalles"
-                                        >
-                                            <PiEyeBold />
-                                        </button>
-                                        <button
-                                            onClick={() => onEdit(user)}
-                                            className="action-button edit"
-                                            title="Editar usuario"
-                                        >
-                                            <PiPencilBold />
-                                        </button>
-                                        <button
-                                            onClick={() => onToggleStatus(user)}
-                                            className={`action-button toggle ${user.isActive ? 'active' : 'inactive'}`}
-                                            title={user.isActive ? 'Desactivar usuario' : 'Activar usuario'}
-                                        >
-                                            {user.isActive ? <PiToggleRightBold /> : <PiToggleLeftBold />}
-                                        </button>
-                                        <button
-                                            onClick={() => onDelete(user)}
-                                            className="action-button delete"
-                                            title="Eliminar usuario"
-                                        >
-                                            <PiTrashBold />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+  return (
+    <div className="table-container">
+      <div className="table-wrapper">
+        <table className="users-table">
+          <thead>
+            <tr>
+              <th className="checkbox-column">
+                <input
+                  type="checkbox"
+                  checked={selectedUsers.length === users.length && users.length > 0}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  className="table-checkbox"
+                />
+              </th>
+              <th
+                className="sortable-header"
+                onClick={() => handleSort('name')}
+              >
+                <div className="header-content">
+                  <PiUserBold className="header-icon" />
+                  <span>Nombre</span>
+                  {renderSortIcon('name')}
+                </div>
+              </th>
+              <th
+                className="sortable-header"
+                onClick={() => handleSort('email')}
+              >
+                <div className="header-content">
+                  <PiEnvelopeBold className="header-icon" />
+                  <span>Email</span>
+                  {renderSortIcon('email')}
+                </div>
+              </th>
+              <th
+                className="sortable-header"
+                onClick={() => handleSort('role')}
+              >
+                <div className="header-content">
+                  <PiShieldCheckBold className="header-icon" />
+                  <span>Rol</span>
+                  {renderSortIcon('role')}
+                </div>
+              </th>
+              <th
+                className="sortable-header"
+                onClick={() => handleSort('isActive')}
+              >
+                <div className="header-content">
+                  <span>Estado</span>
+                  {renderSortIcon('isActive')}
+                </div>
+              </th>
+              <th
+                className="sortable-header"
+                onClick={() => handleSort('createdAt')}
+              >
+                <div className="header-content">
+                  <span>Fecha Registro</span>
+                  {renderSortIcon('createdAt')}
+                </div>
+              </th>
+              <th className="actions-column">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map((user) => (
+              <tr key={user.id} className="table-row">
+                <td className="checkbox-column">
+                  <input
+                    type="checkbox"
+                    checked={selectedUsers.includes(user.id)}
+                    onChange={(e) => handleSelectUser(user.id, e.target.checked)}
+                    className="table-checkbox"
+                  />
+                </td>
+                <td className="user-name">
+                  <div className="user-info">
+                    <div className="user-avatar">
+                      {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                    </div>
+                    <div className="user-details">
+                      <span className="name">{user.name || 'Sin nombre'}</span>
+                      <span className="username">@{user.username || user.email?.split('@')[0]}</span>
+                    </div>
+                  </div>
+                </td>
+                <td className="user-email">{user.email}</td>
+                <td className="user-role">
+                  <span className={`role-badge ${user.role?.toLowerCase()}`}>
+                    {user.role || 'Usuario'}
+                  </span>
+                </td>
+                <td className="user-status">
+                  <UserStatusBadge isActive={user.isActive} size="small" />
+                </td>
+                <td className="user-date">
+                  <span className="date-text">
+                    {user.createdAt ? formatDate(user.createdAt) : 'N/A'}
+                  </span>
+                </td>
+                <td className="user-actions">
+                  <div className="actions-group">
+                    <button
+                      onClick={() => onView(user)}
+                      className="action-button view"
+                      title="Ver detalles"
+                    >
+                      <PiEyeBold />
+                    </button>
+                    <button
+                      onClick={() => onEdit(user)}
+                      className="action-button edit"
+                      title="Editar usuario"
+                    >
+                      <PiPencilBold />
+                    </button>
+                    <button
+                      onClick={() => onToggleStatus(user)}
+                      className={`action-button toggle ${user.isActive ? 'active' : 'inactive'}`}
+                      title={user.isActive ? 'Desactivar usuario' : 'Activar usuario'}
+                    >
+                      {user.isActive ? <PiToggleRightBold /> : <PiToggleLeftBold />}
+                    </button>
+                    <button
+                      onClick={() => onDelete(user)}
+                      className="action-button delete"
+                      title="Eliminar usuario"
+                    >
+                      <PiTrashBold />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-            <style jsx>{`
+      <style jsx>{`
         .table-container {
           background: white;
           border-radius: 12px;
@@ -302,7 +304,7 @@ export default function UsersTable({
         .users-table th {
           background: #f9fafb;
           font-weight: 600;
-          color: #374151;
+          color: #1f2937;
           font-size: 0.85em;
           text-transform: uppercase;
           letter-spacing: 0.5px;
@@ -392,11 +394,12 @@ export default function UsersTable({
         
         .username {
           font-size: 0.8em;
-          color: #6b7280;
+          color: #4b5563;
         }
         
         .user-email {
-          color: #6b7280;
+          color: #1f2937;
+          font-weight: 500;
         }
         
         .role-badge {
@@ -410,19 +413,34 @@ export default function UsersTable({
         
         .role-badge.admin {
           background: #fee2e2;
-          color: #dc2626;
+          color: #991b1b;
+          font-weight: 600;
         }
         
         .role-badge.manager {
           background: #fef3c7;
-          color: #d97706;
+          color: #92400e;
+          font-weight: 600;
         }
         
         .role-badge.user {
           background: #e0f2fe;
-          color: #0369a1;
+          color: #1e40af;
+          font-weight: 600;
         }
         
+        .role-badge.supervisor {
+          background: #f3e8ff;
+          color: #6b21a8;
+          font-weight: 600;
+        }
+        
+        .date-text {
+          color: #374151;
+          font-weight: 500;
+          font-size: 0.875rem;
+        }
+
         .actions-column {
           width: 10em;
           text-align: center;
@@ -524,6 +542,6 @@ export default function UsersTable({
           }
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 } 

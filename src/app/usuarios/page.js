@@ -1,20 +1,56 @@
 'use client';
 
-import React, { useContext } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import { useUsers } from '../../hooks/useUsers';
+import { useUsersWithConfirmation } from '../../hooks/useUsersWithConfirmation';
 import MainContent from '../../components/MainContent';
 import SearchBar from '../../components/SearchBar';
 import UsersTable from '../../components/UsersTable';
 import Pagination from '../../components/Pagination';
 import Button from '../../components/Button';
 import Alert from '../../components/Alert';
-import { PiPlusBold, PiUsersBold, PiDownloadBold, PiUploadBold } from 'react-icons/pi';
+import Modal from '../../components/Modal';
+import ConfirmationModal from '../../components/ConfirmationModal';
+import UserForm from '../../components/UserForm';
+import UserDetailView from '../../components/UserDetailView';
+import { PiPlusBold, PiUsersBold, PiDownloadBold, PiUploadBold, PiBugBold } from 'react-icons/pi';
+import { runCompleteDiagnosis, ensureDefaultRoles, testRoleEndpoints, testRoleAssignment, assignDefaultRolesToUsers, quickUserRoleCheck, testUserCreation } from '../../utils/debugUtils';
 
 export default function UsuariosPage() {
   const { user, status } = useContext(AuthContext);
 
-  // Use custom hook for user management
+  // Expose debug functions to global scope for easy debugging
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.debugUsers = runCompleteDiagnosis;
+      window.ensureRoles = ensureDefaultRoles;
+      window.testEndpoints = testRoleEndpoints;
+      window.testRoleAssign = testRoleAssignment;
+      window.assignDefaultRoles = assignDefaultRolesToUsers;
+      window.quickCheck = quickUserRoleCheck;
+      window.testUserCreation = testUserCreation;
+      console.log('🔧 Debug functions available:');
+      console.log('- window.debugUsers() - Run complete diagnosis');
+      console.log('- window.ensureRoles() - Ensure default roles exist');
+      console.log('- window.testEndpoints() - Test role API endpoints');
+      console.log('- window.testRoleAssign(userId, roleName) - Test role assignment');
+      console.log('- window.assignDefaultRoles() - Assign "user" role to users without roles ⭐');
+      console.log('- window.quickCheck() - Quick role status check ⚡');
+      console.log('- window.testUserCreation("admin") - Test user creation with specific role 🧪');
+    }
+  }, []);
+
+  // Modal state
+  const [modalState, setModalState] = useState({
+    showCreateModal: false,
+    showEditModal: false,
+    showDetailModal: false,
+    selectedUser: null,
+    formLoading: false,
+    formError: null
+  });
+
+  // Use custom hook for user management with confirmations
   const {
     users,
     loading,
@@ -32,34 +68,138 @@ export default function UsuariosPage() {
     handlePageChange,
     handleFilterChange,
     handleToggleUserStatus,
+    handleBlockUser,
+    handleUnblockUser,
     handleDeleteUser,
-    clearMessages
-  } = useUsers();
+    handleCreateUser: createUser,
+    handleUpdateUser: updateUser,
+    clearMessages,
+    confirmationModal
+  } = useUsersWithConfirmation();
+
+  // Modal handlers
+  const openCreateModal = () => {
+    setModalState(prev => ({
+      ...prev,
+      showCreateModal: true,
+      selectedUser: null,
+      formError: null
+    }));
+  };
+
+  const openEditModal = (user) => {
+    setModalState(prev => ({
+      ...prev,
+      showEditModal: true,
+      selectedUser: user,
+      formError: null
+    }));
+  };
+
+  const openDetailModal = (user) => {
+    setModalState(prev => ({
+      ...prev,
+      showDetailModal: true,
+      selectedUser: user
+    }));
+  };
+
+  const closeModals = () => {
+    setModalState(prev => ({
+      ...prev,
+      showCreateModal: false,
+      showEditModal: false,
+      showDetailModal: false,
+      selectedUser: null,
+      formLoading: false,
+      formError: null
+    }));
+  };
 
   // Handle user actions
   const handleViewUser = (user) => {
-    // Navigate to user detail page or open modal
-    console.log('View user:', user);
-    // TODO: Implement user detail view
+    openDetailModal(user);
   };
 
   const handleEditUser = (user) => {
-    // Navigate to edit user page or open modal
-    console.log('Edit user:', user);
-    // TODO: Implement user edit functionality
+    openEditModal(user);
   };
 
-  const handleDeleteUserWithConfirmation = async (user) => {
-    if (!confirm(`¿Estás seguro de que deseas eliminar al usuario "${user.name}"?`)) {
-      return;
-    }
-    await handleDeleteUser(user);
+  // User actions handlers (confirmations are handled by the hook)
+  const handleDeleteUserAction = (user) => {
+    handleDeleteUser(user);
+  };
+
+  const handleToggleStatusAction = (user) => {
+    handleToggleUserStatus(user);
+  };
+
+  const handleBlockUserAction = (user) => {
+    handleBlockUser(user);
+  };
+
+  const handleUnblockUserAction = (user) => {
+    handleUnblockUser(user);
   };
 
   const handleCreateUser = () => {
-    // Navigate to create user page or open modal
-    console.log('Create new user');
-    // TODO: Implement user creation functionality
+    openCreateModal();
+  };
+
+  // Form submission handlers
+  const handleCreateSubmit = async (userData) => {
+    try {
+      setModalState(prev => ({ ...prev, formLoading: true, formError: null }));
+      await createUser(userData);
+      closeModals();
+    } catch (error) {
+      setModalState(prev => ({
+        ...prev,
+        formError: error?.response?.data?.error || 'Error al crear el usuario',
+        formLoading: false
+      }));
+    }
+  };
+
+  const handleEditSubmit = async (userData) => {
+    try {
+      setModalState(prev => ({ ...prev, formLoading: true, formError: null }));
+      await updateUser(modalState.selectedUser.id, userData);
+      closeModals();
+    } catch (error) {
+      setModalState(prev => ({
+        ...prev,
+        formError: error?.response?.data?.error || 'Error al actualizar el usuario',
+        formLoading: false
+      }));
+    }
+  };
+
+  const handleEditFromDetail = (user) => {
+    setModalState(prev => ({
+      ...prev,
+      showDetailModal: false,
+      showEditModal: true,
+      selectedUser: user,
+      formError: null
+    }));
+  };
+
+  const handleDeleteFromDetail = (user) => {
+    handleDeleteUser(user);
+    closeModals();
+  };
+
+  const handleToggleFromDetail = (user) => {
+    handleToggleUserStatus(user);
+  };
+
+  const handleBlockFromDetail = (user) => {
+    handleBlockUser(user);
+  };
+
+  const handleUnblockFromDetail = (user) => {
+    handleUnblockUser(user);
   };
 
   // Loading state for unauthenticated users
@@ -111,6 +251,18 @@ export default function UsuariosPage() {
               </div>
             </div>
             <div className="header-actions">
+              {/* Debug button for development/admin users */}
+              {(process.env.NODE_ENV === 'development' || user?.role === 'admin') && (
+                <Button
+                  variant="outline"
+                  onClick={runCompleteDiagnosis}
+                  leftIcon={<PiBugBold />}
+                  title="Ejecutar diagnóstico de usuarios y roles"
+                >
+                  Debug
+                </Button>
+              )}
+
               <Button
                 variant="outline"
                 onClick={() => console.log('Export users')}
@@ -135,6 +287,14 @@ export default function UsuariosPage() {
             </div>
           </div>
         </div>
+
+        {/* Demo Mode Indicator */}
+        {user?.email?.includes('demo.com') && (
+          <Alert
+            type="info"
+            message="🚀 Modo Demo: Las acciones están simuladas. Conecta tu backend para funcionalidad real."
+          />
+        )}
 
         {/* Alerts */}
         {error && (
@@ -193,8 +353,8 @@ export default function UsuariosPage() {
             onSort={handleSort}
             onView={handleViewUser}
             onEdit={handleEditUser}
-            onToggleStatus={handleToggleUserStatus}
-            onDelete={handleDeleteUserWithConfirmation}
+            onToggleStatus={handleToggleStatusAction}
+            onDelete={handleDeleteUserAction}
           />
 
           {!loading && users.length > 0 && (
@@ -208,6 +368,79 @@ export default function UsuariosPage() {
           )}
         </div>
       </div>
+
+      {/* Modal para crear usuario */}
+      <Modal
+        isOpen={modalState.showCreateModal}
+        onClose={closeModals}
+        size="large"
+        showCloseButton={true}
+      >
+        <UserForm
+          mode="create"
+          onSubmit={handleCreateSubmit}
+          onCancel={closeModals}
+          loading={modalState.formLoading}
+          error={modalState.formError}
+        />
+      </Modal>
+
+      {/* Modal para editar usuario */}
+      <Modal
+        isOpen={modalState.showEditModal}
+        onClose={closeModals}
+        size="large"
+        showCloseButton={true}
+      >
+        <UserForm
+          mode="edit"
+          initialData={modalState.selectedUser}
+          onSubmit={handleEditSubmit}
+          onCancel={closeModals}
+          loading={modalState.formLoading}
+          error={modalState.formError}
+        />
+      </Modal>
+
+      {/* Modal para ver detalles del usuario */}
+      <Modal
+        isOpen={modalState.showDetailModal}
+        onClose={closeModals}
+        size="large"
+        showCloseButton={true}
+      >
+        <UserDetailView
+          user={modalState.selectedUser}
+          onEdit={handleEditFromDetail}
+          onDelete={handleDeleteFromDetail}
+          onToggleStatus={handleToggleFromDetail}
+          onBlockUser={handleBlockFromDetail}
+          onUnblockUser={handleUnblockFromDetail}
+          onClose={closeModals}
+          loading={loading}
+          error={error}
+          success={success}
+          onClearMessages={clearMessages}
+          canEdit={true}
+          canDelete={user?.role === 'admin'}
+          canManageStatus={user?.role === 'admin' || user?.role === 'manager'}
+          canBlockUsers={user?.role === 'admin'}
+        />
+      </Modal>
+
+      {/* Confirmation Modal for all user operations */}
+      <ConfirmationModal
+        isOpen={confirmationModal.isOpen}
+        onClose={confirmationModal.closeConfirmation}
+        title={confirmationModal.confirmationData.title}
+        message={confirmationModal.confirmationData.message}
+        confirmText={confirmationModal.confirmationData.confirmText}
+        cancelText={confirmationModal.confirmationData.cancelText}
+        type={confirmationModal.confirmationData.type}
+        onConfirm={confirmationModal.handleConfirm}
+        onCancel={confirmationModal.handleCancel}
+        loading={confirmationModal.confirmationData.loading}
+      />
 
       <style jsx>{`
         .users-page {

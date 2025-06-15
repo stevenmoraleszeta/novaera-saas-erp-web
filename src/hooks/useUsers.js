@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
     getUsers,
+    getUserById,
     setUserActiveStatus,
     deleteUser,
     createUser,
@@ -148,44 +149,58 @@ export function useUsers(initialFilters = {}) {
     const handleCreateUser = useCallback(async (userData) => {
         try {
             setError(null);
-            const newUser = await createUser(userData);
+            console.log('🚀 useUsers handleCreateUser received:', userData);
+            console.log('🎯 Role selected for new user:', userData.role);
 
-            // Add new user to local state
-            setUsers(prevUsers => [newUser, ...prevUsers]);
-            setTotalUsers(prevTotal => prevTotal + 1);
+            const response = await createUser(userData);
 
-            setSuccess('Usuario creado correctamente');
-            return newUser;
+            console.log('🎉 User creation response:', response);
+
+            // Solo actualizar estado local si tenemos datos del usuario creado
+            if (response && (response.user || response.message)) {
+                // Recargar la lista de usuarios para obtener datos actualizados del servidor
+                await loadUsers(1, searchQuery, sortConfig, filters);
+                setSuccess('Usuario creado correctamente');
+
+                // Verificar el rol del usuario creado
+                if (response.user) {
+                    console.log('👤 Created user role:', response.user.role);
+                    console.log('✅ User creation successful with all data');
+                }
+
+                return response;
+            } else {
+                throw new Error('Respuesta inválida del servidor');
+            }
 
         } catch (err) {
-            console.error('Error creating user:', err);
-            setError(err?.response?.data?.error || 'Error al crear el usuario');
+            console.error('❌ Error creating user:', err);
+            const errorMessage = err?.response?.data?.error || err?.message || 'Error al crear el usuario';
+            setError(errorMessage);
             throw err;
         }
-    }, []);
+    }, [loadUsers, searchQuery, sortConfig, filters]);
 
     // Handle user update
     const handleUpdateUser = useCallback(async (userId, userData) => {
         try {
             setError(null);
-            const updatedUser = await updateUser(userId, userData);
+            const response = await updateUser(userId, userData);
 
-            // Update user in local state
-            setUsers(prevUsers =>
-                prevUsers.map(u =>
-                    u.id === userId ? updatedUser : u
-                )
-            );
+            console.log('User update response:', response);
 
+            // Recargar la lista para obtener datos actualizados del servidor
+            await loadUsers(currentPage, searchQuery, sortConfig, filters);
             setSuccess('Usuario actualizado correctamente');
-            return updatedUser;
+            return response;
 
         } catch (err) {
             console.error('Error updating user:', err);
-            setError(err?.response?.data?.error || 'Error al actualizar el usuario');
+            const errorMessage = err?.response?.data?.error || err?.message || 'Error al actualizar el usuario';
+            setError(errorMessage);
             throw err;
         }
-    }, []);
+    }, [loadUsers, currentPage, searchQuery, sortConfig, filters]);
 
     // Handle user blocking
     const handleBlockUser = useCallback(async (user) => {
@@ -292,6 +307,21 @@ export function useUsers(initialFilters = {}) {
         }
     }, []);
 
+    // Get user by ID
+    const handleGetUserById = useCallback(async (userId) => {
+        try {
+            setError(null);
+            const user = await getUserById(userId);
+            console.log('User retrieved by ID:', user);
+            return user;
+
+        } catch (err) {
+            console.error('Error getting user by ID:', err);
+            setError(err?.response?.data?.error || 'Error al obtener el usuario');
+            throw err;
+        }
+    }, []);
+
     // Clear messages
     const clearMessages = useCallback(() => {
         setError(null);
@@ -350,6 +380,7 @@ export function useUsers(initialFilters = {}) {
         handleResetPassword,
         handleUpdateAvatar,
         handleCheckEmailExists,
+        handleGetUserById,
 
         // Utilities
         clearMessages,

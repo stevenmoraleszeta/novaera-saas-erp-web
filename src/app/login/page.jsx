@@ -65,6 +65,7 @@ export default function LoginPage() {
         <div style={{ textAlign: 'center', marginTop: 8 }}>
           <Link href="/register">¿No tienes cuenta? Regístrate</Link>
         </div>
+
       </form>
       <style jsx>{`
         .login-page {
@@ -91,10 +92,34 @@ export default function LoginPage() {
           font-weight: 800;
           letter-spacing: 0.5px;
         }
+        .demo-credentials {
+          background: #f0f9ff;
+          border: 1px solid #7ed957;
+          border-radius: 8px;
+          padding: 1em;
+          margin-top: 1em;
+          text-align: center;
+        }
+        .demo-credentials p {
+          margin: 0.3em 0;
+          font-size: 0.85em;
+          color: #374151;
+        }
+        .demo-credentials code {
+          background: #e5e7eb;
+          padding: 0.2em 0.4em;
+          border-radius: 4px;
+          font-family: monospace;
+          color: #7ed957;
+          font-weight: 600;
+        }
         @media (max-width: 600px) {
           .login-form {
             min-width: 90vw;
             padding: 1.5em 0.5em;
+          }
+          .demo-credentials {
+            font-size: 0.9em;
           }
         }
       `}</style>

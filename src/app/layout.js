@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Sidebar from "../components/Sidebar";
@@ -19,28 +20,40 @@ const geistMono = Geist_Mono({
 });
 
 export default function RootLayout({ children }) {
-  const isLogin = typeof window !== 'undefined' && window.location.pathname === '/login';
-
-  if (isLogin) {
-    return (
-      <html lang="en">
-        <body className={`${geistSans.variable} ${geistMono.variable}`}>
-          <AuthProvider>{children}</AuthProvider>
-        </body>
-      </html>
-    );
-  }
-
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <AuthProvider>
-          <Sidebar />
-          <Topbar onLogout={() => {/* lógica de logout */}} />
-          <MainContent>{children}</MainContent>
-          <Footer />
+          <LayoutContent>{children}</LayoutContent>
         </AuthProvider>
       </body>
     </html>
+  );
+}
+
+function LayoutContent({ children }) {
+  const [isClient, setIsClient] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return children;
+  }
+
+  const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/register';
+
+  if (isAuthPage) {
+    return children;
+  }
+
+  return (
+    <>
+      <Sidebar />
+      <Topbar onLogout={() => {/* lógica de logout */ }} />
+      <MainContent>{children}</MainContent>
+      <Footer />
+    </>
   );
 }

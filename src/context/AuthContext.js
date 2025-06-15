@@ -32,13 +32,29 @@ export function AuthProvider({ children }) {
     setStatus('authenticating');
     setError(null);
     try {
-      await loginService(email, password);
+      const response = await loginService(email, password);
+
+      // Si es un login demo, establecer cookie de demo
+      if (response.user && !response.token) {
+        // Login demo exitoso
+        setUser(response.user);
+        setStatus('authenticated');
+
+        // Establecer cookie de demo para bypass del middleware
+        if (typeof document !== 'undefined') {
+          document.cookie = 'demo_mode=true; path=/; max-age=3600'; // 1 hora
+        }
+
+        return true;
+      }
+
+      // Login normal con backend
       await refetchUser();
       return true;
     } catch (err) {
       setUser(null);
       setStatus('unauthenticated');
-      setError(err?.response?.data?.error || 'Error de autenticación');
+      setError(err?.message || err?.response?.data?.error || 'Error de autenticación');
       return false;
     }
   };
@@ -46,7 +62,13 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       await axios.post('/auth/logout');
-    } catch {}
+    } catch { }
+
+    // Limpiar cookie de demo
+    if (typeof document !== 'undefined') {
+      document.cookie = 'demo_mode=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    }
+
     setUser(null);
     setStatus('unauthenticated');
     if (typeof window !== 'undefined') {

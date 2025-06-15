@@ -114,14 +114,16 @@ Hook personalizado que encapsula:
 ### Endpoints Utilizados (Backend Routes)
 
 ```javascript
-// Obtener usuarios con paginación y filtros
-GET /api/users?page=1&limit=10&search=query&sortBy=name&sortDirection=asc
+// Obtener usuarios
+GET /api/users
 
-// Crear nuevo usuario
+// Crear nuevo usuario (IMPORTANTE: requiere password_hash, no password)
 POST /api/users
+// Body: { name: string, email: string, password_hash: string }
 
 // Actualizar usuario
 PUT /api/users/:id
+// Body: { name: string, email: string, password_hash?: string, is_active?: boolean }
 
 // Actualizar contraseña de usuario
 PUT /api/users/:id/password
@@ -146,6 +148,22 @@ GET /api/users/exists/email?email=user@example.com
 
 // Actualizar avatar de usuario
 PUT /api/users/:id/avatar
+
+// === ROLES ENDPOINTS (CRÍTICOS para gestión de usuarios) ===
+// Obtener todos los roles
+GET /api/roles
+// Response: [{ rol_id: number, rol_name: string }, ...]
+
+// Asignar rol a usuario (OBLIGATORIO después de crear usuario)
+POST /api/roles/:role_id/assign
+// Body: { user_id: number }
+
+// Obtener roles de un usuario
+GET /api/roles/user/:user_id
+
+// Remover rol de usuario
+DELETE /api/roles/:role_id/remove
+// Body: { user_id: number }
 ```
 
 ### Autenticación
@@ -153,6 +171,68 @@ PUT /api/users/:id/avatar
 - **Interceptores Axios** para autenticación automática
 - **Manejo de sesiones** expiradas
 - **Protección de rutas** con middleware
+
+### 🔥 PROBLEMAS CRÍTICOS RESUELTOS
+
+#### 1. **Mapeo de Datos Backend-Frontend**
+```javascript
+// ❌ PROBLEMA: Backend espera password_hash, frontend enviaba password
+// ❌ PROBLEMA: Roles vienen como {rol_id, rol_name} no {id, name}
+
+// ✅ SOLUCIÓN: Mapeo correcto en userService.js
+const backendData = {
+  name: userData.name,
+  email: userData.email,
+  password_hash: userData.password,  // Mapeo correcto
+  role: userData.role
+};
+
+// ✅ SOLUCIÓN: Transformación de roles en fetchRoles()
+return roles.map(role => ({
+  id: role.rol_id || role.id,
+  name: role.rol_name || role.name,
+  label: getRoleDisplayName(role.rol_name || role.name)
+}));
+```
+
+#### 2. **Tabla user_roles - Relación Many-to-Many**
+```javascript
+// ❌ PROBLEMA: Usuario se creaba pero no tenía roles asignados
+// ✅ SOLUCIÓN: Proceso de 2 pasos obligatorio
+
+// Paso 1: Crear usuario
+const response = await axios.post('/users', backendData);
+
+// Paso 2: Asignar rol (CRÍTICO - no omitir!)
+if (userId && userData.role) {
+  await assignRoleToUser(userId, userData.role);
+}
+```
+
+#### 3. **Optimistic Updates Problemáticos**
+```javascript
+// ❌ PROBLEMA: Frontend mostraba usuarios "fantasma" cuando fallaba la creación
+setUsers(prev => [fakeUser, ...prev]); // Usuario aparece pero no existe en BD
+
+// ✅ SOLUCIÓN: Recargar datos reales del servidor
+await createUser(userData);
+await loadUsers(); // Obtener estado real de la BD
+```
+
+#### 4. **Validación de Email Inconsistente**
+```javascript
+// ❌ PROBLEMA: Email siempre aparecía como "ya registrado"
+// ✅ SOLUCIÓN: Manejo robusto de diferentes formatos de respuesta
+
+export async function checkEmailExists(email) {
+  const data = response.data;
+  
+  // Manejar múltiples formatos de respuesta
+  if (typeof data.exists === 'boolean') return data.exists;
+  if (typeof data === 'boolean') return data;
+  return !!data;
+}
+```
 
 ## Uso y Ejemplos
 
@@ -368,6 +448,64 @@ clearMessages();
 - **Accesibilidad**
 - **Rendimiento**
 
+## 📚 LECCIONES APRENDIDAS PARA FUTUROS DESARROLLOS
+
+### 🔍 **Información Crítica que Necesitas ANTES de Desarrollar:**
+
+#### 1. **Estructura Exacta de la Base de Datos**
+```sql
+-- Siempre especifica:
+-- - Nombres exactos de campos (ej: password_hash vs password)
+-- - Relaciones many-to-many (ej: user_roles)
+-- - Tipos de datos y constraints
+-- - Stored procedures utilizados (ej: sp_registrar_usuario)
+```
+
+#### 2. **Formato Exacto de Respuestas del Backend**
+```javascript
+// Documenta EXACTAMENTE cómo responde cada endpoint:
+// POST /api/users devuelve: { message: string, user?: {id, name, email} }
+// GET /api/roles devuelve: [{ rol_id: number, rol_name: string }]
+// GET /api/users/exists/email devuelve: { exists: boolean } | boolean | any
+```
+
+#### 3. **Dependencias Entre Operaciones**
+```javascript
+// Especifica procesos multi-paso:
+// Crear Usuario = Paso 1: POST /users + Paso 2: POST /roles/:id/assign
+// Actualizar Usuario = ¿Se actualizan roles automáticamente o manualmente?
+// Eliminar Usuario = ¿Cascade delete en user_roles o manual?
+```
+
+### 🛠️ **Recomendaciones para Nuevos Módulos:**
+
+#### ✅ **HACER:**
+- **Testear endpoints** con Postman/Insomnia ANTES de desarrollar frontend
+- **Documentar formato** exacto de requests/responses
+- **Usar logging extensivo** durante desarrollo (console.log es tu amigo)
+- **Validar en base de datos** después de cada operación
+- **Manejar múltiples formatos** de respuesta del backend
+- **Separar claramente** mapeo de datos frontend-backend
+
+#### ❌ **NO HACER:**
+- **Optimistic updates** sin validación de respuesta exitosa
+- **Asumir formatos** de datos sin verificar
+- **Hardcodear valores** que pueden cambiar (nombres de campos, IDs)
+- **Mezclar lógica** de presentación con lógica de backend
+- **Ignorar relaciones** de base de datos many-to-many
+
+### 🔧 **Template para Documentar Nuevos Endpoints:**
+```javascript
+// Endpoint: POST /api/[module]
+// Purpose: [Descripción clara]
+// Auth Required: [Sí/No]
+// Request Body: { field1: type, field2: type }
+// Response Success: { format_exacto }
+// Response Error: { error: string }
+// Side Effects: [Ej: Crea relación en tabla X]
+// Database Changes: [Qué tablas se modifican]
+```
+
 ## Próximas Características
 
 ### Roadmap Futuro
@@ -388,3 +526,6 @@ clearMessages();
 - [Documentación de Next.js](https://nextjs.org/docs)
 - [React Icons - Phosphor](https://react-icons.github.io/react-icons/icons?name=pi)
 - [Axios Documentation](https://axios-http.com/docs/intro)
+
+### 🚨 **NOTA IMPORTANTE para el AI Assistant:**
+Si trabajas en nuevos módulos de este proyecto, LEE PRIMERO esta sección de "PROBLEMAS CRÍTICOS RESUELTOS" y "LECCIONES APRENDIDAS". Te ahorrará horas de debugging y retrabajos. Los problemas documentados aquí ya fueron resueltos, no los repitas.
