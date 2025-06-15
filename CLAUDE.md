@@ -222,6 +222,36 @@ const backendData = {
 };
 ```
 
+### 🚨 ID Extraction from Non-Standard Responses: 🆕
+```javascript
+// ❌ WRONG - Assuming standard ID format
+const userId = response.data.id || response.data.user.id;
+
+// Backend might return: { message: "Usuario registrado exitosamente con ID: 7" }
+// Not: { id: 7 } or { user: { id: 7 } }
+
+// ✅ CORRECT - Multiple extraction strategies
+let userId = null;
+if (response.data) {
+  // Try structured fields first
+  if (response.data.user?.id) userId = response.data.user.id;
+  else if (response.data.id) userId = response.data.id;
+  else if (response.data.insertId) userId = response.data.insertId;
+  else if (response.data.user_id) userId = response.data.user_id;
+  
+  // Fallback: Extract from message text
+  else if (response.data.message) {
+    const match = response.data.message.match(/ID:\s*(\d+)/i);
+    if (match) {
+      userId = parseInt(match[1]);
+      console.log('📋 ID extracted from message:', userId);
+    }
+  }
+}
+
+console.log('🆔 Final extracted userId:', userId);
+```
+
 ### 🚨 Database Relations - user_roles table:
 - Users and roles have many-to-many relationship via `user_roles` table
 - Creating a user is a 2-step process:
@@ -245,14 +275,101 @@ await loadUsers(); // Refresh real data from server
 // Some return: { user: {...} }
 // Some return: { message: "...", user: {...} }
 // Some return: { id: 123 }
+// Some return: { message: "Success with ID: 123" } ← New case found!
 // Always check response structure and handle multiple formats
+```
+
+### 🚨 React Props and Component Warnings: 🆕
+```javascript
+// ❌ WRONG - Passing non-DOM props to DOM elements
+// Warning: "Received `false` for a non-boolean attribute `loading`"
+<button loading={false} customProp="value" {...props}>
+
+// ✅ CORRECT - Filter out non-DOM props
+export default function Button({ 
+  loading,
+  customProp,
+  children,
+  ...props 
+}) {
+  // Remove non-DOM props
+  const { loading: _, customProp: __, ...domProps } = props;
+  
+  return (
+    <button 
+      disabled={loading}
+      {...domProps}  // Only DOM-valid props
+    >
+      {children}
+    </button>
+  );
+}
+
+// ✅ ALTERNATIVE - Destructure explicitly
+export default function Button({ 
+  loading,
+  variant = 'primary',
+  type = 'button',
+  onClick,
+  disabled,
+  className,
+  children,
+  ...restProps  // Only pass known DOM props
+}) {
+  return (
+    <button 
+      type={type}
+      onClick={onClick}
+      disabled={disabled || loading}
+      className={`btn btn-${variant} ${className}`}
+      // Don't spread restProps if they might contain non-DOM props
+    >
+      {children}
+    </button>
+  );
+}
 ```
 
 ### 🛠️ Debugging Best Practices:
 - **Always log backend requests/responses** for debugging
-- **Use console.log extensively** during development
+- **Use console.log extensively** during development with emoji markers
 - **Check Network tab** in browser DevTools for actual API calls
 - **Verify database state** after operations, don't trust frontend state
+- **Implement debug utility functions** accessible via window object
+- **Log data transformations** at each step (request → response → mapping → final state)
+
+#### 🔍 Enhanced Logging Strategy: 🆕
+```javascript
+// ✅ USE EMOJI MARKERS for easy log filtering
+console.log('🚀 Sending request:', requestData);
+console.log('📡 Backend response:', response);
+console.log('🔄 Mapping data:', mappedData);
+console.log('💾 Saving to state:', finalData);
+console.log('✅ Operation completed successfully');
+console.log('❌ Error occurred:', error);
+console.log('🔍 Debugging info:', debugData);
+
+// ✅ CREATE DEBUG UTILITIES
+window.debugUsers = () => {
+  console.log('👥 Current users:', users);
+  console.log('🔍 Checking database state...');
+  // Add verification logic
+};
+
+window.testUserCreation = (role) => {
+  console.log(`👤 Testing user creation with role: ${role}`);
+  // Add test logic
+};
+
+// ✅ LOG MULTI-STEP PROCESSES
+console.log('📋 Step 1: Creating user...');
+const user = await createUser(userData);
+console.log('✅ User created:', user);
+
+console.log('📋 Step 2: Assigning role...');
+await assignRole(userId, role);
+console.log('✅ Role assigned successfully');
+```
 
 ## Future Module Development Guidelines
 When developing new modules, follow this structure:
@@ -276,6 +393,41 @@ When developing new modules, follow this structure:
 - Always maintain code quality and follow established patterns
 - When suggesting new features, consider the existing architecture
 - Prioritize user experience and accessibility in all implementations
+
+## 📋 CASO DE ESTUDIO RECIENTE: Extracción de ID desde Mensajes 🆕
+
+### **Problema Específico Resuelto (Diciembre 2024):**
+- **Síntoma**: Usuario se creaba correctamente pero aparecía con rol "Usuario" en lugar de "Administrador"
+- **Log de error**: `Extracted userId: null` seguido de `Could not assign role: userId = null, role = admin`
+- **Causa raíz**: Backend devolvía ID dentro de mensaje de texto: `{ message: "Usuario registrado exitosamente con ID: 7" }`
+- **Código fallaba**: Esperaba formato estándar como `{ id: 7 }` o `{ user: { id: 7 } }`
+
+### **Solución Implementada:**
+```javascript
+// Múltiples estrategias de extracción en userService.js
+let userId = null;
+if (response.data) {
+  if (response.data.user?.id) userId = response.data.user.id;
+  else if (response.data.id) userId = response.data.id;
+  else if (response.data.insertId) userId = response.data.insertId;
+  else if (response.data.user_id) userId = response.data.user_id;
+  else if (response.data.message) {
+    // NUEVA: Extracción por RegEx
+    const messageMatch = response.data.message.match(/ID:\s*(\d+)/i);
+    if (messageMatch) {
+      userId = parseInt(messageMatch[1]);
+      console.log('📋 User ID extracted from message:', userId);
+    }
+  }
+}
+```
+
+### **Lecciones Críticas:**
+1. **NUNCA asumir** formato estándar de respuestas del backend
+2. **SIEMPRE implementar** múltiples estrategias de extracción
+3. **Logging extensivo** con emojis para fácil identificación
+4. **Verificar en BD** después de operaciones multi-paso
+5. **Componentes React** deben filtrar props no-DOM
 
 ## 🤖 INSTRUCCIONES PARA AI ASSISTANT
 
@@ -339,6 +491,11 @@ console.log('Mapped data:', mappedData);
 - Campos tienen nombres como "password" vs "password_hash"
 - Hay relaciones many-to-many involucradas
 - Respuesta del backend tiene formato inesperado
+- **Console muestra**: `Extracted userId: null` o similar 🆕
+- **Ves warnings de React**: `Received false for non-boolean attribute` 🆕
+- **Usuario se crea pero sin rol asignado** 🆕
+- **Backend devuelve éxito pero operación multi-paso falla** 🆕
+- **ID viene en mensaje de texto en lugar de campo estructurado** 🆕
 
 ### 📋 **Template de Información Requerida:**
 Cuando trabajes en nuevos módulos, pide ESPECÍFICAMENTE:
@@ -346,10 +503,14 @@ Cuando trabajes en nuevos módulos, pide ESPECÍFICAMENTE:
 ```
 1. Endpoints exactos y métodos HTTP
 2. Estructura de request body (nombres exactos de campos)
-3. Estructura de response (formato completo)
+3. Estructura de response (formato completo) - ¡INCLUYE CASOS RAROS!
 4. Tablas de BD involucradas
 5. Relaciones many-to-many existentes
 6. Stored procedures utilizados
 7. Pasos adicionales requeridos
 8. Manejo de errores específicos del backend
+9. Formato de ID retornado (¿campo estructurado o dentro de mensaje?)
+10. Warnings de React props si aplica
+11. Estrategias de debugging recomendadas
+12. Verificación de BD post-operación
 ```

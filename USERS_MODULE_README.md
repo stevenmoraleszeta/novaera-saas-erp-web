@@ -234,6 +234,69 @@ export async function checkEmailExists(email) {
 }
 ```
 
+#### 5. **Extracción de ID de Usuario desde Mensajes de Texto** 🆕
+```javascript
+// ❌ PROBLEMA: Backend devuelve ID dentro de mensaje, no en campos estructurados
+// Respuesta: { message: "Usuario registrado exitosamente con ID: 7" }
+// Código esperaba: response.data.id, response.data.user.id, etc.
+
+// ✅ SOLUCIÓN: Extracción por RegEx + múltiples estrategias
+if (response.data.message) {
+  const messageMatch = response.data.message.match(/ID:\s*(\d+)/i);
+  if (messageMatch) {
+    userId = parseInt(messageMatch[1]);
+    console.log('📋 User ID extracted from message:', userId);
+  }
+}
+
+// ✅ ESTRATEGIA COMPLETA: Múltiples fuentes de ID
+let userId = null;
+if (response.data) {
+  // Intentar campos estructurados primero
+  if (response.data.user?.id) userId = response.data.user.id;
+  else if (response.data.id) userId = response.data.id;
+  else if (response.data.insertId) userId = response.data.insertId;
+  else if (response.data.user_id) userId = response.data.user_id;
+  // Fallback: extraer de mensaje de texto
+  else if (response.data.message) {
+    const match = response.data.message.match(/ID:\s*(\d+)/i);
+    if (match) userId = parseInt(match[1]);
+  }
+}
+```
+
+#### 6. **Warning de React Props en Componentes** 🆕
+```javascript
+// ❌ PROBLEMA: "Received `false` for a non-boolean attribute `loading`"
+// Causa: Componente Button recibía props que no manejaba correctamente
+
+// ✅ SOLUCIÓN: Filtrar props no-DOM del componente
+export default function Button({ 
+  variant, 
+  type = 'button',
+  loading,
+  disabled,
+  leftIcon,
+  rightIcon,
+  children, 
+  className = '', 
+  ...props 
+}) {
+  // Filtrar props que no deben ir al DOM
+  const { loading: _, ...domProps } = props;
+  
+  return (
+    <button
+      type={type}
+      disabled={disabled || loading}
+      {...domProps}  // Solo props válidas para DOM
+    >
+      {/* Contenido del botón */}
+    </button>
+  );
+}
+```
+
 ## Uso y Ejemplos
 
 ### Uso Básico del Hook
@@ -461,12 +524,27 @@ clearMessages();
 -- - Stored procedures utilizados (ej: sp_registrar_usuario)
 ```
 
-#### 2. **Formato Exacto de Respuestas del Backend**
+#### 2. **Formato Exacto de Respuestas del Backend** 🚨 **CRÍTICO**
 ```javascript
+// ⚠️ NUNCA ASUMAS el formato de respuesta - siempre verifica:
+
+// Ejemplo real encontrado:
+// POST /api/users devuelve: { message: "Usuario registrado exitosamente con ID: 7" }
+// NO devuelve: { id: 7, user: {...} } como esperábamos
+
 // Documenta EXACTAMENTE cómo responde cada endpoint:
-// POST /api/users devuelve: { message: string, user?: {id, name, email} }
-// GET /api/roles devuelve: [{ rol_id: number, rol_name: string }]
-// GET /api/users/exists/email devuelve: { exists: boolean } | boolean | any
+// POST /api/users → { message: string } (ID dentro del mensaje!)
+// GET /api/roles → [{ rol_id: number, rol_name: string }] (no id/name!)
+// GET /api/users/exists/email → { exists: boolean } | boolean | any (inconsistente!)
+
+// ✅ SIEMPRE incluye múltiples estrategias de extracción:
+let id = null;
+if (response.data.id) id = response.data.id;
+else if (response.data.user?.id) id = response.data.user.id;
+else if (response.data.message) {
+  const match = response.data.message.match(/ID:\s*(\d+)/i);
+  if (match) id = parseInt(match[1]);
+}
 ```
 
 #### 3. **Dependencias Entre Operaciones**
@@ -477,22 +555,41 @@ clearMessages();
 // Eliminar Usuario = ¿Cascade delete en user_roles o manual?
 ```
 
+#### 4. **Estrategias de Debugging Obligatorias** 🆕
+```javascript
+// ✅ SIEMPRE implementa logging extensivo durante desarrollo:
+console.log('🚀 Request data:', requestData);
+console.log('📡 Backend response:', response);  
+console.log('🔍 Extracted ID:', extractedId);
+console.log('💾 Database verification needed');
+
+// ✅ NUNCA confíes solo en el frontend - verifica en BD:
+// - Ejecuta SELECT después de INSERT/UPDATE
+// - Confirma que relaciones many-to-many se crearon
+// - Verifica que los datos son exactamente los esperados
+```
+
 ### 🛠️ **Recomendaciones para Nuevos Módulos:**
 
 #### ✅ **HACER:**
 - **Testear endpoints** con Postman/Insomnia ANTES de desarrollar frontend
-- **Documentar formato** exacto de requests/responses
+- **Documentar formato** exacto de requests/responses (¡incluye casos raros!)
 - **Usar logging extensivo** durante desarrollo (console.log es tu amigo)
 - **Validar en base de datos** después de cada operación
 - **Manejar múltiples formatos** de respuesta del backend
 - **Separar claramente** mapeo de datos frontend-backend
+- **Implementar múltiples estrategias** de extracción de datos (campos + regex + fallbacks)
+- **Filtrar props no-DOM** en componentes React para evitar warnings
+- **Verificar tipos de props** y manejar valores falsy correctamente
 
 #### ❌ **NO HACER:**
 - **Optimistic updates** sin validación de respuesta exitosa
-- **Asumir formatos** de datos sin verificar
+- **Asumir formatos** de datos sin verificar (¡NUNCA!)
 - **Hardcodear valores** que pueden cambiar (nombres de campos, IDs)
 - **Mezclar lógica** de presentación con lógica de backend
 - **Ignorar relaciones** de base de datos many-to-many
+- **Confiar en un solo método** de extracción de datos (siempre tener fallbacks)
+- **Pasar props no válidas** a elementos DOM (causa warnings de React)
 
 ### 🔧 **Template para Documentar Nuevos Endpoints:**
 ```javascript
@@ -504,7 +601,56 @@ clearMessages();
 // Response Error: { error: string }
 // Side Effects: [Ej: Crea relación en tabla X]
 // Database Changes: [Qué tablas se modifican]
+// ID Extraction: [Cómo extraer ID si es necesario]
+// Additional Steps: [Pasos adicionales requeridos]
 ```
+
+### 📝 **Caso de Estudio: Creación de Usuarios** 🆕
+
+**Problema Encontrado:**
+Usuario se creaba correctamente en base de datos, pero el frontend no podía asignar el rol porque no extraía el ID correctamente.
+
+**Síntomas:**
+- Console mostraba: `Extracted userId: null`
+- Luego: `Could not assign role: userId = null, role = admin`
+- Usuario aparecía en BD con rol por defecto en lugar del seleccionado
+
+**Causa Raíz:**
+Backend devolvía respuesta en formato:
+```javascript
+{ message: "Usuario registrado exitosamente con ID: 7" }
+```
+Pero el código esperaba:
+```javascript
+{ id: 7 } // o { user: { id: 7 } }
+```
+
+**Solución Implementada:**
+```javascript
+// Múltiples estrategias de extracción
+let userId = null;
+if (response.data.user?.id) {
+    userId = response.data.user.id;
+} else if (response.data.id) {
+    userId = response.data.id;
+} else if (response.data.insertId) {
+    userId = response.data.insertId;
+} else if (response.data.user_id) {
+    userId = response.data.user_id;
+} else if (response.data.message) {
+    // Extracción por RegEx del mensaje
+    const messageMatch = response.data.message.match(/ID:\s*(\d+)/i);
+    if (messageMatch) {
+        userId = parseInt(messageMatch[1]);
+    }
+}
+```
+
+**Lecciones Clave:**
+1. **Nunca asumir** el formato de respuesta del backend
+2. **Siempre implementar** múltiples estrategias de extracción
+3. **Logging extensivo** es crucial para debugging
+4. **Verificar en BD** después de operaciones complejas
 
 ## Próximas Características
 
