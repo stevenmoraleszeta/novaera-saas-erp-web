@@ -1,0 +1,390 @@
+#  Módulo de Gestión de Usuarios - ERP System
+
+##  Descripción General
+
+El Módulo de Gestión de Usuarios es un componente integral del sistema ERP que permite administrar usuarios de manera eficiente y segura. Implementa funcionalidades completas de CRUD (Crear, Leer, Actualizar, Eliminar) con características avanzadas de búsqueda, filtrado, paginación y ordenamiento.
+
+##  Características Principales
+
+### Funcionalidades Implementadas
+
+- Vista principal de usuarios con tabla dinámica
+- Búsqueda en tiempo real con debounce
+- Filtros avanzados por rol y estado
+- Paginación inteligente con navegación completa
+- Ordenamiento bidireccional por múltiples columnas
+- Acciones en tiempo real (activar/desactivar, bloquear/desbloquear, editar, eliminar)
+- Gestión avanzada de contraseñas (cambio de contraseña, reset por admin)
+- Gestión de avatares (subida y actualización de imágenes)
+- Validación de emails (verificación de existencia en tiempo real)
+- Diseño responsivo y accesible
+- Autenticación JWT con gestión de estados
+- Manejo de errores y notificaciones de éxito
+
+### Estados de Usuario Visuales
+
+- Usuario Activo: Badge verde con indicador visual
+- Usuario Inactivo: Badge gris con indicador visual
+- Usuario Bloqueado: Badge rojo con indicador visual
+- Avatar generado: Iniciales con colores del tema o imagen personalizada
+
+## Arquitectura del Módulo
+
+### Estructura de Archivos
+
+```
+src/
+├── app/usuarios/
+│   └── page.js                    # Página principal de gestión
+├── components/
+│   ├── UsersTable.jsx             # Tabla de usuarios
+│   ├── UserStatusBadge.jsx        # Badge de estado
+│   ├── SearchBar.jsx              # Barra de búsqueda
+│   └── Pagination.jsx             # Componente de paginación
+├── hooks/
+│   └── useUsers.js                # Hook personalizado
+└── services/
+    └── userService.js             # Servicios de API
+```
+
+### 🔧 Componentes Principales
+
+#### 1. **UsuariosPage** (`/usuarios`)
+Página principal que integra todos los componentes:
+- Manejo de autenticación
+- Gestión de estado centralizada
+- Integración con el hook personalizado
+- Layout responsivo con header y acciones
+
+#### 2. **UsersTable**
+Tabla avanzada con funcionalidades completas:
+- Selección múltiple con checkboxes
+- Ordenamiento por columnas clickeables
+- Acciones por fila (ver, editar, toggle, eliminar)
+- Estados de carga y vacío
+- Diseño responsivo para móviles
+
+#### 3. **SearchBar**
+Búsqueda inteligente con:
+- Debounce de 300ms para optimización
+- Placeholder dinámico
+- Botón de limpiar búsqueda
+- Estilos focus con tema verde
+
+#### 4. **UserStatusBadge**
+Indicador visual de estado:
+- Tres tamaños disponibles (small, medium, large)
+- Colores dinámicos según estado
+- Efecto hover con elevación
+- Indicador circular animado
+
+#### 5. **Pagination**
+Paginación completa con:
+- Navegación a primera/última página
+- Páginas visibles dinámicas
+- Información de elementos mostrados
+- Controles de navegación con iconos
+
+### **useUsers Hook**
+Hook personalizado que encapsula:
+- **Estado centralizado** de usuarios
+- **Operaciones CRUD** optimizadas
+- **Paginación y filtros** integrados
+- **Manejo de errores** consistente
+- **Callbacks optimizados** con useCallback
+
+## Tecnologías Utilizadas
+
+### Dependencias Principales
+- **Next.js 15.3.3** - Framework React
+- **React 19.0.0** - Biblioteca UI
+- **Axios** - Cliente HTTP
+- **js-cookie** - Manejo de cookies
+- **react-icons/pi** - Iconografía Phosphor
+
+### Patrones de Diseño
+- **Styled JSX** para estilos encapsulados
+- **Custom Hooks** para lógica reutilizable
+- **Compound Components** para componentes complejos
+- **State Management** con hooks nativos
+- **Error Boundaries** implícitos
+
+## Integración con Backend
+
+### Endpoints Utilizados (Backend Routes)
+
+```javascript
+// Obtener usuarios con paginación y filtros
+GET /api/users?page=1&limit=10&search=query&sortBy=name&sortDirection=asc
+
+// Crear nuevo usuario
+POST /api/users
+
+// Actualizar usuario
+PUT /api/users/:id
+
+// Actualizar contraseña de usuario
+PUT /api/users/:id/password
+
+// Eliminar usuario
+DELETE /api/users/:id
+
+// Bloquear usuario
+PUT /api/users/:id/block
+
+// Desbloquear usuario
+PUT /api/users/:id/unblock
+
+// Establecer estado activo/inactivo
+PUT /api/users/:id/active
+
+// Resetear contraseña (admin)
+PUT /api/users/:id/reset-password
+
+// Verificar si email existe
+GET /api/users/exists/email?email=user@example.com
+
+// Actualizar avatar de usuario
+PUT /api/users/:id/avatar
+```
+
+### Autenticación
+- **JWT Tokens** almacenados en cookies httpOnly
+- **Interceptores Axios** para autenticación automática
+- **Manejo de sesiones** expiradas
+- **Protección de rutas** con middleware
+
+## Uso y Ejemplos
+
+### Uso Básico del Hook
+
+```javascript
+import { useUsers } from '../hooks/useUsers';
+
+function MyComponent() {
+  const {
+    users,
+    loading,
+    error,
+    handleSearch,
+    handleSort,
+    handleToggleUserStatus,
+    handleBlockUser,
+    handleUnblockUser,
+    handleUpdatePassword,
+    handleResetPassword,
+    handleUpdateAvatar,
+    handleCheckEmailExists
+  } = useUsers();
+
+  return (
+    <div>
+      <SearchBar onSearch={handleSearch} />
+      <UsersTable 
+        users={users} 
+        loading={loading}
+        onToggleStatus={handleToggleUserStatus}
+        onBlock={handleBlockUser}
+        onUnblock={handleUnblockUser}
+      />
+    </div>
+  );
+}
+```
+
+### Gestión Avanzada de Usuarios
+
+```javascript
+// Verificar si un email ya existe
+const emailExists = await handleCheckEmailExists('user@example.com');
+
+// Cambiar contraseña de un usuario
+await handleUpdatePassword(userId, {
+  currentPassword: 'oldpass',
+  newPassword: 'newpass'
+});
+
+// Resetear contraseña (solo admin)
+await handleResetPassword(userId, 'temporaryPassword123');
+
+// Actualizar avatar
+await handleUpdateAvatar(userId, {
+  avatar: base64ImageData
+});
+
+// Bloquear/Desbloquear usuario
+await handleBlockUser(user);
+await handleUnblockUser(user);
+```
+
+### Filtros Personalizados
+
+```javascript
+const {
+  filters,
+  handleFilterChange
+} = useUsers({ role: 'admin' }); // Filtro inicial
+
+// Cambiar filtros
+handleFilterChange({ 
+  role: 'manager', 
+  isActive: 'true' 
+});
+```
+
+### Paginación Avanzada
+
+```javascript
+const {
+  currentPage,
+  totalPages,
+  totalUsers,
+  handlePageChange
+} = useUsers();
+
+return (
+  <Pagination
+    currentPage={currentPage}
+    totalPages={totalPages}
+    totalItems={totalUsers}
+    onPageChange={handlePageChange}
+    maxVisiblePages={7}
+  />
+);
+```
+
+## Personalización y Estilos
+
+### Variables de Tema
+
+```css
+:root {
+  --primary-color: #7ed957;      /* Verde principal */
+  --primary-hover: #6bb946;      /* Verde hover */
+  --success-bg: #d4f2cb;         /* Fondo éxito */
+  --error-bg: #fee2e2;           /* Fondo error */
+  --border-color: #e5e7eb;       /* Bordes */
+  --text-primary: #111827;       /* Texto principal */
+  --text-secondary: #6b7280;     /* Texto secundario */
+}
+```
+
+### 📱 Breakpoints Responsivos
+
+```css
+/* Tablet */
+@media (max-width: 768px) {
+  /* Diseño adaptativo para tablets */
+}
+
+/* Móvil */
+@media (max-width: 480px) {
+  /* Diseño optimizado para móviles */
+}
+```
+
+## Configuración Avanzada
+
+### Parámetros del Hook useUsers
+
+```javascript
+const {
+  users,
+  loading,
+  error,
+  success,
+  // ... más propiedades
+} = useUsers({
+  role: 'admin',           // Filtro inicial por rol
+  isActive: 'true',        // Filtro inicial por estado
+  itemsPerPage: 15,        // Elementos por página
+  initialSort: {           // Ordenamiento inicial
+    key: 'name',
+    direction: 'asc'
+  }
+});
+```
+
+### Configuración de Búsqueda
+
+```javascript
+<SearchBar
+  onSearch={handleSearch}
+  placeholder="Buscar usuarios..."
+  debounceDelay={500}        // Delay personalizado
+  className="custom-search"   // Clases adicionales
+/>
+```
+
+## Rendimiento y Optimizaciones
+
+### Características de Rendimiento
+
+- **Debounce** en búsqueda (300ms)
+- **Memoización** con useCallback
+- **Lazy loading** de componentes
+- **Paginación** para grandes datasets
+- **Cache local** de resultados
+- **Optimistic updates** para acciones rápidas
+
+### Gestión de Estado
+
+- **Estados locales** optimizados
+- **Actualizaciones inmediatas** en UI
+- **Rollback automático** en errores
+- **Sincronización** con servidor
+
+## Manejo de Errores
+
+### 🛡️ Tipos de Error Manejados
+
+- **Errores de conexión**
+- **Errores de autenticación**
+- **Errores de validación**
+- **Errores de permisos**
+- **Timeouts de requests**
+
+### Sistema de Notificaciones
+
+```javascript
+// Error automático
+setError('Error al cargar usuarios');
+
+// Éxito automático
+setSuccess('Usuario creado correctamente');
+
+// Limpiar mensajes
+clearMessages();
+```
+
+## Testing y Calidad
+
+### Áreas de Testing Recomendadas
+
+- **Búsqueda y filtros**
+- **Paginación**
+- **Operaciones CRUD**
+- **Responsividad**
+- **Accesibilidad**
+- **Rendimiento**
+
+## Próximas Características
+
+### Roadmap Futuro
+
+- **Exportación de datos** (CSV, Excel, PDF)
+- **Importación masiva** de usuarios
+- **Roles y permisos** granulares
+- **Invitaciones por email**
+- **Analytics de usuarios**
+- **Historial de cambios**
+- **Plantillas de usuario**
+- **Internacionalización**
+
+## Documentación Adicional
+
+### Enlaces Útiles
+
+- [Documentación de Next.js](https://nextjs.org/docs)
+- [React Icons - Phosphor](https://react-icons.github.io/react-icons/icons?name=pi)
+- [Axios Documentation](https://axios-http.com/docs/intro)
