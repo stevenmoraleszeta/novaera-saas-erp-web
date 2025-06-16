@@ -440,7 +440,7 @@ export default function UsersTable({
           font-weight: 500;
           font-size: 0.875rem;
         }
-
+        
         .actions-column {
           width: 10em;
           text-align: center;

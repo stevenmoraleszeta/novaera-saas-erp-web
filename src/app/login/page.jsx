@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [formError, setFormError] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [localError, setLocalError] = useState('');
 
   const validate = () => {
     const err = {};
@@ -25,24 +26,51 @@ export default function LoginPage() {
   };
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setFormError({ ...formError, [e.target.name]: '' });
+    const { name, value } = e.target;
+    console.log(`Campo ${name} cambiado a: ${value}`);
+    setForm({ ...form, [name]: value });
+    setFormError({ ...formError, [name]: '' });
+    setLocalError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validate()) return;
+    console.log('Iniciando proceso de login...', form);
+
+    if (!validate()) {
+      console.log('Validación fallida', formError);
+      return;
+    }
+
     setSubmitting(true);
-    const ok = await login(form.email, form.password);
-    setSubmitting(false);
-    if (ok) router.replace('/dashboard');
+    setLocalError('');
+
+    try {
+      console.log('Intentando login con:', form.email);
+      const ok = await login(form.email, form.password);
+      console.log('Resultado login:', ok);
+
+      if (ok) {
+        console.log('Login exitoso, redirigiendo...');
+        router.replace('/dashboard');
+      } else {
+        console.log('Login fallido');
+        setLocalError('No se pudo iniciar sesión. Verifica tus credenciales.');
+      }
+    } catch (err) {
+      console.error('Error en login:', err);
+      setLocalError(err.message || 'Error al intentar iniciar sesión');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="login-page">
       <form className="login-form" onSubmit={handleSubmit} autoComplete="off">
         <h2>Iniciar Sesión</h2>
-        {error && error !== 'No autenticado' && <Alert type="error" message={error} />}
+        {(error && error !== 'No autenticado') && <Alert type="error" message={error} />}
+        {localError && <Alert type="error" message={localError} />}
         <FormInput
           label="Usuario"
           name="email"
@@ -59,13 +87,15 @@ export default function LoginPage() {
           onChange={handleChange}
           error={formError.password}
         />
-        <Button type="primary" disabled={submitting || status === 'authenticating'}>
+        <Button
+          type="submit"
+          disabled={submitting || status === 'authenticating'}
+        >
           {submitting || status === 'authenticating' ? <Loader text="Validando..." /> : 'Ingresar'}
         </Button>
         <div style={{ textAlign: 'center', marginTop: 8 }}>
           <Link href="/register">¿No tienes cuenta? Regístrate</Link>
         </div>
-
       </form>
       <style jsx>{`
         .login-page {
