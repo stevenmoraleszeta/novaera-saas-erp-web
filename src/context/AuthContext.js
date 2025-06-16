@@ -2,7 +2,7 @@
 
 import { createContext, useState, useEffect } from 'react';
 import { getUserFromCookie, setToken, removeToken } from '../lib/cookies';
-import { login as loginService, getUser } from '../services/authService';
+import { login as loginService, register as registerService, getUser } from '../services/authService';
 import axios from '../lib/axios';
 
 export const AuthContext = createContext(null);
@@ -71,6 +71,28 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Register method
+  const register = async (name, email, password) => {
+    console.log('AuthContext: register - Iniciando proceso de registro', { name, email });
+    setStatus('registering');
+    setError(null);
+    try {
+      console.log('AuthContext: Llamando a registerService');
+      const response = await registerService(name, email, password);
+      console.log('AuthContext: Respuesta de registerService:', response);
+
+      // No autenticamos al usuario automáticamente después del registro
+      // Solo devolvemos la respuesta para que la página de registro pueda mostrar un mensaje
+      return response;
+    } catch (err) {
+      console.error('AuthContext: Error en registro:', err);
+      setError(err?.message || err?.response?.data?.error || 'Error de registro');
+      throw err; // Re-lanzar el error para que la página de registro pueda manejarlo
+    } finally {
+      setStatus('unauthenticated');
+    }
+  };
+
   const logout = async () => {
     console.log('AuthContext: logout - Cerrando sesión');
     try {
@@ -107,7 +129,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, status, error, login, logout, refetchUser }}>
+    <AuthContext.Provider value={{ user, status, error, login, register, logout, refetchUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -2,15 +2,17 @@
 'use client';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../hooks/useAuth';
 import FormInput from '../../components/FormInput';
 import Button from '../../components/Button';
 import Loader from '../../components/Loader';
 import Alert from '../../components/Alert';
-import axios from '../../lib/axios';
+import Link from 'next/link';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const { register, status, error: authError } = useAuth();
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [formError, setFormError] = useState({});
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -20,32 +22,55 @@ export default function RegisterPage() {
     const err = {};
     if (!form.name) err.name = 'El nombre es obligatorio';
     if (!form.email) err.email = 'El correo es obligatorio';
+    if (!form.email.includes('@')) err.email = 'El correo debe ser válido';
     if (!form.password) err.password = 'La contraseña es obligatoria';
+    if (form.password.length < 6) err.password = 'La contraseña debe tener al menos 6 caracteres';
+    if (form.password !== form.confirmPassword) err.confirmPassword = 'Las contraseñas no coinciden';
+
     setFormError(err);
     return Object.keys(err).length === 0;
   };
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setFormError({ ...formError, [e.target.name]: '' });
+    const { name, value } = e.target;
+    console.log(`Campo ${name} cambiado a: ${value}`);
+    setForm({ ...form, [name]: value });
+    setFormError({ ...formError, [name]: '' });
     setError(null);
     setSuccess(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validate()) return;
+    console.log('Iniciando proceso de registro...', form);
+
+    if (!validate()) {
+      console.log('Validación fallida', formError);
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
     setSuccess(null);
+
     try {
-      await axios.post('/auth/register', form);
+      console.log('Enviando datos de registro...');
+      // Asegurarnos de que estamos enviando exactamente lo que espera el backend
+      const response = await register(
+        form.name.trim(),
+        form.email.trim(),
+        form.password
+      );
+      console.log('Respuesta de registro:', response);
+
       setSuccess('Usuario registrado correctamente. Ahora puedes iniciar sesión.');
-      setTimeout(() => router.replace('/login'), 1500);
+      setTimeout(() => router.replace('/login'), 2000);
     } catch (err) {
-      setError(err?.response?.data?.error || 'Error al registrar usuario');
+      console.error('Error en registro:', err);
+      setError(err?.message || authError || 'Error al registrar usuario');
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   return (
@@ -65,6 +90,7 @@ export default function RegisterPage() {
         <FormInput
           label="Correo"
           name="email"
+          type="email"
           value={form.email}
           onChange={handleChange}
           error={formError.email}
@@ -77,12 +103,23 @@ export default function RegisterPage() {
           onChange={handleChange}
           error={formError.password}
         />
-        <Button type="primary" disabled={submitting}>
-          {submitting ? <Loader text="Registrando..." /> : 'Registrarse'}
+        <FormInput
+          label="Confirmar Contraseña"
+          name="confirmPassword"
+          type="password"
+          value={form.confirmPassword}
+          onChange={handleChange}
+          error={formError.confirmPassword}
+        />
+        <Button
+          type="submit"
+          disabled={submitting || status === 'registering'}
+        >
+          {submitting || status === 'registering' ? <Loader text="Registrando..." /> : 'Registrarse'}
         </Button>
-        <Button type="secondary" onClick={() => router.push('/login')} style={{marginTop: 8}}>
-          Volver a Iniciar Sesión
-        </Button>
+        <div style={{ textAlign: 'center', marginTop: 8 }}>
+          <Link href="/login">¿Ya tienes cuenta? Inicia sesión</Link>
+        </div>
       </form>
       <style jsx>{`
         .register-page {
@@ -90,22 +127,30 @@ export default function RegisterPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: linear-gradient(120deg, var(--primary) 0%, var(--secondary) 100%);
+          background: linear-gradient(120deg, #232526 0%, #7ed957 100%);
         }
         .register-form {
           background: #fff;
-          border-radius: var(--radius);
-          box-shadow: 0 4px 32px rgba(0,0,0,0.08);
-          padding: 2.5em 2em 2em 2em;
-          min-width: 340px;
+          border-radius: 18px;
+          box-shadow: 0 6px 32px rgba(35,37,38,0.10), 0 1.5px 8px #7ed95733;
+          padding: 2.7em 2.2em 2em 2.2em;
+          min-width: 350px;
           display: flex;
           flex-direction: column;
-          gap: 1.2em;
+          gap: 1.3em;
         }
         h2 {
           text-align: center;
-          color: var(--primary);
+          color: #232526;
           margin-bottom: 0.5em;
+          font-weight: 800;
+          letter-spacing: 0.5px;
+        }
+        @media (max-width: 600px) {
+          .register-form {
+            min-width: 90vw;
+            padding: 1.5em 0.5em;
+          }
         }
       `}</style>
     </div>
