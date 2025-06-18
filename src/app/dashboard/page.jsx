@@ -4,7 +4,7 @@ import React, { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import { getUsers } from '../../services/userService';
 import MainContent from '../../components/MainContent';
-import { PiChartBarBold, PiUsersBold, PiGearSixBold, PiBellBold } from 'react-icons/pi';
+import { PiChartBarBold, PiUsersBold, PiGearSixBold, PiBellBold , PiShieldStarBold} from 'react-icons/pi';
 
 export default function DashboardPage() {
   const { user, status } = useContext(AuthContext);
@@ -161,51 +161,59 @@ export default function DashboardPage() {
                 <p>Administra usuarios del sistema</p>
               </div>
             </a>
+            <a href="/roles" className="action-card">
+              <PiShieldStarBold className="action-icon" />
+              <div className="action-content">
+                <h3>Gestionar Roles</h3>
+                <p>Administra Roles del sistema</p>
+              </div>
+            </a>
           </div>
         </div>
       </div>
-
       <style jsx>{`
         .dashboard {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 1em;
+          width: 100%;
+          max-width: none;
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
         }
 
         .welcome-section {
-          background: linear-gradient(135deg, #7ed957 0%, #6bb946 100%);
-          color: white;
-          padding: 2em;
-          border-radius: 16px;
+          background: var(--primary, #fff);
+          color: var(--foreground, #171717);
+          padding: 1.5em 2em;
+          border-radius: 14px;
           margin-bottom: 2em;
           display: flex;
           justify-content: space-between;
           align-items: center;
-          box-shadow: 0 4px 20px rgba(126, 217, 87, 0.3);
+          box-shadow: 0 2px 12px 0 rgba(126,217,87,0.08);
         }
 
         .welcome-content h1 {
           margin: 0 0 0.5em 0;
-          font-size: 2.2em;
+          font-size: 2em;
           font-weight: 700;
         }
 
         .welcome-content p {
           margin: 0;
-          font-size: 1.1em;
+          font-size: 1.08em;
           opacity: 0.9;
         }
 
         .demo-mode-indicator {
-          background: rgba(255, 255, 255, 0.2);
-          color: white;
+          background: #f5f5f5;
+          color: #7ed957;
           padding: 0.6em 1em;
           border-radius: 8px;
           margin-top: 1em;
-          font-size: 0.9em;
+          font-size: 0.95em;
           font-weight: 500;
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          backdrop-filter: blur(10px);
+          border: 1px solid #e0e0e0;
+          backdrop-filter: blur(6px);
         }
 
         .user-info {
@@ -217,15 +225,15 @@ export default function DashboardPage() {
         .user-avatar {
           width: 3.5em;
           height: 3.5em;
-          background: rgba(255, 255, 255, 0.2);
-          color: white;
+          background: #e0f7e9;
+          color: #43a047;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
           font-weight: 700;
           font-size: 1.4em;
-          border: 3px solid rgba(255, 255, 255, 0.3);
+          border: 3px solid #c8e6c9;
         }
 
         .user-details {
@@ -253,11 +261,11 @@ export default function DashboardPage() {
         }
 
         .stat-card {
-          background: white;
-          padding: 1.8em;
-          border-radius: 12px;
+          background: #fff;
+          padding: 1.5em;
+          border-radius: 10px;
           border: 1px solid #e5e7eb;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.06);
           display: flex;
           align-items: center;
           gap: 1.2em;
@@ -266,7 +274,7 @@ export default function DashboardPage() {
 
         .stat-card:hover {
           transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          box-shadow: 0 4px 12px rgba(126,217,87,0.10);
         }
 
         .stat-icon {
@@ -277,7 +285,7 @@ export default function DashboardPage() {
           align-items: center;
           justify-content: center;
           font-size: 1.8em;
-          color: white;
+          color: #fff;
         }
 
         .stat-icon.users {
@@ -295,15 +303,14 @@ export default function DashboardPage() {
         }
 
         .stat-number {
-          font-size: 2.2em;
+          font-size: 2.1em;
           font-weight: 700;
           color: #111827;
         }
 
         .stat-label {
-          font-size: 0.9em;
           color: #6b7280;
-          font-weight: 500;
+          font-size: 1em;
         }
 
         .stat-loading {
@@ -414,36 +421,15 @@ export default function DashboardPage() {
           font-size: 0.9em;
         }
 
-        @media (max-width: 768px) {
+        /* Ajustes responsivos */
+        @media (max-width: 900px) {
           .welcome-section {
             flex-direction: column;
-            text-align: center;
+            align-items: flex-start;
             gap: 1.5em;
-          }
-
-          .welcome-content h1 {
-            font-size: 1.8em;
-          }
-
-          .stats-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .actions-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .action-card {
-            padding: 1.5em;
-          }
-
-          .stats-footer {
-            flex-direction: column;
-            gap: 0.8em;
-            text-align: center;
           }
         }
       `}</style>
     </MainContent>
   );
-} 
+}

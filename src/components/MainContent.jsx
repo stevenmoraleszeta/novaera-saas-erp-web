@@ -7,7 +7,7 @@ export default function MainContent({ children }) {
       {children}
       <style jsx>{`
         .main-content {
-          margin-left: 220px;
+          margin-left: 100px;
           margin-top: 60px;
           margin-bottom: 60px;
           padding: 2em;

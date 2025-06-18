@@ -8,6 +8,7 @@ import Button from '../../components/Button';
 import Modal from '../../components/Modal';
 import RoleForm from '../../components/RoleForm';
 import { useRoles } from '../../hooks/useRoles';
+import MainContent from '../../components/MainContent';
 
 export default function RolesPage() {
   const {
@@ -30,29 +31,38 @@ export default function RolesPage() {
   } = useRoles();
 
   return (
-    <div>
-      <h1>Gestión de Roles</h1>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <SearchBar value={search} onChange={setSearch} placeholder="Buscar rol por nombre..." />
-        <Button onClick={handleCreateRole}>Crear nuevo rol</Button>
-      </div>
-      <RolesTable
-        roles={roles}
-        loading={loading}
-        error={error}
-        onEdit={handleEditRole}
-        onDelete={handleDeleteRole}
-      />
-      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
-        <RoleForm
-          initialData={editingRole}
-          permissions={permissions}
-          onSubmit={handleSaveRole}
-          onCancel={() => setModalOpen(false)}
+    <MainContent> 
+      <div className="roles-page">
+        <h1>Gestión de Roles</h1>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 16
+          }}
+        >
+          <SearchBar value={search} onSearch={setSearch} placeholder="Buscar rol por nombre..." />
+          <Button onClick={handleCreateRole}>Crear nuevo rol</Button>
+        </div>
+        <RolesTable
+          roles={roles}
           loading={loading}
+          error={error}
+          onEdit={handleEditRole}
+          onDelete={handleDeleteRole}
         />
-      </Modal>
-    </div>
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
+          <RoleForm
+            initialData={editingRole}
+            permissions={permissions}
+            onSubmit={handleSaveRole}
+            onCancel={() => setModalOpen(false)}
+            loading={loading}
+          />
+        </Modal>
+      </div>
+    </MainContent>
   );
 }

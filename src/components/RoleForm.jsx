@@ -5,15 +5,17 @@ import PermissionSelector from './PermissionSelector';
 import Button from './Button';
 
 export default function RoleForm({ initialData = {}, permissions = [], onSubmit, onCancel, loading }) {
-  const [name, setName] = useState(initialData.name || '');
-  const [description, setDescription] = useState(initialData.description || '');
-  const [selectedPermissions, setSelectedPermissions] = useState(initialData.permissions || []);
+  const safeData = initialData || {};
+  const [name, setName] = useState(safeData.name || '');
+  const [description, setDescription] = useState(safeData.description || '');
+  const [selectedPermissions, setSelectedPermissions] = useState(safeData.permissions || []);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    setName(initialData.name || '');
-    setDescription(initialData.description || '');
-    setSelectedPermissions(initialData.permissions || []);
+    const safeData = initialData || {};
+    setName(safeData.name || '');
+    setDescription(safeData.description || '');
+    setSelectedPermissions(safeData.permissions || []);
     setError(null);
   }, [initialData]);
 
@@ -31,15 +33,47 @@ export default function RoleForm({ initialData = {}, permissions = [], onSubmit,
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      {error && <div style={{ color: 'red', marginBottom: 8 }}>{error}</div>}
-      <FormInput label="Nombre" value={name} onChange={e => setName(e.target.value)} autoFocus minLength={3} />
-      <FormInput label="Descripción" value={description} onChange={e => setDescription(e.target.value)} />
+    <form onSubmit={handleSubmit} className="role-form">
+      {error && <div className="form-error-msg">{error}</div>}
+      <FormInput label="Nombre del rol" value={name} onChange={e => setName(e.target.value)} autoFocus minLength={3} placeholder="Ej: Administrador" />
+      <FormInput label="Descripción" value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe brevemente el rol" />
       <PermissionSelector value={selectedPermissions} onChange={setSelectedPermissions} permissions={permissions} />
-      <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
+      <div className="role-form-actions">
         <Button type="submit" disabled={loading}>{loading ? 'Guardando...' : 'Guardar'}</Button>
-        <Button type="button" onClick={onCancel} style={{ background: '#ccc', color: '#232526' }}>Cancelar</Button>
+        <Button type="button" onClick={onCancel} variant="secondary">Cancelar</Button>
       </div>
+      <style jsx>{`
+        .role-form {
+          background: #fff;
+          border-radius: 1.1rem;
+          padding: 2.2rem 2.2rem 1.5rem 2.2rem;
+          box-shadow: 0 4px 32px 0 rgba(0,0,0,0.07);
+          display: flex;
+          flex-direction: column;
+          gap: 1.2rem;
+        }
+        .form-error-msg {
+          color: #e53935;
+          background: #fff6f6;
+          border: 1px solid #e53935;
+          border-radius: 8px;
+          padding: 0.7em 1em;
+          margin-bottom: 0.5em;
+          font-weight: 500;
+          font-size: 1.05em;
+        }
+        .role-form-actions {
+          display: flex;
+          gap: 1em;
+          margin-top: 1.2em;
+          justify-content: flex-end;
+        }
+        @media (max-width: 600px) {
+          .role-form {
+            padding: 1.2rem 0.7rem 1rem 0.7rem;
+          }
+        }
+      `}</style>
     </form>
   );
 }

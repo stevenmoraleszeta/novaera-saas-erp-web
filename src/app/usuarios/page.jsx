@@ -444,52 +444,46 @@ export default function UsuariosPage() {
 
       <style jsx>{`
         .users-page {
-          max-width: 1400px;
-          margin: 0 auto;
+          max-width: none;
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
         }
-        
         .page-header {
           margin-bottom: 2em;
         }
-        
         .header-content {
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
           gap: 2em;
         }
-        
         .title-section {
           display: flex;
           align-items: center;
           gap: 1em;
         }
-        
         .page-icon {
           font-size: 2.5em;
           color: #7ed957;
           flex-shrink: 0;
         }
-        
         .users-page h1 {
           margin: 0 0 0.3em 0;
           color: #111827;
           font-size: 2.2em;
           font-weight: 700;
         }
-        
         .users-page p {
           margin: 0;
           color: #6b7280;
           font-size: 1.1em;
         }
-        
         .header-actions {
           display: flex;
           gap: 0.8em;
           flex-shrink: 0;
         }
-        
         .search-section {
           display: flex;
           justify-content: space-between;
@@ -497,78 +491,66 @@ export default function UsuariosPage() {
           gap: 1.5em;
           margin-bottom: 1.5em;
           padding: 1.5em;
-          background: white;
-          border-radius: 12px;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+          background: #fff;
+          border-radius: 10px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.06);
           border: 1px solid #e5e7eb;
         }
-        
         .filters {
           display: flex;
           gap: 1em;
         }
-        
         .filter-select {
           padding: 0.7em 1em;
           border: 2px solid #e5e7eb;
           border-radius: 8px;
-          background: white;
+          background: #fff;
           color: #374151;
           font-size: 0.9em;
           cursor: pointer;
           transition: border-color 0.2s ease;
         }
-        
         .filter-select:focus {
           outline: none;
           border-color: #7ed957;
           box-shadow: 0 0 0 3px rgba(126, 217, 87, 0.1);
         }
-        
         .table-section {
-          background: white;
-          border-radius: 12px;
+          background: #fff;
+          border-radius: 10px;
           overflow: hidden;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.06);
         }
-
         @media (max-width: 768px) {
           .header-content {
             flex-direction: column;
             align-items: stretch;
           }
-          
           .header-actions {
             justify-content: flex-start;
             flex-wrap: wrap;
           }
-          
           .search-section {
             flex-direction: column;
             align-items: stretch;
           }
-          
           .filters {
             justify-content: stretch;
           }
-          
           .filter-select {
             flex: 1;
           }
         }
-        
         @media (max-width: 480px) {
           .title-section {
             align-items: flex-start;
           }
-          
           .page-icon {
             font-size: 2em;
           }
-          
           .users-page h1 {
             font-size: 1.8em;
           }
-          
           .header-actions {
             gap: 0.5em;
           }
@@ -576,4 +558,4 @@ export default function UsuariosPage() {
       `}</style>
     </MainContent>
   );
-} 
+}
