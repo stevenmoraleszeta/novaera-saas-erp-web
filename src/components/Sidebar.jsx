@@ -1,12 +1,14 @@
 // Sidebar.jsx
+"use client"
 import React from 'react';
 import Link from 'next/link';
-import { PiSquaresFourBold, PiUsersThreeBold, PiLayoutBold } from 'react-icons/pi';
+import { PiSquaresFourBold, PiUsersThreeBold, PiLayoutBold, PiShieldStarBold } from 'react-icons/pi';
 
 const modules = [
   { name: 'Dashboard', path: '/dashboard', icon: <PiSquaresFourBold size={22} /> },
   { name: 'Usuarios', path: '/usuarios', icon: <PiUsersThreeBold size={22} /> },
   { name: 'Módulos', path: '/modulos', icon: <PiLayoutBold size={22} /> },
+  { name: 'Roles', path: '/roles', icon: <PiShieldStarBold size={22} /> },
   // Agrega más módulos según permisos
 ];
 

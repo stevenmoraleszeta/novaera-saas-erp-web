@@ -116,3 +116,5 @@ ALTER TABLE "user_roles" ADD FOREIGN KEY ("role_id") REFERENCES "roles" ("id") O
 ALTER TABLE "permissions" ADD FOREIGN KEY ("table_id") REFERENCES "tables" ("id") ON DELETE CASCADE;
 ALTER TABLE "permissions" ADD FOREIGN KEY ("role_id") REFERENCES "roles" ("id") ON DELETE CASCADE;
 ALTER TABLE "notifications" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE;
+ALTER TABLE roles ADD COLUMN description TEXT;
+ALTER TABLE roles ADD COLUMN active BOOLEAN DEFAULT true;

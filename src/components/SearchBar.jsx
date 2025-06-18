@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
 import { PiMagnifyingGlassBold, PiXBold } from 'react-icons/pi';
 
@@ -152,4 +154,4 @@ export default function SearchBar({
       `}</style>
         </div>
     );
-} 
+}

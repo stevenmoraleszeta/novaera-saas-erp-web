@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import { PiCaretLeftBold, PiCaretRightBold, PiCaretDoubleLeftBold, PiCaretDoubleRightBold } from 'react-icons/pi';
 
@@ -229,4 +231,4 @@ export default function Pagination({
       `}</style>
         </div>
     );
-} 
+}
