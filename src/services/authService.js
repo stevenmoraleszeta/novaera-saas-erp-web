@@ -79,12 +79,10 @@ export async function register(name, email, password) {
   try {
     console.log('Enviando solicitud de registro al backend...');
 
-    // Asegurarnos de que los datos son exactamente lo que espera el backend
-    // El backend espera estos campos específicos para el stored procedure sp_registrar_usuario
     const userData = {
       name: String(name).trim(),
       email: String(email).trim(),
-      password_hash: String(password)
+      password: String(password)
     };
 
     console.log('Datos de registro:', userData);
