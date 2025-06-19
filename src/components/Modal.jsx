@@ -83,7 +83,7 @@ export default function Modal({
           left: 0;
           right: 0;
           bottom: 0;
-          background: rgba(0, 0, 0, 0.5);
+          background: rgba(0, 0, 0, 0.18); /* más suave para tema claro */
           display: flex;
           align-items: center;
           justify-content: center;
@@ -103,9 +103,9 @@ export default function Modal({
         }
 
         .modal-content {
-          background: white;
+          background: var(--background, #fff);
           border-radius: 0.75rem;
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.03);
           max-height: 90vh;
           overflow: hidden;
           display: flex;
@@ -152,21 +152,21 @@ export default function Modal({
           align-items: center;
           justify-content: space-between;
           padding: 1.5rem 2rem;
-          border-bottom: 1px solid var(--border-color, #e5e7eb);
-          background: var(--background, #f9fafb);
+          border-bottom: 1px solid var(--border, #e0e0e0);
+          background: var(--secondary, #f5f5f5);
         }
 
         .modal-title {
           margin: 0;
           font-size: 1.25rem;
           font-weight: 600;
-          color: var(--text-primary, #111827);
+          color: var(--foreground, #171717);
         }
 
         .modal-close {
           background: none;
           border: none;
-          color: var(--text-secondary, #6b7280);
+          color: var(--foreground, #171717);
           cursor: pointer;
           padding: 0.5rem;
           border-radius: 0.375rem;
@@ -178,12 +178,12 @@ export default function Modal({
 
         .modal-close:hover {
           background: rgba(0, 0, 0, 0.05);
-          color: var(--text-primary, #111827);
+          color: var(--primary, #0070f3);
         }
 
         .modal-close:focus {
           outline: none;
-          box-shadow: 0 0 0 3px rgba(126, 217, 87, 0.1);
+          box-shadow: 0 0 0 3px rgba(0, 112, 243, 0.1);
         }
 
         .modal-body {
@@ -218,32 +218,7 @@ export default function Modal({
             font-size: 1.125rem;
           }
         }
-
-        /* Dark mode support */
-        @media (prefers-color-scheme: dark) {
-          .modal-content {
-            background: #1f2937;
-          }
-
-          .modal-header {
-            background: #111827;
-            border-bottom-color: #374151;
-          }
-
-          .modal-title {
-            color: #f9fafb;
-          }
-
-          .modal-close {
-            color: #9ca3af;
-          }
-
-          .modal-close:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #f9fafb;
-          }
-        }
       `}</style>
         </div>
     );
-} 
+}

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useAxiosAuth } from '../hooks/useAxiosAuth';
+import { getPermissionsByRole } from '../services/permissionsService';
 
 export function useRoles() {
   const axios = useAxiosAuth();
@@ -58,9 +59,35 @@ export function useRoles() {
     setModalOpen(true);
   };
 
-  const handleEditRole = (role) => {
-    setEditingRole(role);
-    setModalOpen(true);
+  const handleEditRole = async (role) => {
+    setLoading(true);
+    try {
+      // Esperar a que el catálogo de permisos esté cargado
+      if (!permissions || permissions.length === 0) {
+        await fetchPermissions();
+      }
+      const perms = await getPermissionsByRole(role.id);
+      let selectedPerms = [];
+      perms.forEach((perm) => {
+        const table = permissions.find(
+          (group) => group.table_id === perm.table_id || group.module.toLowerCase() === perm.table_name?.toLowerCase()
+        );
+        if (table && table.actions) {
+          if (perm.can_read) selectedPerms.push(table.actions.find(a => a.id.startsWith('read_'))?.id);
+          if (perm.can_create) selectedPerms.push(table.actions.find(a => a.id.startsWith('create_'))?.id);
+          if (perm.can_update) selectedPerms.push(table.actions.find(a => a.id.startsWith('update_'))?.id);
+          if (perm.can_delete) selectedPerms.push(table.actions.find(a => a.id.startsWith('delete_'))?.id);
+        }
+      });
+      selectedPerms = selectedPerms.filter(Boolean);
+      setEditingRole({ ...role, permissions: selectedPerms });
+      setModalOpen(true);
+    } catch (e) {
+      setEditingRole({ ...role, permissions: [] });
+      setModalOpen(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSaveRole = async (roleData) => {

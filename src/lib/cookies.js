@@ -26,23 +26,10 @@ export function getUserFromCookie() {
 
   console.log('cookies.js: Verificando tipo de token');
 
-  // Si tenemos un token demo, devolver información básica
-  if (token === 'demo_token_admin') {
-    console.log('cookies.js: Token demo de admin encontrado');
-    return {
-      id: 1,
-      name: 'Admin Demo',
-      email: 'admin@demo.com',
-      role: 'admin'
-    };
-  } else if (token === 'demo_token_user') {
-    console.log('cookies.js: Token demo de usuario encontrado');
-    return {
-      id: 2,
-      name: 'Usuario Demo',
-      email: 'user@demo.com',
-      role: 'user'
-    };
+  // Si tenemos un token demo, no devolver información de usuario
+  if (token === 'demo_token_admin' || token === 'demo_token_user') {
+    console.log('cookies.js: Token demo encontrado, no se devolverá información de usuario');
+    return null;
   }
 
   // Para tokens JWT reales, se podría decodificar aquí

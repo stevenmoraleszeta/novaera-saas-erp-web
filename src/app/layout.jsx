@@ -43,17 +43,26 @@ function LayoutContent({ children }) {
   }
 
   const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/register';
-
-  if (isAuthPage) {
-    return children;
+  // Redirigir automáticamente si no hay token
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') || document.cookie.includes('token=') : true;
+  if (!isAuthPage && !token) {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+    return null;
   }
 
-  return (
-    <>
-      <Sidebar />
-      <Topbar onLogout={() => {/* lógica de logout */ }} />
-      <MainContent>{children}</MainContent>
-      <Footer />
-    </>
-  );
+  if (!isAuthPage && token) {
+    return (
+      <>
+        <Sidebar />
+        <Topbar onLogout={() => {/* lógica de logout */ }} />
+        <MainContent>{children}</MainContent>
+        <Footer />
+      </>
+    );
+  }
+
+  // Si es login/register, solo muestra el contenido
+  return children;
 }
