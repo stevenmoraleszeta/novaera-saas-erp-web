@@ -44,19 +44,12 @@ export function useModules(initialParams = {}) {
     loadModules();
   }, [loadModules]);
 
-      // Handle search
+     
   const handleSearch = useCallback((query) => {
         setSearch(query);
         setCurrentPage(1);
         loadModules({ search: query, page: 1 });
     }, []);
-
-
-  const handleSearch2 = (term) => {
-    setSearch(term);
-    setCurrentPage(1);
-    loadModules({ search: term, page: 1 });
-  };
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -75,14 +68,35 @@ export function useModules(initialParams = {}) {
     return updatedModule;
   };
 
-  const handleDeleteModule = async (id) => {
-    await deleteModule(id);
-    loadModules();
-  };
+  const handleDeleteModule = useCallback(async (id) => {
+      try {
+          setError(null);
+          await deleteModule(id);
+          setSucces('Usuario eliminado correctamente');
+          loadModules();
 
-  const getById = async (id) => {
-    return await getModuleById(id);
-  };
+      } catch (err) {
+          console.error('Error deleting module:', err);
+          setError(err?.response?.data?.error || 'Error al eliminar el módulo');
+      }
+  }, []);
+
+
+
+      // Get user by ID
+    const getById = useCallback(async (id) => {
+        try {
+            setError(null);
+            const module = await getModuleById(id);
+            console.log('Module retrieved by ID:', module);
+            return module;
+
+        } catch (err) {
+            console.error('Error getting Module by ID:', err);
+            setError(err?.response?.data?.error || 'Error al obtener el usuario');
+            throw err;
+        }
+    }, []);
 
   const clearMessages = useCallback(() => {
         setError(null);

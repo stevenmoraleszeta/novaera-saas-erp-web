@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import FormInput from './FormInput';
+import Button from './Button';
+import Alert from './Alert';
+import { AuthContext } from '../context/AuthContext';
+ 
 
-const categories = [
-  { value: '', label: 'Seleccione una categoría' },
-  { value: 'inventory', label: 'Inventario' },
-  { value: 'hr', label: 'Recursos Humanos' },
-  { value: 'finance', label: 'Finanzas' },
-  // Agrega más categorías según tu sistema
-];
-
-export default function ModuleForm({ mode = 'create', initialData = {}, onSubmit, onCancel, loading, error }) {
+export default function ModuleForm({ mode = 'create', initialData = {}, onSubmit, onCancel, onDelete, loading, error }) {
+  const { user, status } = useContext(AuthContext);
+  const [formError, setFormError] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     iconUrl: '',
     isActive: true,
     category: '',
+    created_by: user.id,
   });
 
   useEffect(() => {
@@ -25,6 +25,7 @@ export default function ModuleForm({ mode = 'create', initialData = {}, onSubmit
         iconUrl: initialData.iconUrl || '',
         isActive: initialData.isActive !== undefined ? initialData.isActive : true,
         category: initialData.category || '',
+        created_by: user.id,
       });
     }
   }, [initialData]);
@@ -37,100 +38,100 @@ export default function ModuleForm({ mode = 'create', initialData = {}, onSubmit
     }));
   };
 
-  const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+
+      if (!formData.name.trim()) {
+        setFormError('El nombre es obligatorio');
+        return;
+      }
+
+      try {
+        setFormError(null); 
+        await onSubmit(formData);
+      } catch (err) {
+        const errorMessage =
+          err?.response?.data?.error ||
+          err?.message ||
+          'Error al guardar el módulo';
+        setFormError(errorMessage);
+      }
+    };
+
+
+    const handleDelete = (e) => {
     e.preventDefault();
 
-    // Validaciones básicas
-    if (!formData.name.trim()) {
-      alert('El nombre es obligatorio');
-      return;
-    }
-    if (!formData.category) {
-      alert('La categoría es obligatoria');
-      return;
-    }
 
-    onSubmit(formData);
+    onDelete(initialData.id);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="module-form" noValidate>
-      <h2>{mode === 'create' ? 'Crear Nuevo Módulo' : 'Editar Módulo'}</h2>
+      <div className="module-form">
+        <div className="form-header">
+            <h2>{mode === 'create' ? 'Crear Nuevo Módulo' : 'Editar Módulo'}</h2>
+        </div>
 
-      <label htmlFor="name">Nombre *</label>
-      <input
-        type="text"
-        id="name"
-        name="name"
-        value={formData.name}
-        onChange={handleChange}
-        placeholder="Nombre del módulo"
-        disabled={loading}
-        required
-      />
+        {error && (
+            <Alert type="error" message={error} />
+        )}
+        {formError && (
+          <Alert type="error" message={formError} />
+        )}
 
-      <label htmlFor="description">Descripción</label>
-      <textarea
-        id="description"
-        name="description"
-        value={formData.description}
-        onChange={handleChange}
-        placeholder="Descripción del módulo"
-        disabled={loading}
-        rows={3}
-      />
+    <form onSubmit={handleSubmit} className="module-content" noValidate>
+      
 
-      <label htmlFor="iconUrl">URL del Ícono</label>
-      <input
-        type="url"
-        id="iconUrl"
-        name="iconUrl"
-        value={formData.iconUrl}
-        onChange={handleChange}
-        placeholder="https://example.com/icon.png"
-        disabled={loading}
-      />
-
-      <label htmlFor="category">Categoría *</label>
-      <select
-        id="category"
-        name="category"
-        value={formData.category}
-        onChange={handleChange}
-        disabled={loading}
-        required
-      >
-        {categories.map(cat => (
-          <option key={cat.value} value={cat.value}>
-            {cat.label}
-          </option>
-        ))}
-      </select>
-
-      <label className="checkbox-label">
-        <input
-          type="checkbox"
-          name="isActive"
-          checked={formData.isActive}
-          onChange={handleChange}
-          disabled={loading}
+        <FormInput
+            label="Nombre"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            placeholder="Nombre del módulo"
+            autoFocus
         />
-        Módulo activo
-      </label>
 
-      {error && <p className="error-message">{error}</p>}
+        <FormInput
+            label="URL del Ícono"
+            name="iconUrl"
+            value={formData.iconUrl}
+            onChange={handleChange}
+            placeholder="Nombre del módulo"
+            autoFocus
+        />
 
       <div className="form-actions">
-        <button type="submit" disabled={loading}>
-          {loading ? 'Guardando...' : (mode === 'create' ? 'Crear' : 'Actualizar')}
-        </button>
-        <button type="button" onClick={onCancel} disabled={loading} className="cancel-btn">
-          Cancelar
-        </button>
+
+        <Button
+            type="submit"
+            variant="outline"
+            disabled={loading}
+        >
+           {loading ? 'Guardando...' : (mode === 'create' ? 'Crear' : 'Actualizar')}
+        </Button>
+        {initialData && (
+        <Button
+            type="button"
+            variant="outline"
+            onClick={handleDelete}
+            disabled={loading}
+        >
+            Eliminar
+        </Button>
+        )}
       </div>
 
       <style jsx>{`
+
         .module-form {
+          background: white;
+          border-radius: 0.75rem;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          overflow: hidden;
+          max-width: 800px;
+          margin: 0 auto;
+        }
+        .module-content {
           display: flex;
           flex-direction: column;
           gap: 1rem;
@@ -218,5 +219,6 @@ export default function ModuleForm({ mode = 'create', initialData = {}, onSubmit
         }
       `}</style>
     </form>
+    </div>
   );
 }

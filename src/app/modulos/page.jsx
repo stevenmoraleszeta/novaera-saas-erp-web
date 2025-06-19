@@ -6,11 +6,13 @@ import MainContent from '@/components/MainContent';
 import ModuleList from '@/components/ModuleList';
 import ModuleFilter from '@/components/ModuleFilter';
 import Alert from '@/components/Alert';
-import Button from '@/components/Button';
-import { PiPlusBold } from 'react-icons/pi';
 import Modal from '@/components/Modal';
 import ModuleForm from '@/components/ModuleForm';
 import { AuthContext } from '../../context/AuthContext';
+import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
+import EditToggleButton from '@/components/EditToggleButton';
+
+
 
 export default function ModulesPage() {
   const {
@@ -32,10 +34,13 @@ export default function ModulesPage() {
     handleCreateModule,
     handleUpdateModule,
     handleDeleteModule,
-    clearMessages
+    clearMessages,
   } = useModules();
 
   const { user, status } = useContext(AuthContext);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [moduleToDelete, setModuleToDelete] = useState(null);
+  const [isEditingMode, setIsEditingMode] = useState(false);
 
   const [modalState, setModalState] = React.useState({
     showModal: false,
@@ -43,6 +48,28 @@ export default function ModulesPage() {
     formLoading: false,
     formError: null
   });
+
+    const handleDeleteClick = (module) => {
+    setModuleToDelete(module);
+    setShowDeleteDialog(true);
+    console.log("USUARIO:", user);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      await handleDeleteModule(moduleToDelete);
+      setShowDeleteDialog(false);
+      setModuleToDelete(null);
+      closeModal();
+    } catch (err) {
+      console.error('Error al eliminar módulo:', err);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteDialog(false);
+    setModuleToDelete(null);
+  };
 
   const openCreateModal = () =>
     setModalState({ showModal: true, selectedModule: null, formLoading: false, formError: null });
@@ -74,8 +101,6 @@ export default function ModulesPage() {
   return (
     <MainContent>
       <div className="modules-page">
-
-
         {error && <Alert type="error" message={error} onClose={clearMessages} />}
         {/* Demo Mode Indicator */}
         {user?.email?.includes('demo.com') && (
@@ -87,25 +112,35 @@ export default function ModulesPage() {
 
         {success && <Alert type="success" message={success} onClose={clearMessages} />}
 
-        <ModuleFilter
-          searchQuery={searchQuery}
-          filters={filters}
-          onSearch={handleSearch}
-          onFilterChange={handleFilterChange}
-        />
+        <div className="filter-toolbar">
+          <ModuleFilter
+            searchQuery={searchQuery}
+            filters={filters}
+            onSearch={handleSearch}
+            onFilterChange={handleFilterChange}
+          />
+
+          <div className="edit-toggle-container">
+            <EditToggleButton onToggle={setIsEditingMode} />
+            {isEditingMode && <span className="edit-label">Modo edición</span>}
+          </div>
+        </div>
+
 
         <ModuleList
           modules={modules}
           loading={loading}
           sortConfig={sortConfig}
           onSort={handleSort}
+          onAdd={openCreateModal}
           onEdit={openEditModal}
-          onDelete={handleDeleteModule}
+          onDelete={handleDeleteClick}
           currentPage={currentPage}
           totalPages={totalPages}
           totalItems={totalModules}
           itemsPerPage={itemsPerPage}
           onPageChange={handlePageChange}
+          isEditingMode={isEditingMode}
         />
 
         <Modal
@@ -119,10 +154,21 @@ export default function ModulesPage() {
             initialData={modalState.selectedModule}
             onSubmit={handleFormSubmit}
             onCancel={closeModal}
+            onDelete={handleDeleteClick}
             loading={modalState.formLoading}
             error={modalState.formError}
           />
         </Modal>
+
+        <DeleteConfirmationDialog
+          isOpen={showDeleteDialog}
+          onClose={handleCancelDelete}
+          onConfirm={handleConfirmDelete}
+          title="¿Eliminar módulo?"
+          message={`¿Estás seguro de que deseas eliminar "${moduleToDelete?.name}"?`}
+          confirmText="Sí, eliminar"
+          cancelText="Cancelar"
+        />
       </div>
 
       <style jsx>{`
@@ -140,6 +186,24 @@ export default function ModulesPage() {
         p {
           color: #6b7280;
           margin-bottom: 1em;
+        }
+        .filter-toolbar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 1rem;
+        }
+
+        .edit-toggle-container {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .edit-label {
+          font-size: 0.9rem;
+          color: #10b981;
+          font-weight: 500;
         }
       `}</style>
     </MainContent>
