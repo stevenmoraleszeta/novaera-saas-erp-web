@@ -101,6 +101,8 @@ export default function ModulesPage() {
   return (
     <MainContent>
       <div className="modules-page">
+        {/* Fondo degradado global eliminado para evitar error de estilos anidados. Agrega el fondo en tu CSS global. */}
+
         {error && <Alert type="error" message={error} onClose={clearMessages} />}
         {/* Demo Mode Indicator */}
         {user?.email?.includes('demo.com') && (

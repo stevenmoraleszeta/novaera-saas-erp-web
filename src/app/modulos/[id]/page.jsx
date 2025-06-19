@@ -9,6 +9,7 @@ import Loader from '@/components/Loader';
 import StatusBadge from '@/components/ModuleStatusBadge';
 import { useModules } from '@/hooks/useModules';
 import Table from '@/components/Table';
+import MainContent from '@/components/MainContent';
 
 
 export default function ModuleDetailPage() {
@@ -55,6 +56,9 @@ export default function ModuleDetailPage() {
   if (!module) return <p>No se encontró el módulo con ID {id}.</p>;
 
   return (
+    <MainContent>
+
+    
     <div className="module-detail-page">
       <p><strong>Descripción:</strong> {module.description || 'Sin descripción'}</p>
       <p><strong>Categoría:</strong> {module.category || 'Sin categoría'}</p>
@@ -93,5 +97,6 @@ export default function ModuleDetailPage() {
         }
       `}</style>
     </div>
+    </MainContent>
   );
 }

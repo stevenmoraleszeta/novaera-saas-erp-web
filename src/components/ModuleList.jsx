@@ -78,8 +78,8 @@ export default function ModuleList({
 
         .module-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-          gap: 1rem;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 2.2rem 2.2rem;
           justify-items: center;
         }
 
