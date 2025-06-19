@@ -167,115 +167,14 @@ export async function getUsers(params = {}) {
         };
 
     } catch (error) {
-        console.warn('Error connecting to backend, using demo data:', error.message);
+        console.warn('Error connecting to backend:', error.message);
 
         // Si es error de token, significa que el backend está funcionando pero necesitas autenticación real
         if (error.response?.data?.error === 'Token requerido' || error.response?.status === 401) {
             console.info('🔐 Backend requiere autenticación. Usando datos demo para testing.');
         }
 
-        // Datos de ejemplo para testing mientras configuras el backend
-        const demoUsers = [
-            {
-                id: 1,
-                name: 'Juan Pérez',
-                email: 'juan@example.com',
-                role: 'admin',
-                isActive: true,
-                createdAt: '2024-01-15T10:30:00Z'
-            },
-            {
-                id: 2,
-                name: 'María García',
-                email: 'maria@example.com',
-                role: 'user',
-                isActive: true,
-                createdAt: '2024-01-16T14:20:00Z'
-            },
-            {
-                id: 3,
-                name: 'Carlos López',
-                email: 'carlos@example.com',
-                role: 'manager',
-                isActive: false,
-                createdAt: '2024-01-17T09:15:00Z'
-            },
-            {
-                id: 4,
-                name: 'Ana Martínez',
-                email: 'ana@example.com',
-                role: 'user',
-                isActive: true,
-                createdAt: '2024-01-18T16:45:00Z'
-            },
-            {
-                id: 5,
-                name: 'Pedro Rodríguez',
-                email: 'pedro@example.com',
-                role: 'admin',
-                isActive: false,
-                createdAt: '2024-01-19T11:30:00Z'
-            }
-        ];
-
-        // Aplicar la misma lógica de filtros con datos demo
-        let filteredUsers = demoUsers;
-
-        if (params.search) {
-            const searchTerm = params.search.toLowerCase();
-            filteredUsers = filteredUsers.filter(user =>
-                (user.name && user.name.toLowerCase().includes(searchTerm)) ||
-                (user.email && user.email.toLowerCase().includes(searchTerm)) ||
-                (user.role && user.role.toLowerCase().includes(searchTerm))
-            );
-        }
-
-        if (params.role) {
-            filteredUsers = filteredUsers.filter(user => user.role === params.role);
-        }
-
-        if (params.isActive !== '' && params.isActive !== undefined) {
-            const isActive = params.isActive === 'true';
-            filteredUsers = filteredUsers.filter(user => user.isActive === isActive);
-        }
-
-        if (params.sortBy) {
-            filteredUsers.sort((a, b) => {
-                let aVal = a[params.sortBy];
-                let bVal = b[params.sortBy];
-
-                if (params.sortBy === 'createdAt') {
-                    aVal = new Date(aVal);
-                    bVal = new Date(bVal);
-                }
-
-                if (typeof aVal === 'string') {
-                    aVal = aVal.toLowerCase();
-                    bVal = bVal.toLowerCase();
-                }
-
-                if (params.sortDirection === 'desc') {
-                    return aVal < bVal ? 1 : -1;
-                } else {
-                    return aVal > bVal ? 1 : -1;
-                }
-            });
-        }
-
-        const page = parseInt(params.page) || 1;
-        const limit = parseInt(params.limit) || 10;
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + limit;
-
-        const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
-
-        return {
-            users: paginatedUsers,
-            total: filteredUsers.length,
-            totalPages: Math.ceil(filteredUsers.length / limit),
-            currentPage: page,
-            itemsPerPage: limit
-        };
+        throw error;
     }
 }
 
@@ -628,18 +527,9 @@ export async function fetchRoles() {
         console.log('Roles after mapping:', mappedRoles);
         return mappedRoles;
     } catch (error) {
-        console.warn('Error fetching roles from backend, using default roles:', error.message);
+        console.warn('Error fetching roles from backend:', error.message);
 
-        // Retornar roles por defecto con estructura consistente
-        const defaultRoles = [
-            { id: 1, name: 'admin', label: 'Administrador' },
-            { id: 2, name: 'manager', label: 'Gerente' },
-            { id: 3, name: 'user', label: 'Usuario' },
-            { id: 4, name: 'supervisor', label: 'Supervisor' }
-        ];
-
-        console.log('Using default roles:', defaultRoles);
-        return defaultRoles;
+        throw error;
     }
 }
 
@@ -705,8 +595,7 @@ export async function getUserRoles(userId) {
         return userRoles;
     } catch (error) {
         console.warn('Error fetching user roles:', error.message);
-        console.warn('Demo mode: returning default user roles');
-        return [{ id: 3, name: 'user', label: 'Usuario' }];
+        return [];
     }
 }
 
@@ -808,4 +697,4 @@ function getRoleDisplayName(roleName) {
 }
 
 // Legacy function name for compatibility
-export const toggleUserStatus = setUserActiveStatus; 
+export const toggleUserStatus = setUserActiveStatus;

@@ -8,11 +8,12 @@ import { PiChartBarBold, PiUsersBold, PiGearSixBold, PiBellBold , PiShieldStarBo
 
 export default function DashboardPage() {
   const { user, status } = useContext(AuthContext);
-
+  
   // Estados para las estadísticas
   const [stats, setStats] = useState({
     totalUsers: 0,
     loading: true,
+
     lastUpdated: null
   });
 
@@ -85,11 +86,6 @@ export default function DashboardPage() {
           <div className="welcome-content">
             <h1>Bienvenido al Sistema ERP</h1>
             <p>Hola <strong>{user?.name || user?.email}</strong>, aquí tienes un resumen de tu sistema.</p>
-            {user?.email?.includes('demo.com') && (
-              <div className="demo-mode-indicator">
-                🚀 Modo Demo Activo - Todas las funcionalidades están simuladas
-              </div>
-            )}
           </div>
           <div className="user-info">
             <div className="user-avatar">
@@ -202,18 +198,6 @@ export default function DashboardPage() {
           margin: 0;
           font-size: 1.08em;
           opacity: 0.9;
-        }
-
-        .demo-mode-indicator {
-          background: #f5f5f5;
-          color: #7ed957;
-          padding: 0.6em 1em;
-          border-radius: 8px;
-          margin-top: 1em;
-          font-size: 0.95em;
-          font-weight: 500;
-          border: 1px solid #e0e0e0;
-          backdrop-filter: blur(6px);
         }
 
         .user-info {

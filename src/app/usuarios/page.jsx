@@ -288,14 +288,6 @@ export default function UsuariosPage() {
           </div>
         </div>
 
-        {/* Demo Mode Indicator */}
-        {user?.email?.includes('demo.com') && (
-          <Alert
-            type="info"
-            message="🚀 Modo Demo: Las acciones están simuladas. Conecta tu backend para funcionalidad real."
-          />
-        )}
-
         {/* Alerts */}
         {error && (
           <Alert

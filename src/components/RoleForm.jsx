@@ -15,7 +15,10 @@ export default function RoleForm({ initialData = {}, permissions = [], onSubmit,
     const safeData = initialData || {};
     setName(safeData.name || '');
     setDescription(safeData.description || '');
-    setSelectedPermissions(safeData.permissions || []);
+    // Solo setea permisos si es creación, no si es edición
+    if (!safeData.id) {
+      setSelectedPermissions(safeData.permissions || []);
+    }
     setError(null);
   }, [initialData]);
 
@@ -31,6 +34,14 @@ export default function RoleForm({ initialData = {}, permissions = [], onSubmit,
     }
     onSubmit({ name: name.trim(), description: description.trim(), permissions: selectedPermissions });
   };
+
+  if (!permissions || permissions.length === 0) {
+    return (
+      <div style={{ padding: '2em', textAlign: 'center' }}>
+        <span>Cargando permisos...</span>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="role-form">

@@ -16,6 +16,7 @@ export default function RolesTable({
   roles = [],
   onEdit,
   onDelete,
+  onViewPermissions,
   loading = false,
   sortConfig = { key: null, direction: 'asc' },
   onSort
@@ -181,14 +182,22 @@ export default function RolesTable({
                       className="action-button edit"
                       title="Editar rol"
                     >
-                      <PiPencilBold />
+                      <PiPencilBold style={{ marginRight: 4 }} /> Editar
+                    </button>
+                    <button
+                      onClick={() => onViewPermissions && onViewPermissions(role)}
+                      className="action-button view"
+                      title="Ver permisos"
+                      style={{ background: '#e0f2fe', color: '#0284c7' }}
+                    >
+                      <PiShieldCheckBold style={{ marginRight: 4 }} /> Permisos
                     </button>
                     <button
                       onClick={() => onDelete(role)}
                       className="action-button delete"
                       title="Eliminar rol"
                     >
-                      <PiTrashBold />
+                      <PiTrashBold style={{ marginRight: 4 }} /> Eliminar
                     </button>
                   </div>
                 </td>
@@ -284,20 +293,27 @@ export default function RolesTable({
         }
         .actions-group {
           display: flex;
-          gap: 0.3em;
+          gap: 0.7em;
           justify-content: center;
         }
         .action-button {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 2em;
-          height: 2em;
+          width: auto;
+          min-width: 2.2em;
+          height: 2.2em;
+          padding: 0 0.8em;
           border: none;
           border-radius: 6px;
           cursor: pointer;
           transition: all 0.2s ease;
-          font-size: 0.9em;
+          font-size: 0.98em;
+          font-weight: 500;
+          gap: 0.4em;
+        }
+        .action-button svg {
+          font-size: 1.1em;
         }
         .action-button.edit {
           background: #fef3c7;
@@ -305,6 +321,14 @@ export default function RolesTable({
         }
         .action-button.edit:hover {
           background: #fde68a;
+          transform: translateY(-1px);
+        }
+        .action-button.view {
+          background: #e0f2fe;
+          color: #0284c7;
+        }
+        .action-button.view:hover {
+          background: #b2e0f0;
           transform: translateY(-1px);
         }
         .action-button.delete {
