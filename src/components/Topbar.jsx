@@ -1,10 +1,46 @@
 // Topbar.jsx
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { PiUserCircleBold, PiSignOutBold } from 'react-icons/pi';
 
+import NotificationBell from '../components/NotificationBell';
+import NotificationDropdown from '../components/NotificationDropdown';
+import { useNotificationPolling } from '@/hooks/useNotificationPolling';
+import { useNotifications } from '@/hooks/useNotifications'
+
 export default function Topbar() {
   const { user, logout } = useAuth();
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+
+  const {
+    notifications,
+    unreadCount,
+    handleMarkAllAsRead,
+    fetchNotifications,
+    fetchUnreadCount,
+  } = useNotifications(user?.id);
+
+   useNotificationPolling(user?.id, fetchNotifications, fetchUnreadCount);
+
+
+  useEffect(() => {
+      function handleClickOutside(event) {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+          setOpen(false);
+        }
+      }
+
+      if (open) {
+        document.addEventListener('mousedown', handleClickOutside);
+      }
+
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+  }, [open]);
+
   return (
     <header className="topbar">
       <div className="system-name">
@@ -19,6 +55,16 @@ export default function Topbar() {
         <button className="btn-logout" onClick={logout} title="Cerrar sesión">
           <PiSignOutBold size={22} />
         </button>
+        <div ref={dropdownRef} className="notification-container" style={{ position: 'relative' }}>
+          <NotificationBell unreadCount={unreadCount} onClick={() => setOpen(!open)} />
+          {open && (
+            <NotificationDropdown
+              notifications={notifications}
+              onClose={() => setOpen(false)}
+              onMarkAllAsRead={handleMarkAllAsRead}
+            />
+          )}
+        </div>
       </div>
       <style jsx>{`
         .topbar {

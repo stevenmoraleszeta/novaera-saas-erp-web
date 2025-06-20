@@ -5,7 +5,7 @@ export default function NotificationBell({ unreadCount = 0, onClick }) {
   const hasUnread = unreadCount > 0;
 
   return (
-    <div className="notification-bell" onClick={onClick}>
+    <div className="notification-bell" onClick={onClick} style={{ marginTop: '6.5px' }}>
       {hasUnread ? (
         <PiBellFill size={24} />
       ) : (

@@ -159,7 +159,7 @@ export default function NotificationCenterPage() {
           rightIcon={PiTrashLight}
           title="Borrar todas las notificaciones"
         >
-          Borrar todas las notificaciones
+        Borrar todas las notificaciones
         </Button>
 
         <Button

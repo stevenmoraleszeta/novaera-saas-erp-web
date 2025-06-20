@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 export default function NotificationDropdown({
   notifications = [],
@@ -6,7 +7,6 @@ export default function NotificationDropdown({
   onViewAll,
   onMarkAllAsRead
 }) {
-    console.log("aaaaaaaaaaaaaaaaaaaaaaa", notifications);
   return (
     <div className="dropdown">
       <div className="header">
@@ -31,10 +31,27 @@ export default function NotificationDropdown({
       </div>
 
       <div className="footer">
-        <button className="view-all" onClick={onViewAll}>Ver todas</button>
+        <a href="/notificaciones" className="view-all-link">
+          Ver todas
+        </a>
+
       </div>
 
       <style jsx>{`
+
+        .view-all-link {
+          display: inline-block;
+          color:rgb(0, 0, 0);
+          font-weight: bold;
+          padding: 0.5rem 1rem;
+          text-decoration: underline;
+          transition: color 0.2s;
+        }
+
+        .view-all-link:hover {
+          color: #6bb946;
+        }
+
         .dropdown {
           position: absolute;
           top: 40px;

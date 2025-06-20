@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from 'react';
 import { countUnread } from '@/services/notificationService';
 import { AuthContext } from '../context/AuthContext';
 
-export function useNotificationPolling(userId, fetchNotifications, fetchUnreadCount, interval = 3000) {
+export function useNotificationPolling(userId, fetchNotifications, fetchUnreadCount, interval = 10000) { // intervalo de cada cuanto revisa si hay notificaciones
   const [unreadCount, setUnreadCount] = useState(0);
   const { user } = useContext(AuthContext);
 
