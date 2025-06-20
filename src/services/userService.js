@@ -456,39 +456,25 @@ export async function resetUserPasswordAdmin(id, newPassword) {
 }
 
 export async function checkEmailExists(email) {
-    try {
-        const response = await axios.get('/users/exists/email', {
-            params: { email }
-        });
+    const response = await axios.get('/users/exists/email', {
+        params: { email }
+    });
 
-        // Manejar diferentes formatos de respuesta del backend
-        const data = response.data;
+    // Manejar diferentes formatos de respuesta del backend
+    const data = response.data;
 
-        // Si la respuesta tiene una propiedad 'exists'
-        if (typeof data.exists === 'boolean') {
-            return data.exists;
-        }
-
-        // Si la respuesta es directamente un booleano
-        if (typeof data === 'boolean') {
-            return data;
-        }
-
-        // Si tiene otras propiedades, asumir que existe si hay data
-        return !!data;
-
-    } catch (error) {
-        console.warn('Demo mode: simulating email check for', email);
-
-        // En modo demo, algunos emails "existen" para testing
-        const demoExistingEmails = [
-            'admin@demo.com',
-            'test@demo.com',
-            'user@demo.com'
-        ];
-
-        return demoExistingEmails.includes(email.toLowerCase());
+    // Si la respuesta tiene una propiedad 'exists'
+    if (typeof data.exists === 'boolean') {
+        return data.exists;
     }
+
+    // Si la respuesta es directamente un booleano
+    if (typeof data === 'boolean') {
+        return data;
+    }
+
+    // Si tiene otras propiedades, asumir que existe si hay data
+    return !!data;
 }
 
 export async function setUserAvatar(id, avatarData) {
