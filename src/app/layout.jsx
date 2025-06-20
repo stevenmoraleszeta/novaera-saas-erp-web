@@ -7,7 +7,7 @@ import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
 import Footer from "../components/Footer";
 import MainContent from "../components/MainContent";
-import { AuthProvider } from "../context/AuthContext";
+import { AuthProvider, AuthContext } from "../context/AuthContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,30 +33,38 @@ export default function RootLayout({ children }) {
 
 function LayoutContent({ children }) {
   const [isClient, setIsClient] = React.useState(false);
+  const auth = React.useContext(AuthContext);
 
   React.useEffect(() => {
     setIsClient(true);
   }, []);
 
   if (!isClient) {
-    return children;
+    return null;
   }
 
-  const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/register';
-  // Redirigir automáticamente si no hay token
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') || document.cookie.includes('token=') : true;
-  if (!isAuthPage && !token) {
+  const status = auth?.status;
+  const isAuthPage = typeof window !== 'undefined' && (window.location.pathname === '/login' || window.location.pathname === '/register');
+
+  // Esperar a que la autenticación esté lista
+  if (!isAuthPage && (status === 'checking' || status === 'authenticating')) {
+    return null;
+  }
+
+  // Si no está autenticado, redirigir a login
+  if (!isAuthPage && status === 'unauthenticated') {
     if (typeof window !== 'undefined') {
       window.location.href = '/login';
     }
     return null;
   }
 
-  if (!isAuthPage && token) {
+  // Si está autenticado, mostrar layout completo
+  if (!isAuthPage && status === 'authenticated') {
     return (
       <>
         <Sidebar />
-        <Topbar onLogout={() => {/* lógica de logout */ }} />
+        <Topbar />
         <MainContent>{children}</MainContent>
         <Footer />
       </>
