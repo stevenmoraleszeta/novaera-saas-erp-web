@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useState, useEffect } from 'react';
-import { getUserFromCookie, setToken, removeToken } from '../lib/cookies';
+import { setToken, removeToken } from '../lib/cookies';
 import { login as loginService, register as registerService, getUser } from '../services/authService';
 import axios from '../lib/axios';
 
@@ -50,10 +50,7 @@ export function AuthProvider({ children }) {
 
         // Si estamos en modo demo, establecer cookie de demo
         if (!response.token) {
-          console.log('AuthContext: No hay token, configurando modo demo');
-          if (typeof document !== 'undefined') {
-            document.cookie = 'demo_mode=true; path=/; max-age=3600'; // 1 hora
-          }
+          console.log('AuthContext: No hay token');
         }
 
         return true;
@@ -103,9 +100,6 @@ export function AuthProvider({ children }) {
 
     // Limpiar cookies
     removeToken();
-    if (typeof document !== 'undefined') {
-      document.cookie = 'demo_mode=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-    }
 
     setUser(null);
     setStatus('unauthenticated');
@@ -116,16 +110,8 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     console.log('AuthContext: useEffect - Verificando sesión inicial');
-    // Intentar cargar usuario desde cookie primero
-    const cookieUser = getUserFromCookie();
-    if (cookieUser) {
-      console.log('AuthContext: Usuario encontrado en cookie:', cookieUser);
-      setUser(cookieUser);
-      setStatus('authenticated');
-    } else {
-      console.log('AuthContext: No hay usuario en cookie, intentando refetchUser');
-      refetchUser();
-    }
+    // Siempre intentar obtener el usuario desde el backend usando el token httpOnly
+    refetchUser();
   }, []);
 
   return (
