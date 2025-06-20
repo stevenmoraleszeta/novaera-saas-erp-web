@@ -26,7 +26,7 @@ export default function ModuleFilter({
 
         <SearchBar
             onSearch={onSearch}
-            placeholder="Buscar por nombre, email o rol..."
+            placeholder="Buscar por nombre o descripción...."
         />
         
         {/* 

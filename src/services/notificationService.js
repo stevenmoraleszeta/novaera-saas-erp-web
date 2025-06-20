@@ -7,7 +7,7 @@ const mapNotificationFromBackend = (n) => ({
   title: n.title,
   message: n.message,
   linkToModule: n.link_to_module,
-  isRead: n.read,
+  read: n.read,
   createdAt: n.created_at,
   ...n,
 });
@@ -18,7 +18,7 @@ const mapNotificationToBackend = (n) => ({
   title: n.title,
   message: n.message,
   link_to_module: n.linkToModule,
-  read: n.isRead,
+  read: n.read,
 });
 
 // Obtener todas

@@ -8,7 +8,6 @@ export default function ModuleRow({ module, onEdit, onDelete, isEditingMode }) {
   const handleCardClick = () => {
     if (isEditingMode) {
       onEdit?.(module); // Abrir modal
-      console.log("EDITANDO ", isEditingMode);
     } else {
       router.push(`/modulos/${module.id}`); // Redirigir
 

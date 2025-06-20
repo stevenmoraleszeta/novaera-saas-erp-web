@@ -1,6 +1,4 @@
-import React from 'react';
-
-export default function Table({ columns = [], data = [], onRowClick }) {
+export default function Table({ columns = [], data = [], onRowClick, rowClassName }) {
   if (!data.length) {
     return <p className="no-data">No hay datos disponibles.</p>;
   }
@@ -20,10 +18,12 @@ export default function Table({ columns = [], data = [], onRowClick }) {
             <tr
               key={row.id || rowIndex}
               onClick={() => onRowClick?.(row)}
-              className={onRowClick ? 'clickable' : ''}
+              className={`${onRowClick ? 'clickable' : ''} ${rowClassName?.(row) || ''}`}
             >
               {columns.map((col) => (
-                <td key={col.key}>{row[col.key]}</td>
+                <td key={col.key}>
+                  {col.render ? col.render(row[col.key], row) : row[col.key]}
+                </td>
               ))}
             </tr>
           ))}
@@ -60,6 +60,11 @@ export default function Table({ columns = [], data = [], onRowClick }) {
 
         .clickable:hover {
           background-color: #f3f4f6;
+        }
+
+        .unread-row {
+          background-color:rgb(207, 247, 203);
+          font-weight: 500;
         }
 
         .no-data {
