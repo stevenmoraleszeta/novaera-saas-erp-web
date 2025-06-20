@@ -1,21 +1,10 @@
 // MainContent.jsx
-import React from 'react';
+import React from "react";
 
 export default function MainContent({ children }) {
   return (
-    <main className="main-content">
+    <main className="ml-[100px] mt-[60px] mb-[60px] p-8 min-h-[calc(100vh-120px)] bg-gray-50 text-gray-900">
       {children}
-      <style jsx>{`
-        .main-content {
-          margin-left: 100px;
-          margin-top: 60px;
-          margin-bottom: 60px;
-          padding: 2em;
-          min-height: calc(100vh - 120px);
-          background: var(--background);
-          color: var(--foreground);
-        }
-      `}</style>
     </main>
   );
 }

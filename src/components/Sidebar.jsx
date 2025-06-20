@@ -1,15 +1,20 @@
 // Sidebar.jsx
-"use client"
-import React from 'react';
-import Link from 'next/link';
-import { PiSquaresFourBold, PiUsersThreeBold, PiLayoutBold, PiShieldStarBold } from 'react-icons/pi';
+"use client";
+import React from "react";
+import Link from "next/link";
+import {
+  PiSquaresFourBold,
+  PiUsersThreeBold,
+  PiLayoutBold,
+  PiShieldStarBold,
+} from "react-icons/pi";
 
 const modules = [
-  { name: 'Dashboard', path: '/dashboard', icon: <PiSquaresFourBold size={22} /> },
-  { name: 'Usuarios', path: '/usuarios', icon: <PiUsersThreeBold size={22} /> },
-  { name: 'Módulos', path: '/modulos', icon: <PiLayoutBold size={22} /> },
-  { name: 'Roles', path: '/roles', icon: <PiShieldStarBold size={22} /> },
-  { name: 'Permisos', path: '/permissions', icon: <PiLayoutBold size={22} /> },
+  { name: "Dashboard", path: "/", icon: <PiSquaresFourBold size={22} /> },
+  { name: "Usuarios", path: "/usuarios", icon: <PiUsersThreeBold size={22} /> },
+  { name: "Módulos", path: "/modulos", icon: <PiLayoutBold size={22} /> },
+  { name: "Roles", path: "/roles", icon: <PiShieldStarBold size={22} /> },
+  { name: "Permisos", path: "/permissions", icon: <PiLayoutBold size={22} /> },
   // Agrega más módulos según permisos
 ];
 
@@ -38,7 +43,7 @@ export default function Sidebar({ userModules = modules }) {
           left: 0;
           top: 0;
           bottom: 0;
-          box-shadow: 4px 0 24px 0 rgba(0,0,0,0.13);
+          box-shadow: 4px 0 24px 0 rgba(0, 0, 0, 0.13);
           display: flex;
           flex-direction: column;
           z-index: 30;
@@ -56,15 +61,16 @@ export default function Sidebar({ userModules = modules }) {
           border-radius: 8px;
           transition: background 0.18s;
         }
-        li:hover, li.active {
-          background: rgba(255,255,255,0.08);
+        li:hover,
+        li.active {
+          background: rgba(255, 255, 255, 0.08);
         }
         .icon {
           margin-right: 0.9em;
           display: inline-flex;
           vertical-align: middle;
           color: #7ed957;
-          filter: drop-shadow(0 1px 2px rgba(0,0,0,0.10));
+          filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
         }
         a {
           color: #f3f3f3;
@@ -78,7 +84,8 @@ export default function Sidebar({ userModules = modules }) {
           letter-spacing: 0.2px;
           transition: background 0.18s, color 0.18s;
         }
-        a:hover, li.active a {
+        a:hover,
+        li.active a {
           background: #7ed95722;
           color: #7ed957;
         }

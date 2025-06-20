@@ -1,26 +1,26 @@
 // Login Page
-'use client';
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '../../hooks/useAuth';
-import FormInput from '../../components/FormInput';
-import Button from '../../components/Button';
-import Loader from '../../components/Loader';
-import Alert from '../../components/Alert';
-import Link from 'next/link';
+"use client";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../hooks/useAuth";
+import FormInput from "../../components/FormInput";
+import Button from "../../components/Button";
+import Loader from "../../components/Loader";
+import Alert from "../../components/Alert";
+import Link from "next/link";
 
 export default function LoginPage() {
   const { login, status, error } = useAuth();
   const router = useRouter();
-  const [form, setForm] = useState({ email: '', password: '' });
+  const [form, setForm] = useState({ email: "", password: "" });
   const [formError, setFormError] = useState({});
   const [submitting, setSubmitting] = useState(false);
-  const [localError, setLocalError] = useState('');
+  const [localError, setLocalError] = useState("");
 
   const validate = () => {
     const err = {};
-    if (!form.email) err.email = 'El usuario es obligatorio';
-    if (!form.password) err.password = 'La contraseña es obligatoria';
+    if (!form.email) err.email = "El usuario es obligatorio";
+    if (!form.password) err.password = "La contraseña es obligatoria";
     setFormError(err);
     return Object.keys(err).length === 0;
   };
@@ -29,37 +29,37 @@ export default function LoginPage() {
     const { name, value } = e.target;
     console.log(`Campo ${name} cambiado a: ${value}`);
     setForm({ ...form, [name]: value });
-    setFormError({ ...formError, [name]: '' });
-    setLocalError('');
+    setFormError({ ...formError, [name]: "" });
+    setLocalError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Iniciando proceso de login...', form);
+    console.log("Iniciando proceso de login...", form);
 
     if (!validate()) {
-      console.log('Validación fallida', formError);
+      console.log("Validación fallida", formError);
       return;
     }
 
     setSubmitting(true);
-    setLocalError('');
+    setLocalError("");
 
     try {
-      console.log('Intentando login con:', form.email);
+      console.log("Intentando login con:", form.email);
       const ok = await login(form.email, form.password);
-      console.log('Resultado login:', ok);
+      console.log("Resultado login:", ok);
 
       if (ok) {
-        console.log('Login exitoso, redirigiendo...');
-        router.replace('/dashboard');
+        console.log("Login exitoso, redirigiendo...");
+        router.replace("/");
       } else {
-        console.log('Login fallido');
-        setLocalError('No se pudo iniciar sesión. Verifica tus credenciales.');
+        console.log("Login fallido");
+        setLocalError("No se pudo iniciar sesión. Verifica tus credenciales.");
       }
     } catch (err) {
-      console.error('Error en login:', err);
-      setLocalError(err.message || 'Error al intentar iniciar sesión');
+      console.error("Error en login:", err);
+      setLocalError(err.message || "Error al intentar iniciar sesión");
     } finally {
       setSubmitting(false);
     }
@@ -69,7 +69,9 @@ export default function LoginPage() {
     <div className="login-page">
       <form className="login-form" onSubmit={handleSubmit} autoComplete="off">
         <h2>Iniciar Sesión</h2>
-        {(error && error !== 'No autenticado') && <Alert type="error" message={error} />}
+        {error && error !== "No autenticado" && (
+          <Alert type="error" message={error} />
+        )}
         {localError && <Alert type="error" message={localError} />}
         <FormInput
           label="Usuario"
@@ -89,11 +91,15 @@ export default function LoginPage() {
         />
         <Button
           type="submit"
-          disabled={submitting || status === 'authenticating'}
+          disabled={submitting || status === "authenticating"}
         >
-          {submitting || status === 'authenticating' ? <Loader text="Validando..." /> : 'Ingresar'}
+          {submitting || status === "authenticating" ? (
+            <Loader text="Validando..." />
+          ) : (
+            "Ingresar"
+          )}
         </Button>
-        <div style={{ textAlign: 'center', marginTop: 8 }}>
+        <div style={{ textAlign: "center", marginTop: 8 }}>
           <Link href="/register">¿No tienes cuenta? Regístrate</Link>
         </div>
       </form>
@@ -108,7 +114,7 @@ export default function LoginPage() {
         .login-form {
           background: #fff;
           border-radius: 18px;
-          box-shadow: 0 6px 32px rgba(35,37,38,0.10), 0 1.5px 8px #7ed95733;
+          box-shadow: 0 6px 32px rgba(35, 37, 38, 0.1), 0 1.5px 8px #7ed95733;
           padding: 2.7em 2.2em 2em 2.2em;
           min-width: 350px;
           display: flex;
