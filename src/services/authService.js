@@ -61,30 +61,6 @@ export async function register(name, email, password) {
       });
     }
 
-    // Si el backend no está disponible, usar modo demo
-    if (!error.response) {
-      console.warn('Backend not available, simulando registro demo:', error.message);
-
-      // Simular registro fallido para emails ya registrados
-      if (email === 'admin@demo.com' || email === 'user@demo.com') {
-        console.error('Error: Email ya registrado en modo demo');
-        throw new Error('El correo electrónico ya está registrado');
-      }
-
-      // Simular registro exitoso para otros emails
-      console.log('Registro demo exitoso');
-      return {
-        success: true,
-        message: 'Usuario registrado exitosamente con ID: 3',
-        user: {
-          id: 3,
-          name,
-          email,
-          role: 'user'
-        }
-      };
-    }
-
     // Re-lanzar el error para que sea manejado por el componente
     throw error;
   }
