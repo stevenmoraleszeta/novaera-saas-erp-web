@@ -50,10 +50,7 @@ export function AuthProvider({ children }) {
 
         // Si estamos en modo demo, establecer cookie de demo
         if (!response.token) {
-          console.log('AuthContext: No hay token, configurando modo demo');
-          if (typeof document !== 'undefined') {
-            document.cookie = 'demo_mode=true; path=/; max-age=3600'; // 1 hora
-          }
+          console.log('AuthContext: No hay token');
         }
 
         return true;

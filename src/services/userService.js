@@ -171,7 +171,7 @@ export async function getUsers(params = {}) {
 
         // Si es error de token, significa que el backend está funcionando pero necesitas autenticación real
         if (error.response?.data?.error === 'Token requerido' || error.response?.status === 401) {
-            console.info('🔐 Backend requiere autenticación. Usando datos demo para testing.');
+            console.info('🔐 Backend requiere autenticación.');
         }
 
         throw error;
@@ -391,68 +391,37 @@ export async function updateUser(id, userData) {
 }
 
 export async function updateUserPassword(id, passwordData) {
-    try {
-        // Tu backend espera password_hash, no password
-        const payload = {
-            password_hash: passwordData.password_hash || passwordData.newPassword
-        };
-        const response = await axios.put(`/users/${id}/password`, payload);
-        return response.data;
-    } catch (error) {
-        console.warn('Demo mode: simulating password update');
-        return { message: 'Contraseña actualizada correctamente (modo demo)' };
-    }
+    const payload = {
+        password_hash: passwordData.password_hash || passwordData.newPassword
+    };
+    const response = await axios.put(`/users/${id}/password`, payload);
+    return response.data;
 }
 
 export async function deleteUser(id, tipo = 'logica') {
-    try {
-        // Tu backend usa query parameter para el tipo de eliminación
-        const response = await axios.delete(`/users/${id}?tipo=${tipo}`);
-        return response.data;
-    } catch (error) {
-        console.warn('Demo mode: simulating user deletion');
-        return { message: 'Usuario eliminado correctamente (modo demo)' };
-    }
+    const response = await axios.delete(`/users/${id}?tipo=${tipo}`);
+    return response.data;
 }
 
 export async function setUserActiveStatus(id, isActive) {
-    try {
-        const response = await axios.put(`/users/${id}/active`, { activo: isActive });
-        return response.data;
-    } catch (error) {
-        console.warn('Demo mode: simulating user status toggle');
-        return { message: `Usuario ${isActive ? 'activado' : 'desactivado'} correctamente (modo demo)` };
-    }
+    const response = await axios.put(`/users/${id}/active`, { activo: isActive });
+    return response.data;
 }
 
 export async function blockUser(id) {
-    try {
-        const response = await axios.put(`/users/${id}/block`);
-        return response.data;
-    } catch (error) {
-        console.warn('Demo mode: simulating user block');
-        return { message: 'Usuario bloqueado correctamente (modo demo)' };
-    }
+    const response = await axios.put(`/users/${id}/block`);
+    return response.data;
 }
 
 export async function unblockUser(id) {
-    try {
-        const response = await axios.put(`/users/${id}/unblock`);
-        return response.data;
-    } catch (error) {
-        console.warn('Demo mode: simulating user unblock');
-        return { message: 'Usuario desbloqueado correctamente (modo demo)' };
-    }
+    const response = await axios.put(`/users/${id}/unblock`);
+    return response.data;
 }
 
 export async function resetUserPasswordAdmin(id, newPassword) {
-    try {
-        const response = await axios.put(`/users/${id}/reset-password`, { password_hash: newPassword });
-        return response.data;
-    } catch (error) {
-        console.warn('Demo mode: simulating password reset');
-        return { message: 'Contraseña restablecida correctamente (modo demo)' };
-    }
+    const response = await axios.put(`/users/${id}/reset-password`, { password_hash: newPassword });
+    return response.data;
+
 }
 
 export async function checkEmailExists(email) {
@@ -478,20 +447,11 @@ export async function checkEmailExists(email) {
 }
 
 export async function setUserAvatar(id, avatarData) {
-    try {
-        // Tu backend espera avatar_url
-        const payload = {
-            avatar_url: avatarData.avatar_url || avatarData.avatar
-        };
-        const response = await axios.put(`/users/${id}/avatar`, payload);
-        return response.data;
-    } catch (error) {
-        console.warn('Demo mode: simulating avatar update');
-        return {
-            message: 'Avatar actualizado correctamente (modo demo)',
-            avatar: avatarData.avatar_url || avatarData.avatar
-        };
-    }
+    const payload = {
+        avatar_url: avatarData.avatar_url || avatarData.avatar
+    };
+    const response = await axios.put(`/users/${id}/avatar`, payload);
+    return response.data;
 }
 
 // Obtener roles disponibles

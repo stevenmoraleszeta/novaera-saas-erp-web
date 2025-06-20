@@ -49,7 +49,7 @@ export default function ModulesPage() {
     formError: null
   });
 
-    const handleDeleteClick = (module) => {
+  const handleDeleteClick = (module) => {
     setModuleToDelete(module);
     setShowDeleteDialog(true);
     console.log("USUARIO:", user);
@@ -104,13 +104,6 @@ export default function ModulesPage() {
         {/* Fondo degradado global eliminado para evitar error de estilos anidados. Agrega el fondo en tu CSS global. */}
 
         {error && <Alert type="error" message={error} onClose={clearMessages} />}
-        {/* Demo Mode Indicator */}
-        {user?.email?.includes('demo.com') && (
-        <Alert
-            type="info"
-            message="🚀 Modo Demo: Las acciones están simuladas. Conecta tu backend para funcionalidad real."
-        />
-        )}
 
         {success && <Alert type="success" message={success} onClose={clearMessages} />}
 
