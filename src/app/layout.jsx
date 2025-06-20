@@ -5,6 +5,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "../context/AuthContext";
 import { LayoutWrapper } from "../components/LayoutWrapper";
+import { TabProvider } from "@/context/TabContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,9 +24,11 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <Suspense fallback={<LoadingFallback />}>
-            <LayoutWrapper>{children}</LayoutWrapper>
-          </Suspense>
+          <TabProvider>
+            <Suspense fallback={<LoadingFallback />}>
+              <LayoutWrapper>{children}</LayoutWrapper>
+            </Suspense>
+          </TabProvider>
         </AuthProvider>
       </body>
     </html>

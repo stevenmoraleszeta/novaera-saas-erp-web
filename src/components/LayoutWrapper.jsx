@@ -3,10 +3,12 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { AuthContext } from "../context/AuthContext";
-import Sidebar from "./Sidebar";
-import Topbar from "./Topbar";
 import Footer from "./Footer";
 import MainContent from "./MainContent";
+import Header from "./Header";
+import Sidebar from "./Sidebar";
+import Topbar from "./Topbar";
+import TabBar from "./TabBar";
 
 // Auth pages that don't need the full layout
 const AUTH_PAGES = ["/login", "/register"];
@@ -67,9 +69,11 @@ export function LayoutWrapper({ children }) {
 function AuthenticatedLayout({ children }) {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Sidebar />
-      <Topbar />
-      <MainContent>{children}</MainContent>
+      <Header />
+      <div className="flex-grow flex flex-col">
+        <TabBar />
+        <MainContent>{children}</MainContent>
+      </div>
       <Footer />
     </div>
   );
