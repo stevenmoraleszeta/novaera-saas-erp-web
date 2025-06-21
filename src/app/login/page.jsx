@@ -3,11 +3,11 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../hooks/useAuth";
-import FormInput from "../../components/FormInput";
-import Button from "../../components/Button";
-import Loader from "../../components/Loader";
-import Alert from "../../components/Alert";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const { login, status, error } = useAuth();
@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [formError, setFormError] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [localError, setLocalError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const validate = () => {
     const err = {};
@@ -27,7 +28,6 @@ export default function LoginPage() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    console.log(`Campo ${name} cambiado a: ${value}`);
     setForm({ ...form, [name]: value });
     setFormError({ ...formError, [name]: "" });
     setLocalError("");
@@ -35,30 +35,17 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Iniciando proceso de login...", form);
-
-    if (!validate()) {
-      console.log("Validación fallida", formError);
-      return;
-    }
-
+    if (!validate()) return;
     setSubmitting(true);
     setLocalError("");
-
     try {
-      console.log("Intentando login con:", form.email);
       const ok = await login(form.email, form.password);
-      console.log("Resultado login:", ok);
-
       if (ok) {
-        console.log("Login exitoso, redirigiendo...");
         router.replace("/");
       } else {
-        console.log("Login fallido");
         setLocalError("No se pudo iniciar sesión. Verifica tus credenciales.");
       }
     } catch (err) {
-      console.error("Error en login:", err);
       setLocalError(err.message || "Error al intentar iniciar sesión");
     } finally {
       setSubmitting(false);
@@ -66,75 +53,115 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="login-page">
-      <form className="login-form" onSubmit={handleSubmit} autoComplete="off">
-        <h2>Iniciar Sesión</h2>
-        {error && error !== "No autenticado" && (
-          <Alert type="error" message={error} />
-        )}
-        {localError && <Alert type="error" message={localError} />}
-        <FormInput
-          label="Usuario"
-          name="email"
-          value={form.email}
-          onChange={handleChange}
-          error={formError.email}
-          autoFocus
-        />
-        <FormInput
-          label="Contraseña"
-          name="password"
-          type="password"
-          value={form.password}
-          onChange={handleChange}
-          error={formError.password}
-        />
-        <Button
-          type="submit"
-          disabled={submitting || status === "authenticating"}
-        >
-          {submitting || status === "authenticating" ? (
-            <Loader text="Validando..." />
-          ) : (
-            "Ingresar"
-          )}
-        </Button>
-        <div style={{ textAlign: "center", marginTop: 8 }}>
-          <Link href="/register">¿No tienes cuenta? Regístrate</Link>
-        </div>
-      </form>
-      <style jsx>{`
-        .login-page {
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(120deg, #232526 0%, #7ed957 100%);
-        }
-        .login-form {
-          background: #fff;
-          border-radius: 18px;
-          box-shadow: 0 6px 32px rgba(35, 37, 38, 0.1), 0 1.5px 8px #7ed95733;
-          padding: 2.7em 2.2em 2em 2.2em;
-          min-width: 350px;
-          display: flex;
-          flex-direction: column;
-          gap: 1.3em;
-        }
-        h2 {
-          text-align: center;
-          color: #232526;
-          margin-bottom: 0.5em;
-          font-weight: 800;
-          letter-spacing: 0.5px;
-        }
-        @media (max-width: 600px) {
-          .login-form {
-            min-width: 90vw;
-            padding: 1.5em 0.5em;
-          }
-        }
-      `}</style>
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <Card className="w-full max-w-md mx-auto shadow-xl rounded-2xl">
+        <CardContent className="p-8">
+          <form
+            className="flex flex-col gap-6"
+            onSubmit={handleSubmit}
+            autoComplete="off"
+          >
+            <div className="text-center mb-2">
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                Iniciar Sesión
+              </h2>
+              <p className="text-gray-500 text-sm">
+                Accede a tu cuenta del sistema ERP
+              </p>
+            </div>
+            {error && error !== "No autenticado" && (
+              <div className="bg-red-100 text-red-700 rounded px-3 py-2 text-sm text-center">
+                {error}
+              </div>
+            )}
+            {localError && (
+              <div className="bg-red-100 text-red-700 rounded px-3 py-2 text-sm text-center">
+                {localError}
+              </div>
+            )}
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="email"
+                className="text-sm font-medium text-gray-700"
+              >
+                Usuario
+              </label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="usuario@ejemplo.com"
+                value={form.email}
+                onChange={handleChange}
+                autoFocus
+                disabled={submitting || status === "authenticating"}
+                className={formError.email ? "border-red-500" : ""}
+                aria-invalid={!!formError.email}
+                aria-describedby="email-error"
+              />
+              {formError.email && (
+                <span id="email-error" className="text-xs text-red-600">
+                  {formError.email}
+                </span>
+              )}
+            </div>
+            <div className="relative flex flex-col gap-2">
+              <label
+                htmlFor="password"
+                className="text-sm font-medium text-gray-700"
+              >
+                Contraseña
+              </label>
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                value={form.password}
+                onChange={handleChange}
+                disabled={submitting || status === "authenticating"}
+                className={`pr-10 ${
+                  formError.password ? "border-red-500" : ""
+                }`}
+                aria-invalid={!!formError.password}
+                aria-describedby="password-error"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-8 h-7 w-7"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </Button>
+              {formError.password && (
+                <span id="password-error" className="text-xs text-red-600">
+                  {formError.password}
+                </span>
+              )}
+            </div>
+            <Button
+              type="submit"
+              className="w-full h-12 text-lg font-semibold"
+              disabled={submitting || status === "authenticating"}
+            >
+              {submitting || status === "authenticating"
+                ? "Validando..."
+                : "Ingresar"}
+            </Button>
+            <div className="text-center mt-2">
+              <Link href="/register" className="hover:underline font-medium">
+                ¿No tienes cuenta? Regístrate
+              </Link>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

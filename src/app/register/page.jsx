@@ -1,31 +1,40 @@
 // Register Page
-'use client';
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '../../hooks/useAuth';
-import FormInput from '../../components/FormInput';
-import Button from '../../components/Button';
-import Loader from '../../components/Loader';
-import Alert from '../../components/Alert';
-import Link from 'next/link';
+"use client";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../hooks/useAuth";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
   const { register, status, error: authError } = useAuth();
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
   const [formError, setFormError] = useState({});
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validate = () => {
     const err = {};
-    if (!form.name) err.name = 'El nombre es obligatorio';
-    if (!form.email) err.email = 'El correo es obligatorio';
-    if (!form.email.includes('@')) err.email = 'El correo debe ser válido';
-    if (!form.password) err.password = 'La contraseña es obligatoria';
-    if (form.password.length < 6) err.password = 'La contraseña debe tener al menos 6 caracteres';
-    if (form.password !== form.confirmPassword) err.confirmPassword = 'Las contraseñas no coinciden';
+    if (!form.name) err.name = "El nombre es obligatorio";
+    if (!form.email) err.email = "El correo es obligatorio";
+    if (!form.email.includes("@")) err.email = "El correo debe ser válido";
+    if (!form.password) err.password = "La contraseña es obligatoria";
+    if (form.password.length < 6)
+      err.password = "La contraseña debe tener al menos 6 caracteres";
+    if (form.password !== form.confirmPassword)
+      err.confirmPassword = "Las contraseñas no coinciden";
 
     setFormError(err);
     return Object.keys(err).length === 0;
@@ -33,126 +42,205 @@ export default function RegisterPage() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    console.log(`Campo ${name} cambiado a: ${value}`);
     setForm({ ...form, [name]: value });
-    setFormError({ ...formError, [name]: '' });
+    setFormError({ ...formError, [name]: "" });
     setError(null);
     setSuccess(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Iniciando proceso de registro...', form);
-
-    if (!validate()) {
-      console.log('Validación fallida', formError);
-      return;
-    }
+    if (!validate()) return;
 
     setSubmitting(true);
     setError(null);
     setSuccess(null);
 
     try {
-      console.log('Enviando datos de registro...');
-      // Asegurarnos de que estamos enviando exactamente lo que espera el backend
       const response = await register(
         form.name.trim(),
         form.email.trim(),
         form.password
       );
-      console.log('Respuesta de registro:', response);
-
-      setSuccess('Usuario registrado correctamente. Ahora puedes iniciar sesión.');
-      setTimeout(() => router.replace('/login'), 2000);
+      setSuccess(
+        "Usuario registrado correctamente. Ahora puedes iniciar sesión."
+      );
+      setTimeout(() => router.replace("/login"), 2000);
     } catch (err) {
-      console.error('Error en registro:', err);
-      setError(err?.message || authError || 'Error al registrar usuario');
+      setError(err?.message || authError || "Error al registrar usuario");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="register-page">
-      <form className="register-form" onSubmit={handleSubmit} autoComplete="off">
-        <h2>Registro de Usuario</h2>
-        {error && <Alert type="error" message={error} />}
-        {success && <Alert type="success" message={success} />}
-        <FormInput
-          label="Nombre"
-          name="name"
-          value={form.name}
-          onChange={handleChange}
-          error={formError.name}
-          autoFocus
-        />
-        <FormInput
-          label="Correo"
-          name="email"
-          type="email"
-          value={form.email}
-          onChange={handleChange}
-          error={formError.email}
-        />
-        <FormInput
-          label="Contraseña"
-          name="password"
-          type="password"
-          value={form.password}
-          onChange={handleChange}
-          error={formError.password}
-        />
-        <FormInput
-          label="Confirmar Contraseña"
-          name="confirmPassword"
-          type="password"
-          value={form.confirmPassword}
-          onChange={handleChange}
-          error={formError.confirmPassword}
-        />
-        <Button
-          type="submit"
-          disabled={submitting || status === 'registering'}
-        >
-          {submitting || status === 'registering' ? <Loader text="Registrando..." /> : 'Registrarse'}
-        </Button>
-        <div style={{ textAlign: 'center', marginTop: 8 }}>
-          <Link href="/login">¿Ya tienes cuenta? Inicia sesión</Link>
-        </div>
-      </form>
-      <style jsx>{`
-        .register-page {
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(120deg, #232526 0%, #7ed957 100%);
-        }
-        .register-form {
-          background: #fff;
-          border-radius: 18px;
-          box-shadow: 0 6px 32px rgba(35,37,38,0.10), 0 1.5px 8px #7ed95733;
-          padding: 2.7em 2.2em 2em 2.2em;
-          min-width: 350px;
-          display: flex;
-          flex-direction: column;
-          gap: 1.3em;
-        }
-        h2 {
-          text-align: center;
-          color: #232526;
-          margin-bottom: 0.5em;
-          font-weight: 800;
-          letter-spacing: 0.5px;
-        }
-        @media (max-width: 600px) {
-          .register-form {
-            min-width: 90vw;
-            padding: 1.5em 0.5em;
-          }
-        }
-      `}</style>
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <Card className="w-full max-w-md mx-auto shadow-xl rounded-2xl">
+        <CardContent className="p-8">
+          <form
+            className="flex flex-col gap-6"
+            onSubmit={handleSubmit}
+            autoComplete="off"
+          >
+            <div className="text-center mb-2">
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                Registro de Usuario
+              </h2>
+              <p className="text-gray-500 text-sm">
+                Crea tu cuenta para acceder al sistema ERP
+              </p>
+            </div>
+            {error && (
+              <div className="bg-red-100 text-red-700 rounded px-3 py-2 text-sm text-center">
+                {error}
+              </div>
+            )}
+            {success && (
+              <div className="bg-green-100 text-green-700 rounded px-3 py-2 text-sm text-center">
+                {success}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="name"
+                className="text-sm font-medium text-gray-700"
+              >
+                Nombre
+              </label>
+              <Input
+                id="name"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                placeholder="Tu Nombre Completo"
+                autoFocus
+                disabled={submitting || status === "registering"}
+                className={formError.name ? "border-red-500" : ""}
+              />
+              {formError.name && (
+                <span className="text-xs text-red-600">{formError.name}</span>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="email"
+                className="text-sm font-medium text-gray-700"
+              >
+                Correo
+              </label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="usuario@ejemplo.com"
+                value={form.email}
+                onChange={handleChange}
+                disabled={submitting || status === "registering"}
+                className={formError.email ? "border-red-500" : ""}
+              />
+              {formError.email && (
+                <span className="text-xs text-red-600">{formError.email}</span>
+              )}
+            </div>
+
+            <div className="relative flex flex-col gap-2">
+              <label
+                htmlFor="password"
+                className="text-sm font-medium text-gray-700"
+              >
+                Contraseña
+              </label>
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                value={form.password}
+                onChange={handleChange}
+                disabled={submitting || status === "registering"}
+                className={`pr-10 ${
+                  formError.password ? "border-red-500" : ""
+                }`}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-8 h-7 w-7"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </Button>
+              {formError.password && (
+                <span className="text-xs text-red-600">
+                  {formError.password}
+                </span>
+              )}
+            </div>
+
+            <div className="relative flex flex-col gap-2">
+              <label
+                htmlFor="confirmPassword"
+                className="text-sm font-medium text-gray-700"
+              >
+                Confirmar Contraseña
+              </label>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="••••••••"
+                value={form.confirmPassword}
+                onChange={handleChange}
+                disabled={submitting || status === "registering"}
+                className={`pr-10 ${
+                  formError.confirmPassword ? "border-red-500" : ""
+                }`}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-8 h-7 w-7"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </Button>
+              {formError.confirmPassword && (
+                <span className="text-xs text-red-600">
+                  {formError.confirmPassword}
+                </span>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full h-12 text-lg font-semibold"
+              disabled={submitting || status === "registering"}
+            >
+              {submitting || status === "registering"
+                ? "Registrando..."
+                : "Registrarse"}
+            </Button>
+
+            <div className="text-center mt-2">
+              <Link href="/login" className="hover:underline font-medium">
+                ¿Ya tienes cuenta? Inicia sesión
+              </Link>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

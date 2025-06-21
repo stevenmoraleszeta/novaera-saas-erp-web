@@ -121,3 +121,13 @@
     @apply bg-background text-foreground;
   }
 }
+
+.bg-erp-gradient {
+  background: #ffffff;
+  background: linear-gradient(
+    221deg,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(212, 212, 212, 1) 74%,
+    rgba(130, 130, 130, 1) 100%
+  );
+}
