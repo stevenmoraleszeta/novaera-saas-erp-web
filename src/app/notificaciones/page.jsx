@@ -25,6 +25,7 @@ export default function NotificationCenterPage() {
     handleDelete,
     handleDeleteAll,
     loading,
+    handleCreate,
   } = useNotifications(user?.id);
 
   const [filter, setFilter] = useState('all');
@@ -33,6 +34,48 @@ export default function NotificationCenterPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteDialogMessage, setDeleteDialogMessage] = useState("");
   const [deletingMode, setDeletingMode] = useState("");
+
+  // Estado para crear notificación
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    userId: '',
+    title: '',
+    message: '',
+    linkToModule: '',
+    reminderAt: ''
+  });
+  const [createError, setCreateError] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [usersList, setUsersList] = useState([]);
+  const [modulesList, setModulesList] = useState([]);
+
+  // Cargar usuarios al abrir el modal de crear notificación y al cargar la página
+  React.useEffect(() => {
+    import('@/services/userService').then(mod => {
+      mod.getUsers({ limit: 1000 }).then(result => {
+        setUsersList(Array.isArray(result?.users) ? result.users : []);
+      });
+    });
+  }, []);
+
+  React.useEffect(() => {
+    if (showCreateModal) {
+      import('@/services/userService').then(mod => {
+        mod.getUsers({ limit: 1000 }).then(result => {
+          setUsersList(Array.isArray(result?.users) ? result.users : []);
+        });
+      });
+    }
+  }, [showCreateModal]);
+
+  // Cargar módulos al cargar la página
+  React.useEffect(() => {
+    import('@/services/moduleService').then(mod => {
+      mod.getModules().then(result => {
+        setModulesList(Array.isArray(result?.modules) ? result.modules : []);
+      });
+    });
+  }, []);
 
   const filteredNotifications = notifications.filter((n) => {
     if (filter === 'unread') return !n.read;
@@ -43,6 +86,15 @@ export default function NotificationCenterPage() {
     const columns = [
       { key: 'title', header: 'Título' },
       { key: 'message', header: 'Mensaje' },
+      {
+        key: 'user',
+        header: 'Usuario',
+        render: (_, row) => {
+          // Buscar el usuario en usersList, si no está, mostrar el id como fallback
+          const userObj = usersList.find(u => String(u.id) === String(row.userId));
+          return userObj ? `${userObj.name} (${userObj.email})` : row.userId;
+        },
+      },
       {
         key: 'read',
         header: 'Estado',
@@ -56,6 +108,16 @@ export default function NotificationCenterPage() {
             dateStyle: 'short',
             timeStyle: 'short',
           }),
+      },
+      {
+        key: 'module',
+        header: 'Módulo',
+        render: (_, row) => {
+          if (!row.linkToModule) return '';
+          // Buscar el módulo por el link
+          const moduleObj = modulesList.find(m => `/modulos/${m.id}` === row.linkToModule);
+          return moduleObj ? moduleObj.name : row.linkToModule;
+        },
       },
       {
         key: 'actions',
@@ -171,6 +233,14 @@ export default function NotificationCenterPage() {
         </Button>
       </div>
 
+      <Button
+        variant="success"
+        onClick={() => setShowCreateModal(true)}
+        style={{ marginBottom: '1rem' }}
+      >
+        Crear notificación
+      </Button>
+
       <Table
         columns={columns}
         data={filteredNotifications}
@@ -196,6 +266,113 @@ export default function NotificationCenterPage() {
           confirmText="Sí, eliminar"
           cancelText="Cancelar"
         />
+
+        {/* Modal para crear notificación */}
+        <Modal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          title="Crear notificación"
+          size="small"
+        >
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setCreateError('');
+              if (!createForm.title || !createForm.message || !createForm.userId) {
+                setCreateError('Debes seleccionar un usuario, título y mensaje');
+                return;
+              }
+              setCreating(true);
+              try {
+                await handleCreate({
+                  userId: createForm.userId,
+                  title: createForm.title,
+                  message: createForm.message,
+                  linkToModule: createForm.linkToModule ? createForm.linkToModule : null,
+                  reminderAt: createForm.reminderAt || null,
+                  read: false,
+                });
+                setShowCreateModal(false);
+                setCreateForm({ userId: '', title: '', message: '', linkToModule: '', reminderAt: '' });
+              } catch (err) {
+                setCreateError('Error al crear la notificación');
+              } finally {
+                setCreating(false);
+              }
+            }}
+            style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 8 }}
+          >
+            <label style={{ fontWeight: 500, marginBottom: 4 }}>
+              Usuario
+              <select
+                name="userId"
+                value={createForm.userId}
+                onChange={e => setCreateForm({ ...createForm, userId: e.target.value })}
+                required
+                style={{ width: '100%', marginBottom: 12, minHeight: 36, borderRadius: 6, padding: 6 }}
+              >
+                <option value="">Seleccione un usuario</option>
+                {usersList.map(u => (
+                  <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                ))}
+              </select>
+            </label>
+            <label style={{ fontWeight: 500, marginBottom: 4 }}>
+              Título
+              <input
+                name="title"
+                value={createForm.title}
+                onChange={e => setCreateForm({ ...createForm, title: e.target.value })}
+                required
+                style={{ width: '100%', marginBottom: 12, borderRadius: 6, padding: 6, border: '1px solid #ccc' }}
+                maxLength={100}
+              />
+            </label>
+            <label style={{ fontWeight: 500, marginBottom: 4 }}>
+              Mensaje
+              <textarea
+                name="message"
+                value={createForm.message}
+                onChange={e => setCreateForm({ ...createForm, message: e.target.value })}
+                required
+                style={{ width: '100%', marginBottom: 12, borderRadius: 6, padding: 6, border: '1px solid #ccc', minHeight: 60 }}
+              />
+            </label>
+            <label style={{ fontWeight: 500, marginBottom: 4 }}>
+              Link al módulo (opcional)
+              <select
+                name="linkToModule"
+                value={createForm.linkToModule}
+                onChange={e => setCreateForm({ ...createForm, linkToModule: e.target.value })}
+                style={{ width: '100%', marginBottom: 12, borderRadius: 6, padding: 6, border: '1px solid #ccc' }}
+              >
+                <option value="">Seleccione un módulo</option>
+                {modulesList.map(m => (
+                  <option key={m.id} value={`/modulos/${m.id}`}>{m.name}</option>
+                ))}
+              </select>
+            </label>
+            <label style={{ fontWeight: 500, marginBottom: 4 }}>
+              Recordatorio para (opcional)
+              <input
+                name="reminderAt"
+                type="datetime-local"
+                value={createForm.reminderAt}
+                onChange={e => setCreateForm({ ...createForm, reminderAt: e.target.value })}
+                style={{ width: '100%', marginBottom: 12, borderRadius: 6, padding: 6, border: '1px solid #ccc' }}
+              />
+            </label>
+            {createError && <div style={{ color: 'red', marginBottom: 8 }}>{createError}</div>}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <Button type="button" variant="secondary" onClick={() => setShowCreateModal(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" variant="success" loading={creating}>
+                Crear
+              </Button>
+            </div>
+          </form>
+        </Modal>
 
        <style jsx>{`
           .page-container {
