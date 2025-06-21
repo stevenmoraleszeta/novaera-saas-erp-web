@@ -22,7 +22,7 @@ export default function FormInput({ label, value, onChange, name, error, require
       <InputTag
         name={name}
         value={value}
-        onChange={e => onChange(name, e.target.value)}
+        onChange={onChange}
         required={required}
         style={{ ...style, border: error ? '1px solid red' : style.border || '#d1d5db', resize: as === 'textarea' ? 'vertical' : undefined }}
         {...props}
