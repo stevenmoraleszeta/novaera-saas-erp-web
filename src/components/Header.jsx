@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useContext } from "react";
-import { Settings, Bell, Edit3, Eye } from "lucide-react";
+import { Settings, Bell, Edit3, Eye, Users, Shield, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -9,14 +9,28 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AuthContext } from "../context/AuthContext";
 import { useEditMode } from "../context/EditModeContext";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function Header() {
   const { user } = useContext(AuthContext);
   const { isEditingMode, toggleEditMode } = useEditMode();
+  const router = useRouter();
+
+  const handleNavigation = (path) => {
+    router.push(path);
+  };
 
   return (
     <header className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
@@ -54,16 +68,32 @@ export default function Header() {
             </TooltipContent>
           </Tooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
+          {/* Settings Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">
                 <Settings className="w-5 h-5" />
               </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Configuración</p>
-            </TooltipContent>
-          </Tooltip>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Configuración del Sistema</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleNavigation("/usuarios")}>
+                <Users className="w-4 h-4 mr-2" />
+                Usuarios
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleNavigation("/roles")}>
+                <Shield className="w-4 h-4 mr-2" />
+                Roles
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleNavigation("/permissions")}
+              >
+                <Key className="w-4 h-4 mr-2" />
+                Permisos
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <Tooltip>
             <TooltipTrigger asChild>
