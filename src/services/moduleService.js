@@ -259,11 +259,8 @@ export async function getModuleById(id) {
 // Crear un nuevo módulo
 export async function createModule(data) {
   try {
-    console.log("creando: ", data);
     const payload = mapModuleToBackend(data);
-    console.log("CREADOOOO: ", payload);
     const response = await axios.post('/modules', payload);
-    console.log("lo logrooo : ", response);
     return mapModuleFromBackend(response.data);
   } catch (error) {
     console.error('Error creating module:', error.message);
@@ -286,7 +283,6 @@ export async function updateModule(id, data) {
 // Eliminar un módulo
 export async function deleteModule(id) {
   try {
-    console.log("EL MERO IDDD, ", id);
     const response = await axios.delete(`/modules/${id}`);
     return response.data;
   } catch (error) {

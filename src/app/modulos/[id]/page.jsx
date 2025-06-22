@@ -21,6 +21,7 @@ import DynamicRecordForm from '@/components/DynamicRecordForm';
 import LogicalTableColumns from '@/components/LogicalTableColumns';
 import DynamicEditRecordForm from '@/components/DynamicEditRecordForm';
 import EditToggleButton from '@/components/EditToggleButton';
+import ColumnManager from '@/components/columns/ColumnManager'
 
 export default function ModuleDetailPage() {
 
@@ -214,6 +215,7 @@ export default function ModuleDetailPage() {
 
         <section className="logical-table-detail">
           {selectedTable ? (
+            
             <div>
               {isGlobalEditingMode ? (
                 <>
@@ -313,6 +315,8 @@ export default function ModuleDetailPage() {
                       + Nuevo registro
                     </button>
                   </div>
+
+                  <ColumnManager tableId={selectedTable.id} tableName={selectedTable.name} />
                   <Modal isOpen={showRecordForm} onClose={() => setShowRecordForm(false)}>
                     <div style={{ minWidth: 340, padding: 12 }}>
                       <DynamicRecordForm

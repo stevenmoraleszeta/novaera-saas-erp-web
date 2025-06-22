@@ -52,7 +52,6 @@ export default function ModulesPage() {
   const handleDeleteClick = (module) => {
     setModuleToDelete(module);
     setShowDeleteDialog(true);
-    console.log("USUARIO:", user);
   };
 
   const handleConfirmDelete = async () => {
@@ -69,6 +68,11 @@ export default function ModulesPage() {
   const handleCancelDelete = () => {
     setShowDeleteDialog(false);
     setModuleToDelete(null);
+  };
+
+   const handleFormCancel = () => {
+    setSelectedColumn(null);
+    setFormMode('create');
   };
 
   const openCreateModal = () =>
