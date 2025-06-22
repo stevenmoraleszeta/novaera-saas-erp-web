@@ -51,7 +51,7 @@ export default function ModuleDetailPage() {
   if (!module) return <p>No se encontró el módulo con ID {id}.</p>;
 
   return (
-    <div className="max-w-full mx-auto my-8 bg-red-500">
+    <div className="max-w-full mx-auto">
       {/* Header Section - Outside the card */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
