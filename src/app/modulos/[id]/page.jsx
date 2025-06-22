@@ -18,37 +18,90 @@ export default function ModuleDetailPage() {
   const { id } = useParams();
   const [module, setModule] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [moduleData, setModuleData] = useState([]);
+  const [dataLoading, setDataLoading] = useState(true);
 
-  const columns = [
-    { key: "name", header: "Nombre" },
-    { key: "quantity", header: "Cantidad" },
-    { key: "location", header: "Ubicación" },
-  ];
+  // Dynamic columns based on module type or data structure
+  const getColumns = (data) => {
+    if (!data || data.length === 0) return [];
 
-  const data = [
-    { id: 1, name: "Monitor", quantity: 15, location: "Almacén A" },
-    { id: 2, name: "Teclado", quantity: 30, location: "Almacén B" },
-    { id: 3, name: "Mouse", quantity: 25, location: "Almacén A" },
-    { id: 4, name: "Impresora", quantity: 8, location: "Almacén C" },
-  ];
+    const firstItem = data[0];
+    return Object.keys(firstItem).map((key) => ({
+      key,
+      header:
+        key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, " $1"),
+      width: key === "id" ? "80px" : "auto",
+    }));
+  };
 
   useEffect(() => {
     const fetchModule = async () => {
       try {
-        const data = await getById(id);
-        setModule(data);
+        setLoading(true);
+        const moduleData = await getById(id);
+        setModule(moduleData);
+
+        // Fetch module-specific data if available
+        if (moduleData && moduleData.data) {
+          setModuleData(moduleData.data);
+        } else {
+          // Fallback to sample data if no real data available
+          setModuleData([
+            {
+              id: 1,
+              name: "Monitor",
+              quantity: 15,
+              location: "Almacén A",
+              status: "Activo",
+            },
+            {
+              id: 2,
+              name: "Teclado",
+              quantity: 30,
+              location: "Almacén B",
+              status: "Activo",
+            },
+            {
+              id: 3,
+              name: "Mouse",
+              quantity: 25,
+              location: "Almacén A",
+              status: "Inactivo",
+            },
+            {
+              id: 4,
+              name: "Impresora",
+              quantity: 8,
+              location: "Almacén C",
+              status: "Activo",
+            },
+          ]);
+        }
       } catch (error) {
         console.error("Error fetching module:", error);
+        // Set fallback data on error
+        setModuleData([
+          {
+            id: 1,
+            name: "Error al cargar datos",
+            quantity: 0,
+            location: "N/A",
+            status: "Error",
+          },
+        ]);
       } finally {
         setLoading(false);
+        setDataLoading(false);
       }
     };
 
     fetchModule();
-  }, [id]);
+  }, [id, getById]);
 
   if (loading) return <Loader text="Cargando módulo..." />;
   if (!module) return <p>No se encontró el módulo con ID {id}.</p>;
+
+  const columns = getColumns(moduleData);
 
   return (
     <div className="max-w-full mx-auto">
@@ -70,7 +123,20 @@ export default function ModuleDetailPage() {
 
       {/* Table Section - Inside card */}
       <div className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm">
-        <Table columns={columns} data={data} />
+        {dataLoading ? (
+          <Loader text="Cargando datos del módulo..." />
+        ) : (
+          <Table
+            columns={columns}
+            data={moduleData}
+            searchable={true}
+            filterable={true}
+            pagination={true}
+            itemsPerPageOptions={[10, 25, 50]}
+            defaultItemsPerPage={10}
+            customizable={true}
+          />
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useCallback } from "react";
 import {
   Table as TableUI,
   TableBody,
@@ -37,6 +37,7 @@ import {
   Settings,
   Eye,
   EyeOff,
+  GripVertical,
 } from "lucide-react";
 
 export default function Table({
@@ -49,6 +50,7 @@ export default function Table({
   itemsPerPageOptions = [10, 25, 50, 100],
   defaultItemsPerPage = 10,
   customizable = true,
+  resizable = true,
   className = "",
 }) {
   // State management
@@ -60,11 +62,18 @@ export default function Table({
     columns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {})
   );
   const [columnWidths, setColumnWidths] = useState(
-    columns.reduce(
-      (acc, col) => ({ ...acc, [col.key]: col.width || "auto" }),
-      {}
-    )
+    columns.reduce((acc, col) => ({ ...acc, [col.key]: "200px" }), {})
   );
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizingColumn, setResizingColumn] = useState(null);
+
+  const tableRef = useRef(null);
+  const resizeStateRef = useRef({
+    isResizing: false,
+    resizingColumn: null,
+    startX: 0,
+    startWidth: 0,
+  });
 
   // Filter data based on search term and filters
   const filteredData = useMemo(() => {
@@ -125,6 +134,87 @@ export default function Table({
       [columnKey]: width,
     }));
   };
+
+  // Column resizing handlers
+  const handleResizeStart = useCallback(
+    (e, columnKey) => {
+      if (!resizable) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const currentWidth = parseInt(columnWidths[columnKey]) || 200;
+
+      // Update both state and ref
+      setIsResizing(true);
+      setResizingColumn(columnKey);
+      resizeStateRef.current = {
+        isResizing: true,
+        resizingColumn: columnKey,
+        startX: e.clientX,
+        startWidth: currentWidth,
+      };
+
+      // Add event listeners with capture phase
+      document.addEventListener("mousemove", handleResizeMove, {
+        capture: true,
+      });
+      document.addEventListener("mouseup", handleResizeEnd, { capture: true });
+
+      // Prevent text selection during resize
+      document.body.style.userSelect = "none";
+      document.body.style.cursor = "col-resize";
+    },
+    [resizable, columnWidths]
+  );
+
+  const handleResizeMove = useCallback(
+    (e) => {
+      const state = resizeStateRef.current;
+      if (!state.isResizing || !state.resizingColumn) {
+        return;
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const deltaX = e.clientX - state.startX;
+      const newWidth = Math.max(100, state.startWidth + deltaX);
+
+      setColumnWidths((prev) => ({
+        ...prev,
+        [state.resizingColumn]: `${newWidth}px`,
+      }));
+    },
+    [columnWidths]
+  );
+
+  const handleResizeEnd = useCallback((e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    // Reset both state and ref
+    setIsResizing(false);
+    setResizingColumn(null);
+    resizeStateRef.current = {
+      isResizing: false,
+      resizingColumn: null,
+      startX: 0,
+      startWidth: 0,
+    };
+
+    // Remove event listeners
+    document.removeEventListener("mousemove", handleResizeMove, {
+      capture: true,
+    });
+    document.removeEventListener("mouseup", handleResizeEnd, { capture: true });
+
+    // Restore cursor and text selection
+    document.body.style.userSelect = "";
+    document.body.style.cursor = "";
+  }, []);
 
   // Get visible columns
   const visibleColumnsList = columns.filter((col) => visibleColumns[col.key]);
@@ -280,55 +370,76 @@ export default function Table({
       </div>
 
       {/* Table */}
-      <div className="border rounded-lg">
-        <TableUI>
+      <div className="border rounded-lg overflow-x-auto">
+        <TableUI ref={tableRef}>
           <TableHeader>
             <TableRow>
-              {visibleColumnsList.map((column) => (
+              {visibleColumnsList.map((column, index) => (
                 <TableHead
                   key={column.key}
-                  style={{ width: columnWidths[column.key] }}
-                  className="cursor-pointer hover:bg-gray-50"
+                  style={{
+                    width: columnWidths[column.key],
+                    minWidth: "100px",
+                    position: "relative",
+                  }}
+                  className="cursor-pointer hover:bg-gray-50 select-none"
                 >
-                  <div className="flex items-center justify-between">
-                    <span>{column.header}</span>
-                    {customizable && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                          >
-                            <Settings className="w-3 h-3" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuLabel>
-                            Ancho de columna
-                          </DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          {[
-                            "auto",
-                            "100px",
-                            "150px",
-                            "200px",
-                            "250px",
-                            "300px",
-                          ].map((width) => (
-                            <DropdownMenuItem
-                              key={width}
-                              onClick={() =>
-                                updateColumnWidth(column.key, width)
-                              }
+                  <div className="flex items-center justify-between pr-2">
+                    <span className="truncate">{column.header}</span>
+                    <div className="flex items-center gap-1">
+                      {customizable && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
                             >
-                              {width === "auto" ? "Automático" : width}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
+                              <Settings className="w-3 h-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuLabel>
+                              Ancho de columna
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {[
+                              "auto",
+                              "100px",
+                              "150px",
+                              "200px",
+                              "250px",
+                              "300px",
+                            ].map((width) => (
+                              <DropdownMenuItem
+                                key={width}
+                                onClick={() =>
+                                  updateColumnWidth(column.key, width)
+                                }
+                              >
+                                {width === "auto" ? "Automático" : width}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Resize handle */}
+                  {resizable && (
+                    <div
+                      className={`absolute right-0 top-0 bottom-0 w-4 cursor-col-resize hover:bg-blue-500 transition-colors ${
+                        resizingColumn === column.key
+                          ? "bg-blue-500"
+                          : "bg-transparent"
+                      }`}
+                      onMouseDown={(e) => handleResizeStart(e, column.key)}
+                      style={{ zIndex: 10 }}
+                    >
+                      <div className="absolute right-1 top-1/2 transform -translate-y-1/2 w-0.5 h-8 bg-gray-400 rounded opacity-0 hover:opacity-100 transition-opacity" />
+                    </div>
+                  )}
                 </TableHead>
               ))}
             </TableRow>
@@ -341,7 +452,14 @@ export default function Table({
                 className={onRowClick ? "cursor-pointer hover:bg-gray-50" : ""}
               >
                 {visibleColumnsList.map((column) => (
-                  <TableCell key={column.key}>
+                  <TableCell
+                    key={column.key}
+                    style={{
+                      width: columnWidths[column.key],
+                      minWidth: "100px",
+                    }}
+                    className="truncate"
+                  >
                     {column.render
                       ? column.render(row[column.key], row)
                       : row[column.key]}
