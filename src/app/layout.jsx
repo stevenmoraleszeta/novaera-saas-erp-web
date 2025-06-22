@@ -4,6 +4,7 @@ import React, { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "../context/AuthContext";
+import { EditModeProvider } from "../context/EditModeContext";
 import { LayoutWrapper } from "../components/LayoutWrapper";
 import { TabProvider } from "@/context/TabContext";
 
@@ -24,11 +25,13 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-erp-gradient`}
       >
         <AuthProvider>
-          <TabProvider>
-            <Suspense fallback={<LoadingFallback />}>
-              <LayoutWrapper>{children}</LayoutWrapper>
-            </Suspense>
-          </TabProvider>
+          <EditModeProvider>
+            <TabProvider>
+              <Suspense fallback={<LoadingFallback />}>
+                <LayoutWrapper>{children}</LayoutWrapper>
+              </Suspense>
+            </TabProvider>
+          </EditModeProvider>
         </AuthProvider>
       </body>
     </html>

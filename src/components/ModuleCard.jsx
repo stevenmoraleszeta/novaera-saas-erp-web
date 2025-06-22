@@ -1,19 +1,40 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { GripVertical } from "lucide-react";
 
-export default function ModuleCard({ module, onClick }) {
+export default function ModuleCard({ module, onClick, isEditingMode = false }) {
+  const [imageError, setImageError] = useState(false);
+
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
+  const handleCardClick = () => {
+    if (onClick) {
+      onClick(module);
+    }
+  };
+
   return (
     <Card
-      onClick={onClick}
-      className="aspect-square flex flex-col items-center justify-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ease-in-out cursor-pointer hover:-translate-y-1"
+      onClick={handleCardClick}
+      className={`aspect-square flex items-center justify-center p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-md hover:shadow-xl transition-all duration-200 ease-in-out cursor-pointer hover:-translate-y-1.5 w-full ${
+        isEditingMode ? "animate-shake" : ""
+      }`}
     >
-      <CardContent className="flex flex-col items-center justify-center p-0 text-center">
-        {React.cloneElement(module.icon, {
-          className: "w-1/2 h-1/2 text-gray-700 dark:text-gray-300 mb-2",
-        })}
-        <span className="text-sm font-medium">{module.name}</span>
+      <CardContent className="p-0">
+        {module.iconUrl && !imageError ? (
+          <img
+            src={module.iconUrl}
+            alt={module.name}
+            className="w-24 h-24 object-contain"
+            onError={handleImageError}
+          />
+        ) : (
+          <GripVertical className="w-24 h-24 text-gray-800 dark:text-gray-200" />
+        )}
       </CardContent>
     </Card>
   );

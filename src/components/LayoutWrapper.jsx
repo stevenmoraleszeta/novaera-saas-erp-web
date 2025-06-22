@@ -68,7 +68,7 @@ export function LayoutWrapper({ children }) {
 // Authenticated layout with sidebar, topbar, and footer
 function AuthenticatedLayout({ children }) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <Header />
       <div className="flex-grow flex flex-col">
         <TabBar />

@@ -1,7 +1,10 @@
-import React from 'react';
-import ModuleRow from './ModuleRow';
-import Loader from './Loader';
-import Pagination from './Pagination';
+import React from "react";
+import { useRouter } from "next/navigation";
+import { useTabs } from "@/context/TabContext";
+import ModuleCard from "./ModuleCard";
+import AddModuleCard from "./AddModuleCard";
+import Loader from "./Loader";
+import Pagination from "./Pagination";
 
 export default function ModuleList({
   modules = [],
@@ -14,81 +17,81 @@ export default function ModuleList({
   onEdit,
   onDelete,
   onAdd,
-  isEditingMode = true
+  isEditingMode = true,
 }) {
+  const router = useRouter();
+  const { addModuleTab } = useTabs();
 
-  const addModule = 
-  {
-      id: 1,
-      name: 'Agregar',
-      description: '',
-      iconUrl: 'https://icon2.cleanpng.com/20180610/yr/aa8tqkh1s.webp',
-      createdBy: 1,
-      createdAt: '2024-01-15T10:30:00Z'
-  }
+  const addModule = {
+    id: 1,
+    name: "Agregar",
+    description: "",
+    iconUrl: "https://icon2.cleanpng.com/20180610/yr/aa8tqkh1s.webp",
+    createdBy: 1,
+    createdAt: "2024-01-15T10:30:00Z",
+  };
+
+  const handleModuleClick = (module) => {
+    if (isEditingMode) {
+      onEdit(module);
+    } else {
+      // Add tab for module and navigate
+      addModuleTab(module.id, module.name);
+      router.push(`/modulos/${module.id}`);
+    }
+  };
 
   if (loading) {
     return (
-      <div className="module-list-loading">
+      <div className="flex justify-center items-center min-h-[200px]">
         <Loader text="Cargando módulos..." />
       </div>
     );
   }
 
   if (!modules.length) {
-    return <p className="no-data">No se encontraron módulos.</p>;
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <p>No se encontraron módulos.</p>
+      </div>
+    );
   }
 
   return (
-    <div className="module-grid-wrapper">
-      <div className="module-grid">
-            {modules.map((module) => (
-              <ModuleRow
-                key={module.id}
+    <div className="flex justify-center">
+      <div className="max-w-6xl w-full">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-8 gap-y-12">
+          {modules.map((module) => (
+            <div key={module.id} className="flex flex-col items-center gap-3">
+              <ModuleCard
                 module={module}
-                onEdit={() => onEdit(module)}
-                onDelete={() => onDelete(module)}
+                onClick={handleModuleClick}
                 isEditingMode={isEditingMode}
               />
-            ))}
+              <span className="font-semibold text-gray-700 dark:text-gray-300 text-center">
+                {module.name}
+              </span>
+            </div>
+          ))}
 
-            {isEditingMode && (
-              <ModuleRow
-                key="add"
-                module={addModule}
-                onEdit={onAdd}
-                onDelete={() => {}}
-                isEditingMode={isEditingMode}
-              />
-            )}
-          </div>
+          {isEditingMode && (
+            <div className="flex flex-col items-center gap-3">
+              <AddModuleCard onClick={onAdd} isEditingMode={isEditingMode} />
+              <span className="font-semibold text-gray-700 dark:text-gray-300">
+                Añadir Módulo
+              </span>
+            </div>
+          )}
+        </div>
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={totalItems}
-        itemsPerPage={itemsPerPage}
-        onPageChange={onPageChange}
-      />
-
-      <style jsx>{`
-        .module-grid-wrapper {
-          padding: 1rem;
-        }
-
-        .module-grid {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 2.2rem 2.2rem;
-          justify-items: center;
-        }
-
-        .no-data {
-          text-align: center;
-          padding: 2rem;
-          color: #6b7280;
-        }
-      `}</style>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={onPageChange}
+        />
+      </div>
     </div>
   );
 }

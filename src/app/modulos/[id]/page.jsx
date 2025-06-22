@@ -1,40 +1,35 @@
 // app/modules/[id]/page.jsx (o .tsx si usas TypeScript)
 
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { getModuleById } from '@/services/moduleService'; 
-import Loader from '@/components/Loader'; 
-import StatusBadge from '@/components/ModuleStatusBadge';
-import { useModules } from '@/hooks/useModules';
-import Table from '@/components/Table';
-import MainContent from '@/components/MainContent';
-
+import React, { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { getModuleById } from "@/services/moduleService";
+import Loader from "@/components/Loader";
+import StatusBadge from "@/components/ModuleStatusBadge";
+import { useModules } from "@/hooks/useModules";
+import Table from "@/components/Table";
+import MainContent from "@/components/MainContent";
+import { Badge } from "@/components/ui/badge";
 
 export default function ModuleDetailPage() {
-
-  const {
-    modules,
-    getById,
-  } = useModules();
+  const { modules, getById } = useModules();
 
   const { id } = useParams();
   const [module, setModule] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const columns = [
-  { key: 'name', header: 'Nombre' },
-  { key: 'quantity', header: 'Cantidad' },
-  { key: 'location', header: 'Ubicación' },
-];
+    { key: "name", header: "Nombre" },
+    { key: "quantity", header: "Cantidad" },
+    { key: "location", header: "Ubicación" },
+  ];
 
   const data = [
-    { id: 1, name: 'Monitor', quantity: 15, location: 'Almacén A' },
-    { id: 2, name: 'Teclado', quantity: 30, location: 'Almacén B' },
-    { id: 2, name: 'Teclado', quantity: 30, location: 'Almacén B' },
-    { id: 2, name: 'Teclado', quantity: 30, location: 'Almacén B' },
-    
+    { id: 1, name: "Monitor", quantity: 15, location: "Almacén A" },
+    { id: 2, name: "Teclado", quantity: 30, location: "Almacén B" },
+    { id: 3, name: "Mouse", quantity: 25, location: "Almacén A" },
+    { id: 4, name: "Impresora", quantity: 8, location: "Almacén C" },
   ];
 
   useEffect(() => {
@@ -43,7 +38,7 @@ export default function ModuleDetailPage() {
         const data = await getById(id);
         setModule(data);
       } catch (error) {
-        console.error('Error fetching module:', error);
+        console.error("Error fetching module:", error);
       } finally {
         setLoading(false);
       }
@@ -56,47 +51,27 @@ export default function ModuleDetailPage() {
   if (!module) return <p>No se encontró el módulo con ID {id}.</p>;
 
   return (
-    <MainContent>
-
-    
-    <div className="module-detail-page">
-      <p><strong>Descripción:</strong> {module.description || 'Sin descripción'}</p>
-      <p><strong>Categoría:</strong> {module.category || 'Sin categoría'}</p>
-      <div>
-        <h1>{module.name}</h1>
-        <Table columns={columns} data={data} />
+    <div className="max-w-full mx-auto my-8 bg-red-500">
+      {/* Header Section - Outside the card */}
+      <div className="mb-6">
+        <div className="flex items-center gap-3 mb-2">
+          <h1 className="text-2xl font-bold text-gray-900">{module.name}</h1>
+          <Badge variant="secondary" className="text-sm">
+            {module.category || "Sin categoría"}
+          </Badge>
+        </div>
+        <p className="text-gray-600 text-lg">
+          {module.description || "Sin descripción"}
+        </p>
+        <div className="mt-3">
+          <StatusBadge status={module.status} />
+        </div>
       </div>
 
-      <style jsx>{`
-        .module-detail-page {
-          max-width: 100%;
-          margin: 2rem auto;
-          padding: 1rem;
-          border: 1px solid #e5e7eb;
-          border-radius: 12px;
-          background: #fff;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
-
-        .module-icon {
-          width: 64px;
-          height: 64px;
-          object-fit: contain;
-          margin-bottom: 1rem;
-        }
-
-        h1 {
-          font-size: 1.5rem;
-          color: #111827;
-          margin-bottom: 1rem;
-        }
-
-        p {
-          font-size: 1rem;
-          margin-bottom: 0.5rem;
-        }
-      `}</style>
+      {/* Table Section - Inside card */}
+      <div className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm">
+        <Table columns={columns} data={data} />
+      </div>
     </div>
-    </MainContent>
   );
 }

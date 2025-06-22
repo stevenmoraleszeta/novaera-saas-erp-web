@@ -4,14 +4,16 @@ import React from "react";
 import { Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
-export default function AddModuleCard({ onClick }) {
+export default function AddModuleCard({ onClick, isEditingMode = false }) {
   return (
     <Card
-      className="aspect-square flex flex-col items-center justify-center p-4 bg-gray-200 dark:bg-gray-700 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ease-in-out cursor-pointer hover:-translate-y-1"
       onClick={onClick}
+      className={`aspect-square flex items-center justify-center p-6 bg-gray-200 dark:bg-gray-700 rounded-2xl shadow-md hover:shadow-xl transition-all duration-200 ease-in-out cursor-pointer hover:-translate-y-1.5 w-full ${
+        isEditingMode ? "animate-shake" : ""
+      }`}
     >
-      <CardContent className="flex flex-col items-center justify-center p-0">
-        <Plus className="w-1/2 h-1/2 text-gray-500 dark:text-gray-400" />
+      <CardContent className="p-0">
+        <Plus className="w-24 h-24 text-gray-500 dark:text-gray-400" />
       </CardContent>
     </Card>
   );

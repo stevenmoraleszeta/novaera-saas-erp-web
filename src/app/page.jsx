@@ -1,12 +1,182 @@
 "use client";
 
-import React from "react";
-import ModuleGrid from "@/components/ModuleGrid";
+import React, { useContext, useState, useEffect } from "react";
+import { useModules } from "@/hooks/useModules";
+import ModuleList from "@/components/ModuleList";
+import Alert from "@/components/Alert";
+import Modal from "@/components/Modal";
+import ModuleForm from "@/components/ModuleForm";
+import { AuthContext } from "@/context/AuthContext";
+import { useEditMode } from "@/context/EditModeContext";
+import DeleteConfirmationDialog from "@/components/DeleteConfirmationDialog";
+import { Badge } from "@/components/ui/badge";
+import { Edit3 } from "lucide-react";
 
-export default function DashboardPage() {
+export default function ModulesPage() {
+  const {
+    modules,
+    loading,
+    error,
+    success,
+    searchQuery,
+    filters,
+    sortConfig,
+    currentPage,
+    totalPages,
+    totalModules,
+    itemsPerPage,
+    handleSearch,
+    handleSort,
+    handleFilterChange,
+    handlePageChange,
+    handleCreateModule,
+    handleUpdateModule,
+    handleDeleteModule,
+    clearMessages,
+  } = useModules();
+
+  const { user, status } = useContext(AuthContext);
+  const { isEditingMode } = useEditMode();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [moduleToDelete, setModuleToDelete] = useState(null);
+
+  const [modalState, setModalState] = React.useState({
+    showModal: false,
+    selectedModule: null,
+    formLoading: false,
+    formError: null,
+  });
+
+  const handleDeleteClick = (module) => {
+    setModuleToDelete(module);
+    setShowDeleteDialog(true);
+    console.log("USUARIO:", user);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      await handleDeleteModule(moduleToDelete);
+      setShowDeleteDialog(false);
+      setModuleToDelete(null);
+      closeModal();
+    } catch (err) {
+      console.error("Error al eliminar módulo:", err);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteDialog(false);
+    setModuleToDelete(null);
+  };
+
+  const openCreateModal = () =>
+    setModalState({
+      showModal: true,
+      selectedModule: null,
+      formLoading: false,
+      formError: null,
+    });
+
+  const openEditModal = (module) =>
+    setModalState({
+      showModal: true,
+      selectedModule: module,
+      formLoading: false,
+      formError: null,
+    });
+
+  const closeModal = () =>
+    setModalState({
+      showModal: false,
+      selectedModule: null,
+      formLoading: false,
+      formError: null,
+    });
+
+  const handleFormSubmit = async (data) => {
+    try {
+      setModalState((prev) => ({
+        ...prev,
+        formLoading: true,
+        formError: null,
+      }));
+      if (modalState.selectedModule) {
+        await handleUpdateModule(modalState.selectedModule.id, data);
+      } else {
+        await handleCreateModule(data);
+      }
+      closeModal();
+    } catch (err) {
+      setModalState((prev) => ({
+        ...prev,
+        formError: err?.response?.data?.error || "Error al guardar módulo",
+        formLoading: false,
+      }));
+    }
+  };
+
   return (
-    <div className="flex flex-col h-screen">
-      <ModuleGrid />
+    <div className="max-w-6xl mx-auto p-4">
+      {error && <Alert type="error" message={error} onClose={clearMessages} />}
+
+      {success && (
+        <Alert type="success" message={success} onClose={clearMessages} />
+      )}
+
+      {isEditingMode && (
+        <div className="mb-8">
+          <Badge
+            variant="default"
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            <Edit3 className="w-5 h-5" />
+            Modo edición
+          </Badge>
+        </div>
+      )}
+
+      <ModuleList
+        modules={modules}
+        loading={loading}
+        sortConfig={sortConfig}
+        onSort={handleSort}
+        onAdd={openCreateModal}
+        onEdit={openEditModal}
+        onDelete={handleDeleteClick}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalModules}
+        itemsPerPage={itemsPerPage}
+        onPageChange={handlePageChange}
+        isEditingMode={isEditingMode}
+      />
+
+      <Modal
+        isOpen={modalState.showModal}
+        onClose={closeModal}
+        size="large"
+        showCloseButton
+      >
+        <ModuleForm
+          mode={modalState.selectedModule ? "edit" : "create"}
+          initialData={modalState.selectedModule}
+          onSubmit={handleFormSubmit}
+          onCancel={closeModal}
+          onDelete={handleDeleteClick}
+          loading={modalState.formLoading}
+          error={modalState.formError}
+        />
+      </Modal>
+
+      <DeleteConfirmationDialog
+        isOpen={showDeleteDialog}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="¿Eliminar módulo?"
+        message={`¿Estás seguro de que deseas eliminar "${moduleToDelete?.name}"?`}
+        confirmText="Sí, eliminar"
+        cancelText="Cancelar"
+      />
     </div>
   );
 }

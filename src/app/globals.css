@@ -131,3 +131,42 @@
     rgba(130, 130, 130, 1) 100%
   );
 }
+
+/* iOS-like shake animation for editing mode */
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  10% {
+    transform: translateX(-1px) rotate(-0.5deg);
+  }
+  20% {
+    transform: translateX(1px) rotate(0.5deg);
+  }
+  30% {
+    transform: translateX(-1px) rotate(-0.3deg);
+  }
+  40% {
+    transform: translateX(1px) rotate(0.3deg);
+  }
+  50% {
+    transform: translateX(-0.5px) rotate(-0.2deg);
+  }
+  60% {
+    transform: translateX(0.5px) rotate(0.2deg);
+  }
+  70% {
+    transform: translateX(-0.3px) rotate(-0.1deg);
+  }
+  80% {
+    transform: translateX(0.3px) rotate(0.1deg);
+  }
+  90% {
+    transform: translateX(-0.1px) rotate(-0.05deg);
+  }
+}
+
+.animate-shake {
+  animation: shake 1.2s ease-in-out infinite;
+}
