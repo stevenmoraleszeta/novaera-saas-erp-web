@@ -68,19 +68,14 @@ export default function ModuleList({
                 onClick={handleModuleClick}
                 isEditingMode={isEditingMode}
               />
-              <span className="font-semibold text-gray-700 dark:text-gray-300 text-center">
+              <span className="font-bold text-2xl text-gray-700 dark:text-gray-300 text-center">
                 {module.name}
               </span>
             </div>
           ))}
 
           {isEditingMode && (
-            <div className="flex flex-col items-center gap-3">
-              <AddModuleCard onClick={onAdd} isEditingMode={isEditingMode} />
-              <span className="font-semibold text-gray-700 dark:text-gray-300">
-                Añadir Módulo
-              </span>
-            </div>
+            <AddModuleCard onClick={onAdd} isEditingMode={isEditingMode} />
           )}
         </div>
 
