@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { getModuleById } from '@/services/moduleService'; 
 import Loader from '@/components/Loader'; 
@@ -11,12 +11,16 @@ import { useModules } from '@/hooks/useModules';
 import Table from '@/components/Table';
 import MainContent from '@/components/MainContent';
 import LogicalTableList from '@/components/LogicalTableList';
-import EditToggleButton from '@/components/EditToggleButton';
 import Modal from '@/components/Modal';
 import axios from '@/lib/axios';
 import { useLogicalTables } from '@/hooks/useLogicalTables';
 import LogicalTableForm from '@/components/LogicalTableForm';
 import DeleteLogicalTableButton from '@/components/DeleteLogicalTableButton';
+import DynamicTableView from '@/components/DynamicTableView';
+import DynamicRecordForm from '@/components/DynamicRecordForm';
+import LogicalTableColumns from '@/components/LogicalTableColumns';
+import DynamicEditRecordForm from '@/components/DynamicEditRecordForm';
+import EditToggleButton from '@/components/EditToggleButton';
 
 export default function ModuleDetailPage() {
 
@@ -32,6 +36,12 @@ export default function ModuleDetailPage() {
   const [isEditingMode, setIsEditingMode] = useState(false);
   const [showTableModal, setShowTableModal] = useState(false);
   const [selectedTable, setSelectedTable] = useState(null);
+  const [showRecordForm, setShowRecordForm] = useState(false);
+  const [refreshRecords, setRefreshRecords] = useState(false);
+  const [editRecord, setEditRecord] = useState(null);
+  const [deleteRecord, setDeleteRecord] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
 
   // Estado para edición inline y autosave
   const [editFields, setEditFields] = useState({});
@@ -43,6 +53,15 @@ export default function ModuleDetailPage() {
   const [newTableFields, setNewTableFields] = useState({ name: '', alias: '' });
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState(null);
+
+  // Estado para edición inline de registros
+  const [isRecordEditingMode, setIsRecordEditingMode] = useState(false);
+
+  // Estado para edición global (tabla y registros)
+  const [isGlobalEditingMode, setIsGlobalEditingMode] = useState(false);
+
+  // Track last selected table id to only reset editFields when table changes
+  const lastTableIdRef = useRef(null);
 
   const { getAllTables, getTableById, createOrUpdateTable, deleteTable } = useLogicalTables(id);
 
@@ -140,18 +159,22 @@ export default function ModuleDetailPage() {
       alert(err?.response?.data?.message || 'No se pudo eliminar la tabla. Puede tener dependencias.');
     }
   };
-  useEffect(() => {
-    if (selectedTable) {
-      setEditFields({ name: selectedTable.name, alias: selectedTable.alias || '' });
-      setIsDirty(false);
-      setSaveError(null);
-    }
-  }, [selectedTable]);
+  
+
 
   // Handlers para acciones
   const handleAddTable = () => { setSelectedTable(null); setShowTableModal(true); };
   const handleEditTable = (table) => { setSelectedTable(table); setShowTableModal(true); };
-  const handleViewTable = (table) => { setSelectedTable(table); };
+  const handleViewTable = (table) => {
+    setSelectedTable(table);
+    setEditFields({
+      name: table.name ?? '',
+      description: table.description ?? ''
+    });
+    setIsDirty(false);
+    setSaveError(null);
+  };
+
 
   // Handler para edición inline
   const handleFieldChange = (field, value) => {
@@ -177,50 +200,41 @@ export default function ModuleDetailPage() {
         <aside className="logical-tables-sidebar">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h2 style={{ margin: 0 }}>Tablas lógicas</h2>
-            <EditToggleButton onToggle={setIsEditingMode} />
+            <EditToggleButton onToggle={setIsGlobalEditingMode} />
           </div>
-          <ul className="logical-tables-list">
-            {tables.map((table, idx) => (
-              <li
-                key={table.id ?? `table-idx-${idx}`}
-                className={`logical-table-item${selectedTable && selectedTable.id === table.id ? ' selected' : ''}`}
-                onClick={() => handleViewTable(table)}
-                style={{ cursor: 'pointer', padding: '8px 12px', borderRadius: 6, background: selectedTable && selectedTable.id === table.id ? '#f3f4f6' : 'transparent', marginBottom: 4 }}
-              >
-                <span>{table.name}</span>
-              </li>
-            ))}
-          </ul>
-          {isEditingMode && (
-            <button onClick={handleAddTable} style={{ width: '100%', marginTop: 12 }}>+ Nueva tabla</button>
-          )}
+          <LogicalTableList
+            tables={tables}
+            selectedTable={selectedTable}
+            onSelect={handleViewTable}
+            editing={isGlobalEditingMode}
+            onEdit={handleEditTable}
+            onDelete={handleDeleteTable}
+          />
         </aside>
 
         <section className="logical-table-detail">
           {selectedTable ? (
             <div>
-              {isEditingMode ? (
+              {isGlobalEditingMode ? (
                 <>
-                  <h3 style={{ marginTop: 0 }}>
+                  <h3 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <input
                       type="text"
-                      value={editFields.name ?? selectedTable.name ?? ''}
+                      value={editFields.name !== undefined ? editFields.name : selectedTable.name}
                       onChange={e => handleFieldChange('name', e.target.value)}
-                      style={{ fontSize: '1.2rem', fontWeight: 500, width: '100%' }}
                     />
                   </h3>
                   <p>
                     <strong>Descripción:</strong>{' '}
                     <input
                       type="text"
-                      value={editFields.description ?? selectedTable.description ?? ''}
+                      value={editFields.description !== undefined ? editFields.description : selectedTable.description}
                       onChange={e => handleFieldChange('description', e.target.value)}
-                      style={{ fontSize: '1rem', width: 300 }}
                     />
                   </p>
                   <p><strong>Cantidad de columnas:</strong> {selectedTable.columnCount ?? 'N/A'}</p>
-                  <div style={{ marginTop: 16, color: '#888' }}>
-                    <em>Aquí se mostrarán las columnas de la tabla seleccionada.</em>
+                  <div style={{ marginTop: 16 }}>
+                    <LogicalTableColumns tableId={selectedTable.id} />
                   </div>
                   <div style={{ marginTop: 16, display: 'flex', gap: 12 }}>
                     <button
@@ -228,39 +242,117 @@ export default function ModuleDetailPage() {
                         setSaving(true);
                         setSaveError(null);
                         try {
-                          const updated = { id: selectedTable.id, name: editFields.name ?? selectedTable.name, description: editFields.description ?? selectedTable.description };
+                          const updated = {
+                            id: selectedTable.id,
+                            name: editFields.name,
+                            description: editFields.description
+                          };
+
                           const data = await createOrUpdateTable(updated);
-                          setTables(prev => prev.map(t => t.id === data.id ? data : t));
-                          setSelectedTable(data);
+
+                          const newSelected = {
+                            ...selectedTable,
+                            ...data
+                          };
+                          setSelectedTable(prev => ({
+                            ...prev,
+                            ...editFields 
+                          }));
+                          setEditFields({});
+
                           setIsDirty(false);
-                          try {
-                            const refreshed = await getAllTables();
-                            setTables(refreshed);
-                          } catch (refreshErr) {
-                          }
+
+                          const refreshed = await getAllTables();
+                          setTables(refreshed);
                         } catch (err) {
                           setSaveError('Error al guardar cambios');
                         } finally {
                           setSaving(false);
                         }
                       }}
+
                       disabled={saving || !isDirty}
                       style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 500, fontSize: 16, cursor: saving || !isDirty ? 'not-allowed' : 'pointer' }}
                     >
                       {saving ? 'Guardando...' : 'Guardar'}
                     </button>
+                    <button
+                      onClick={() => {
+                        setEditFields({
+                          name: typeof selectedTable.name === 'string' ? selectedTable.name : '',
+                          description: typeof selectedTable.description === 'string' ? selectedTable.description : ''
+                        });
+                        setIsDirty(false);
+                        setSaveError(null);
+                      }}
+                      style={{ background: '#e5e7eb', color: '#222', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 500, fontSize: 16 }}
+                    >
+                      Cancelar
+                    </button>
                     <DeleteLogicalTableButton onDelete={() => handleDeleteTable(selectedTable)} />
                   </div>
                   {saveError && <div style={{ color: 'red', marginTop: 8 }}>{saveError}</div>}
+                  <div style={{ marginTop: 32 }}>
+                    <DynamicTableView
+                      tableId={selectedTable.id}
+                      refresh={refreshRecords}
+                      isEditingMode={true}
+                      editingRecordId={editRecord?.id || null}
+                      setEditingRecordId={id => setEditRecord(id ? { id } : null)}
+                      onDeleteRecord={rec => setDeleteRecord(rec)}
+                      onRecordSaved={() => setRefreshRecords(r => !r)}
+                      hideEditDeleteButtons={true}
+                      onEditRecord={rec => setEditRecord(rec)}
+                    />
+                  </div>
+                  <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                      onClick={() => setShowRecordForm(true)}
+                      style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 500, fontSize: 16 }}
+                    >
+                      + Nuevo registro
+                    </button>
+                  </div>
+                  <Modal isOpen={showRecordForm} onClose={() => setShowRecordForm(false)}>
+                    <div style={{ minWidth: 340, padding: 12 }}>
+                      <DynamicRecordForm
+                        tableId={selectedTable.id}
+                        onSubmitSuccess={() => {
+                          setShowRecordForm(false);
+                          setRefreshRecords(r => !r);
+                        }}
+                      />
+                    </div>
+                  </Modal>
                 </>
               ) : (
+                // ...vista solo lectura...
                 <>
                   <h3 style={{ marginTop: 0 }}>{selectedTable.name}</h3>
                   <p><strong>Descripción:</strong> {selectedTable.description || 'Sin descripción'}</p>
                   <p><strong>Cantidad de columnas:</strong> {selectedTable.columnCount ?? 'N/A'}</p>
-                  <div style={{ marginTop: 16, color: '#888' }}>
-                    <em>Aquí se mostrarán las columnas de la tabla seleccionada.</em>
+                  <div style={{ marginTop: 16 }}>
+                    <LogicalTableColumns tableId={selectedTable.id} />
                   </div>
+                  <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                    <button
+                      onClick={() => setShowRecordForm(true)}
+                      style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 500, fontSize: 16 }}
+                    >
+                      + Nuevo registro
+                    </button>
+                  </div>
+                  <DynamicTableView
+                    tableId={selectedTable.id}
+                    refresh={refreshRecords}
+                    isEditingMode={isGlobalEditingMode}
+                    editingRecordId={editRecord?.id || null}
+                    setEditingRecordId={id => setEditRecord(id ? { id } : null)}
+                    onDeleteRecord={rec => setDeleteRecord(rec)}
+                    onRecordSaved={() => setRefreshRecords(r => !r)}
+                    hideEditDeleteButtons={true}
+                    onEditRecord={rec => setEditRecord(rec)}
+                  />
                 </>
               )}
             </div>
@@ -283,6 +375,58 @@ export default function ModuleDetailPage() {
               error={formError}
               inputStyle={{ marginBottom: 16, padding: '10px 12px', borderRadius: 8, border: '1px solid #d1d5db', width: '100%' }}
             />
+          </div>
+        </Modal>
+
+        {/* Modal edición registro */}
+        <Modal isOpen={!!editRecord} onClose={() => setEditRecord(null)}>
+          <div style={{ minWidth: 340, padding: 12 }}>
+            {editRecord && (
+              <DynamicEditRecordForm
+                tableId={selectedTable?.id}
+                record={editRecord}
+                onSubmitSuccess={() => {
+                  setEditRecord(null);
+                  setRefreshRecords(r => !r);
+                }}
+                onCancel={() => setEditRecord(null)}
+              />
+            )}
+          </div>
+        </Modal>
+
+        {/* Modal eliminación registro */}
+        <Modal isOpen={!!deleteRecord} onClose={() => setDeleteRecord(null)}>
+          <div style={{ minWidth: 340, padding: 24, textAlign: 'center' }}>
+            <p>¿Seguro que deseas eliminar este registro?</p>
+            {deleteError && <div style={{ color: 'red', marginBottom: 8 }}>{deleteError}</div>}
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 16 }}>
+              <button
+                onClick={async () => {
+                  setDeleteLoading(true);
+                  setDeleteError(null);
+                  try {
+                    await import('@/services/logicalTableService').then(m => m.deleteLogicalTableRecord(deleteRecord.id));
+                    setDeleteRecord(null);
+                    setRefreshRecords(r => !r);
+                  } catch (err) {
+                    setDeleteError('No se pudo eliminar el registro');
+                  } finally {
+                    setDeleteLoading(false);
+                  }
+                }}
+                disabled={deleteLoading}
+                style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 500, fontSize: 16 }}
+              >
+                {deleteLoading ? 'Eliminando...' : 'Eliminar'}
+              </button>
+              <button
+                onClick={() => setDeleteRecord(null)}
+                style={{ background: '#e5e7eb', color: '#222', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 500, fontSize: 16 }}
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
         </Modal>
       </div>

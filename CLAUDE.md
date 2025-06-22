@@ -169,7 +169,7 @@ DELETE /api/roles/:id/permissions/:table_id // Delete role permissions
 GET/POST/PUT/DELETE /api/modules     // Modules management
 GET/POST/PUT/DELETE /api/tables      // Tables management
 GET/POST/PUT/DELETE /api/columns     // Columns management
-GET/POST/PUT/DELETE /api/records     // Records management
+GET/POST/PUT/DELETE /records/     // Records management
 GET/POST/PUT/DELETE /api/permissions // Permissions management
 GET/POST/PUT/DELETE /api/notifications // Notifications management
 ```

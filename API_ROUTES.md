@@ -7,7 +7,7 @@ app.use(authMiddleware);
 app.use('/api/modules', modulesRoutes);
 app.use('/api/tables', tablesRoutes);
 app.use('/api/columns', columnsRoutes);
-app.use('/api/records', recordsRoutes);
+app.use('/records/', recordsRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/roles', rolesRoutes);
 app.use('/api/permissions', permissionsRoutes);
