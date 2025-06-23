@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { EditModeProvider } from "../context/EditModeContext";
 import { TabProvider } from "@/context/TabContext";
+import UserInitializer from "@/components/UserInitializer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,7 +22,10 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-erp-gradient`}
       >
         <EditModeProvider>
-          <TabProvider>{children}</TabProvider>
+          <TabProvider>
+            <UserInitializer />
+            {children}
+          </TabProvider>
         </EditModeProvider>
       </body>
     </html>

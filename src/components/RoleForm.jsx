@@ -4,14 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { DialogHeader } from "@/components/ui/dialog-header";
+import { DialogActions } from "@/components/ui/dialog-actions";
 import { Separator } from "@/components/ui/separator";
 import PermissionSelector from "./PermissionSelector";
 import { Shield, Save, X, Loader2 } from "lucide-react";
@@ -88,23 +83,16 @@ export default function RoleForm({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
-              <Shield className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <DialogTitle className="text-xl font-semibold text-gray-900">
-                {initialData?.id ? "Editar Rol" : "Crear Nuevo Rol"}
-              </DialogTitle>
-              <DialogDescription className="text-sm text-gray-500 mt-1">
-                {initialData?.id
-                  ? "Modifica la información del rol"
-                  : "Define un nuevo rol para el sistema"}
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
+        <DialogHeader
+          icon={Shield}
+          title={initialData?.id ? "Editar Rol" : "Crear Nuevo Rol"}
+          description={
+            initialData?.id
+              ? "Modifica la información del rol"
+              : "Define un nuevo rol para el sistema"
+          }
+          iconBgColor="from-blue-500 to-purple-600"
+        />
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
@@ -172,35 +160,22 @@ export default function RoleForm({
           </div>
 
           {/* Action Buttons */}
-          <DialogFooter className="flex items-center justify-between pt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCancel}
-              disabled={loading}
-              className="h-11 px-6"
-            >
-              <X className="w-4 h-4 mr-2" />
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 h-11 px-6"
-            >
-              {loading ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Guardando...
-                </div>
-              ) : (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  Guardar
-                </>
-              )}
-            </Button>
-          </DialogFooter>
+          <DialogActions
+            cancelAction={{
+              onClick: handleCancel,
+              label: "Cancelar",
+              icon: X,
+            }}
+            primaryAction={{
+              onClick: handleSubmit,
+              label: "Guardar",
+              icon: Save,
+              variant: "default",
+              className:
+                "bg-black hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200",
+            }}
+            loading={loading}
+          />
         </form>
       </DialogContent>
     </Dialog>

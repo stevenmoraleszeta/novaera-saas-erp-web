@@ -117,7 +117,7 @@ export default function RoleModal({
             </Button>
             <Button
               type="submit"
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 h-11 px-6"
+              className="bg-black hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 h-11 px-6"
             >
               <Save className="w-4 h-4 mr-2" />
               Guardar

@@ -41,13 +41,20 @@ export default function LoginPage() {
     setLocalError("");
     try {
       const response = await authServiceLogin(form.email, form.password);
-      if (response.user) {
-        setUser(response.user);
+      console.log("🚀 Login response:", response);
+
+      // Check if response has user property or if it's the user data directly
+      if (response && (response.user || response.id)) {
+        const userToSet = response.user || response;
+        console.log("🚀 Setting user:", userToSet);
+        setUser(userToSet);
         router.replace("/");
       } else {
+        console.log("❌ No user in response:", response);
         setLocalError("No se pudo iniciar sesión. Verifica tus credenciales.");
       }
     } catch (err) {
+      console.error("❌ Login error:", err);
       setLocalError(err.message || "Error al intentar iniciar sesión");
     } finally {
       setSubmitting(false);

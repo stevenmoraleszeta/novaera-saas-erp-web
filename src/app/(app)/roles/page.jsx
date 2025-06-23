@@ -1,14 +1,14 @@
 "use client";
 
 import React from "react";
-import RolesTable from "../../components/RolesTable";
-import SearchBar from "../../components/SearchBar";
-import Pagination from "../../components/Pagination";
-import Button from "../../components/Button";
-import RoleForm from "../../components/RoleForm";
-import RolePermissionsModal from "../../components/RolePermissionsModal";
-import { useRoles } from "../../hooks/useRoles";
-import MainContent from "../../components/MainContent";
+import RolesTable from "@/components/RolesTable";
+import SearchBar from "@/components/SearchBar";
+import Pagination from "@/components/Pagination";
+import Button from "@/components/Button";
+import RoleForm from "@/components/RoleForm";
+import RolePermissionsModal from "@/components/RolePermissionsModal";
+import { useRoles } from "@/hooks/useRoles";
+import MainContent from "@/components/MainContent";
 
 export default function RolesPage() {
   const {
@@ -34,7 +34,7 @@ export default function RolesPage() {
   const [rolePerms, setRolePerms] = React.useState([]);
   const [rolePermsLoading, setRolePermsLoading] = React.useState(false);
   const [rolePermsError, setRolePermsError] = React.useState(null);
-  const { getPermissionsByRole } = require("../../services/permissionsService");
+  const { getPermissionsByRole } = require("@/services/permissionsService");
 
   const handleViewPermissions = async (role) => {
     setRolePermsLoading(true);

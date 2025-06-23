@@ -1,34 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import useUserStore from "../../stores/userStore";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import useUserStore from "@/stores/userStore";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Edit3, Trash2, Plus, Search, Filter } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import UserList from "../../components/UserList";
-import Alert from "../../components/Alert";
+import { Edit3 } from "lucide-react";
+import Alert from "@/components/Alert";
 import UserForm from "@/components/UserForm";
 import { useEditMode } from "@/context/EditModeContext";
 import DeleteConfirmationDialog from "@/components/DeleteConfirmationDialog";
+import UserList from "@/components/UserList";
 
 export default function UsuariosPage() {
   const { user } = useUserStore();

@@ -1,10 +1,10 @@
 "use client";
 import { useState } from "react";
-import RoleSelector from "../../components/RoleSelector";
-import PermissionsMatrix from "../../components/PermissionsMatrix";
-import PermissionsToolbar from "../../components/PermissionsToolbar";
-import { useRolePermissions } from "../../hooks/useRolePermissions";
-import MainContent from "../../components/MainContent";
+import RoleSelector from "@/components/RoleSelector";
+import PermissionsMatrix from "@/components/PermissionsMatrix";
+import PermissionsToolbar from "@/components/PermissionsToolbar";
+import { useRolePermissions } from "@/hooks/useRolePermissions";
+import MainContent from "@/components/MainContent";
 
 export default function PermisosPorRolPage() {
   const [selectedRole, setSelectedRole] = useState("");
@@ -33,7 +33,9 @@ export default function PermisosPorRolPage() {
             <PermissionsMatrix
               tables={tables}
               permissions={permissions}
-              onChange={(tableId, actions) => updatePermission(selectedRole, tableId, actions)}
+              onChange={(tableId, actions) =>
+                updatePermission(selectedRole, tableId, actions)
+              }
               loading={loading}
             />
           </>

@@ -11,19 +11,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { DialogHeader } from "@/components/ui/dialog-header";
+import { DialogActions } from "@/components/ui/dialog-actions";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import Alert from "./Alert";
 import { fetchRoles, checkEmailExists } from "../services/userService";
-import { Eye, EyeOff, Check, X, User, Mail, Shield, Lock } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Check,
+  X,
+  User,
+  Mail,
+  Shield,
+  Lock,
+  Save,
+  X as XIcon,
+} from "lucide-react";
 
 /**
  * Props:
@@ -50,12 +56,12 @@ export default function UserForm({
 
   // Form state
   const [formData, setFormData] = useState({
-    name: initialData.name || "",
-    email: initialData.email || "",
+    name: initialData?.name || "",
+    email: initialData?.email || "",
     password: "",
     confirmPassword: "",
-    role: initialData.role || "",
-    isActive: initialData.isActive !== undefined ? initialData.isActive : true,
+    role: initialData?.role || "",
+    isActive: initialData?.isActive !== undefined ? initialData.isActive : true,
   });
 
   // Validation and UI state
@@ -78,13 +84,13 @@ export default function UserForm({
   useEffect(() => {
     if (open && initialData) {
       setFormData({
-        name: initialData.name || "",
-        email: initialData.email || "",
+        name: initialData?.name || "",
+        email: initialData?.email || "",
         password: "",
         confirmPassword: "",
-        role: initialData.role || "",
+        role: initialData?.role || "",
         isActive:
-          initialData.isActive !== undefined ? initialData.isActive : true,
+          initialData?.isActive !== undefined ? initialData.isActive : true,
       });
     } else if (!open) {
       setFormData({
@@ -140,7 +146,7 @@ export default function UserForm({
       if (
         !email ||
         !isValidEmail(email) ||
-        (isEditMode && email === initialData.email)
+        (isEditMode && email === initialData?.email)
       ) {
         setEmailValid(null);
         return;
@@ -159,7 +165,7 @@ export default function UserForm({
         setEmailChecking(false);
       }
     },
-    [isEditMode, initialData.email]
+    [isEditMode, initialData?.email]
   );
 
   // Debounced email check
@@ -289,23 +295,16 @@ export default function UserForm({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
-              <User className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <DialogTitle className="text-xl font-semibold text-gray-900">
-                {isEditMode ? "Editar Usuario" : "Crear Nuevo Usuario"}
-              </DialogTitle>
-              <DialogDescription className="text-sm text-gray-500 mt-1">
-                {isEditMode
-                  ? "Modifica la información del usuario"
-                  : "Completa los datos del nuevo usuario"}
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
+        <DialogHeader
+          icon={User}
+          title={isEditMode ? "Editar Usuario" : "Crear Nuevo Usuario"}
+          description={
+            isEditMode
+              ? "Modifica la información del usuario"
+              : "Completa los datos del nuevo usuario"
+          }
+          iconBgColor="from-blue-500 to-purple-600"
+        />
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
@@ -550,31 +549,23 @@ export default function UserForm({
           </div>
 
           {/* Action Buttons */}
-          <DialogFooter className="flex items-center justify-between pt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCancel}
-              disabled={loading}
-              className="h-11 px-6"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading || (emailValid === false && !emailChecking)}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 h-11 px-6"
-            >
-              {loading ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  {isEditMode ? "Actualizando..." : "Creando..."}
-                </div>
-              ) : (
-                <>{isEditMode ? "Actualizar Usuario" : "Crear Usuario"}</>
-              )}
-            </Button>
-          </DialogFooter>
+          <DialogActions
+            cancelAction={{
+              onClick: handleCancel,
+              label: "Cancelar",
+              icon: XIcon,
+            }}
+            primaryAction={{
+              onClick: handleSubmit,
+              label: isEditMode ? "Actualizar Usuario" : "Crear Usuario",
+              icon: Save,
+              variant: "default",
+              className:
+                "bg-black hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200",
+            }}
+            loading={loading}
+            disabled={emailValid === false && !emailChecking}
+          />
         </form>
       </DialogContent>
     </Dialog>
