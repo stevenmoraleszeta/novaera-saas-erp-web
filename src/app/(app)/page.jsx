@@ -6,7 +6,7 @@ import ModuleList from "@/components/ModuleList";
 import Alert from "@/components/Alert";
 import ModuleForm from "@/components/ModuleForm";
 import useUserStore from "@/stores/userStore";
-import { useEditMode } from "@/context/EditModeContext";
+import useEditModeStore from "@/stores/editModeStore";
 import DeleteConfirmationDialog from "@/components/DeleteConfirmationDialog";
 import { Badge } from "@/components/ui/badge";
 import { Edit3 } from "lucide-react";
@@ -35,7 +35,7 @@ export default function ModulesPage() {
   } = useModules();
 
   const { user } = useUserStore();
-  const { isEditingMode } = useEditMode();
+  const { isEditingMode } = useEditModeStore();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [moduleToDelete, setModuleToDelete] = useState(null);
 

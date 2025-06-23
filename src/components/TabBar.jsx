@@ -3,10 +3,12 @@
 import React from "react";
 import { ChevronLeft, ChevronRight, LayoutGrid, X, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useTabs } from "@/context/TabContext";
+import useTabStore from "@/stores/tabStore";
+import { useRouter } from "next/navigation";
 
 export default function TabBar() {
-  const { tabs, activeTab, setActiveTab, closeTab } = useTabs();
+  const { tabs, activeTab, navigateToTab, closeTab } = useTabStore();
+  const router = useRouter();
 
   // Don't render tab bar if no tabs
   if (!tabs || tabs.length === 0) {
@@ -19,6 +21,10 @@ export default function TabBar() {
     if (tab.path && tab.path.startsWith("/modulos/"))
       return <LayoutGrid className="w-4 h-4" />;
     return <LayoutGrid className="w-4 h-4" />;
+  };
+
+  const handleTabClick = (tabId) => {
+    navigateToTab(tabId, router);
   };
 
   return (
@@ -35,7 +41,7 @@ export default function TabBar() {
         {tabs.map((tab) => (
           <div
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => handleTabClick(tab.id)}
             className={`flex items-center px-4 py-2 cursor-pointer border-b-2 min-w-0 flex-shrink-0 ${
               activeTab === tab.id
                 ? "border-blue-500 bg-white dark:bg-gray-700"

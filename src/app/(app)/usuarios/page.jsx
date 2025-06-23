@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import useUserStore from "@/stores/userStore";
+import useEditModeStore from "@/stores/editModeStore";
 import { Badge } from "@/components/ui/badge";
 import { Edit3 } from "lucide-react";
 import Alert from "@/components/Alert";
 import UserForm from "@/components/UserForm";
-import { useEditMode } from "@/context/EditModeContext";
 import DeleteConfirmationDialog from "@/components/DeleteConfirmationDialog";
 import UserList from "@/components/UserList";
 
@@ -22,7 +22,7 @@ export default function UsuariosPage() {
   const [totalUsers, setTotalUsers] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  const { isEditingMode } = useEditMode();
+  const { isEditingMode } = useEditModeStore();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
 

@@ -29,14 +29,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import useUserStore from "../stores/userStore";
-import { useEditMode } from "../context/EditModeContext";
+import useEditModeStore from "../stores/editModeStore";
+import useTabStore from "../stores/tabStore";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { logout as authServiceLogout } from "@/services/authService";
 
 export default function Header() {
   const { user, clearUser } = useUserStore();
-  const { isEditingMode, toggleEditMode } = useEditMode();
+  const { isEditingMode, toggleEditMode, resetEditMode } = useEditModeStore();
+  const { clearTabs } = useTabStore();
   const router = useRouter();
 
   const handleNavigation = (path) => {
@@ -48,11 +50,15 @@ export default function Header() {
       // Call logout API to clear httpOnly cookie
       await authServiceLogout();
       clearUser();
+      clearTabs();
+      resetEditMode();
       router.push("/login");
     } catch (error) {
       console.error("Logout error:", error);
       // Fallback: just clear local state
       clearUser();
+      clearTabs();
+      resetEditMode();
       router.push("/login");
     }
   };

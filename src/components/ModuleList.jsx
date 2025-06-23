@@ -1,6 +1,6 @@
 import React from "react";
 import { useRouter } from "next/navigation";
-import { useTabs } from "@/context/TabContext";
+import useTabStore from "@/stores/tabStore";
 import ModuleCard from "./ModuleCard";
 import AddModuleCard from "./AddModuleCard";
 import Loader from "./Loader";
@@ -20,7 +20,7 @@ export default function ModuleList({
   isEditingMode = true,
 }) {
   const router = useRouter();
-  const { addModuleTab } = useTabs();
+  const { addModuleTab } = useTabStore();
 
   const addModule = {
     id: 1,

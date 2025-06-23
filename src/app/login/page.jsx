@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import useUserStore from "../../stores/userStore";
+import useTabStore from "../../stores/tabStore";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import { login as authServiceLogin } from "@/services/authService";
 
 export default function LoginPage() {
   const { setUser } = useUserStore();
+  const { clearTabs } = useTabStore();
   const router = useRouter();
   const [form, setForm] = useState({ email: "", password: "" });
   const [formError, setFormError] = useState({});
@@ -48,6 +50,7 @@ export default function LoginPage() {
         const userToSet = response.user || response;
         console.log("🚀 Setting user:", userToSet);
         setUser(userToSet);
+        clearTabs();
         router.replace("/");
       } else {
         console.log("❌ No user in response:", response);
