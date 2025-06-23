@@ -215,7 +215,6 @@ export default function ModuleDetailPage() {
 
         <section className="logical-table-detail">
           {selectedTable ? (
-            
             <div>
               {isGlobalEditingMode ? (
                 <>
@@ -295,18 +294,8 @@ export default function ModuleDetailPage() {
                   </div>
                   {saveError && <div style={{ color: 'red', marginTop: 8 }}>{saveError}</div>}
                   <div style={{ marginTop: 32 }}>
-                    <DynamicTableView
-                      tableId={selectedTable.id}
-                      refresh={refreshRecords}
-                      isEditingMode={true}
-                      editingRecordId={editRecord?.id || null}
-                      setEditingRecordId={id => setEditRecord(id ? { id } : null)}
-                      onDeleteRecord={rec => setDeleteRecord(rec)}
-                      onRecordSaved={() => setRefreshRecords(r => !r)}
-                      hideEditDeleteButtons={true}
-                      onEditRecord={rec => setEditRecord(rec)}
-                    />
                   </div>
+                  {/* Mostrar el botón solo en modo edición */}
                   <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
                     <button
                       onClick={() => setShowRecordForm(true)}
@@ -335,17 +324,7 @@ export default function ModuleDetailPage() {
                   <h3 style={{ marginTop: 0 }}>{selectedTable.name}</h3>
                   <p><strong>Descripción:</strong> {selectedTable.description || 'Sin descripción'}</p>
                   <p><strong>Cantidad de columnas:</strong> {selectedTable.columnCount ?? 'N/A'}</p>
-                  <div style={{ marginTop: 16 }}>
-                    <LogicalTableColumns tableId={selectedTable.id} />
-                  </div>
-                  <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                    <button
-                      onClick={() => setShowRecordForm(true)}
-                      style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 500, fontSize: 16 }}
-                    >
-                      + Nuevo registro
-                    </button>
-                  </div>
+                 
                   <DynamicTableView
                     tableId={selectedTable.id}
                     refresh={refreshRecords}
