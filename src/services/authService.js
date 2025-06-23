@@ -3,10 +3,12 @@ import axios from "../lib/axios";
 
 export async function login(email, password) {
   try {
+    console.log("🔐 AuthService: Attempting login for:", email);
     const response = await axios.post("/auth/login", { email, password });
+    console.log("🔐 AuthService: Login response:", response.data);
     return response.data;
   } catch (error) {
-    console.error("Error en el login:", error);
+    console.error("🔐 AuthService: Login error:", error);
     throw error;
   }
 }
@@ -34,10 +36,12 @@ export async function register(name, email, password) {
 
 export async function getUser() {
   try {
+    console.log("🔐 AuthService: Getting user data...");
     const response = await axios.get("/auth/me");
+    console.log("🔐 AuthService: Get user response:", response.data);
     return response.data;
   } catch (error) {
-    console.error("Error al obtener el usuario:", error);
+    console.error("🔐 AuthService: Get user error:", error);
     throw error;
   }
 }

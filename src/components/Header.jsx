@@ -140,7 +140,8 @@ export default function Header() {
                 className="rounded-full cursor-pointer"
               >
                 <Avatar className="text-black w-8 h-8">
-                  {user?.name?.charAt(0)}
+                  <AvatarImage src="https://github.com/shadcn.png" />
+                  <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
