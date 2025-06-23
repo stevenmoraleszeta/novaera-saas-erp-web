@@ -13,20 +13,6 @@ instance.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response) {
-      console.error("Error de respuesta:", {
-        status: error.response.status,
-        url: error.config?.url,
-        data: error.response.data,
-      });
-    } else if (error.request) {
-      console.error("No se recibió respuesta:", {
-        url: error.config?.url,
-        message: error.message,
-      });
-    } else {
-      console.error("Error al configurar la solicitud:", error.message);
-    }
     return Promise.reject(error);
   }
 );

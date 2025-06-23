@@ -36,12 +36,13 @@ export async function register(name, email, password) {
 
 export async function getUser() {
   try {
-    console.log("🔐 AuthService: Getting user data...");
     const response = await axios.get("/auth/me");
-    console.log("🔐 AuthService: Get user response:", response.data);
     return response.data;
   } catch (error) {
-    console.error("🔐 AuthService: Get user error:", error);
+    // Don't log 401 errors as they're expected when user is not authenticated
+    if (error?.response?.status !== 401) {
+      console.error("AuthService: Error getting user:", error);
+    }
     throw error;
   }
 }

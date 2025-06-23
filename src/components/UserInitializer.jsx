@@ -30,7 +30,15 @@ export default function UserInitializer() {
             console.log("❌ UserInitializer: No user data from server");
           }
         } catch (error) {
-          console.log("❌ UserInitializer: Error loading user:", error.message);
+          // Handle 401 errors silently (user not authenticated)
+          if (error?.response?.status === 401) {
+            console.log("ℹ️ UserInitializer: User not authenticated (401)");
+          } else {
+            console.log(
+              "❌ UserInitializer: Error loading user:",
+              error.message
+            );
+          }
           // Don't throw error, just log it - user might not be authenticated
         }
       } else {
