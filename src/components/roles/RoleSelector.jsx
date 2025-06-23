@@ -1,5 +1,5 @@
 "use client";
-import { useRoles } from "../hooks/useRoles";
+import { useRoles } from "../../hooks/useRoles";
 
 export default function RoleSelector({ value, onChange }) {
   const { roles, loading } = useRoles();

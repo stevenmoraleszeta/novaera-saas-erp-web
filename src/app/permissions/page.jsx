@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import RoleSelector from "../../components/RoleSelector";
+import RoleSelector from "../../components/roles/RoleSelector";
 import PermissionsMatrix from "../../components/PermissionsMatrix";
 import PermissionsToolbar from "../../components/PermissionsToolbar";
 import { useRolePermissions } from "../../hooks/useRolePermissions";

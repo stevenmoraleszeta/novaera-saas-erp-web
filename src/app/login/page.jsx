@@ -3,10 +3,10 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../hooks/useAuth';
-import FormInput from '../../components/FormInput';
-import Button from '../../components/Button';
-import Loader from '../../components/Loader';
-import Alert from '../../components/Alert';
+import FormInput from '../../components/commmon/FormInput';
+import Button from '../../components/commmon/Button';
+import Loader from '../../components/ui/Loader';
+import Alert from '../../components/commmon/Alert';
 import Link from 'next/link';
 
 export default function LoginPage() {

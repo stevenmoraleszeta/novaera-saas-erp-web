@@ -1,5 +1,5 @@
 "use client";
-import PermissionCheckbox from "./PermissionCheckbox";
+import PermissionCheckbox from "./ui/PermissionCheckbox";
 
 export default function PermissionsMatrix({ tables, permissions, onChange, loading }) {
   const actions = ["can_read", "can_create", "can_update", "can_delete"];

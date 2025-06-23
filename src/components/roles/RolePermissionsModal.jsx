@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import RolePermissionsView from './RolePermissionsView';
-import { getTables } from '../services/tablesService';
+import { getTables } from '../../services/tablesService';
 
 export default function RolePermissionsModal({ permissions, onClose }) {
   const [tables, setTables] = useState([]);

@@ -1,8 +1,8 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import FormInput from './FormInput';
-import PermissionSelector from './PermissionSelector';
-import Button from './Button';
+import FormInput from '../commmon/FormInput';
+import PermissionSelector from '../PermissionSelector';
+import Button from '../commmon/Button';
 
 export default function RoleForm({ initialData = {}, permissions = [], onSubmit, onCancel, loading }) {
   const safeData = initialData || {};

@@ -1,10 +1,10 @@
 // UserForm.jsx - Reusable form for creating and editing users
 import React, { useState, useEffect, useCallback } from 'react';
-import FormInput from './FormInput';
-import SelectInput from './SelectInput';
-import Button from './Button';
-import Alert from './Alert';
-import { fetchRoles, checkEmailExists } from '../services/userService';
+import FormInput from '../commmon/FormInput';
+import SelectInput from '../commmon/SelectInput';
+import Button from '../commmon/Button';
+import Alert from '../commmon/Alert';
+import { fetchRoles, checkEmailExists } from '../../services/userService';
 import { PiEyeBold, PiEyeSlashBold, PiCheckBold, PiXBold } from 'react-icons/pi';
 
 /**

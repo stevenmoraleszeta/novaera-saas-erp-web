@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useColumns } from '@/hooks/useColumns';  // Hook para manejar CRUD columnas
 import ColumnListTable from './ColumnListTable';
 import ColumnForm from './ColumnForm';
-import Modal from '@/components/Modal';
-import TablePreview from '../TablePreview'
-import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
+import Modal from '@/components/commmon/Modal';
+import TablePreview from './TablePreview'
+import DeleteConfirmationDialog from '@/components/commmon/DeleteConfirmationDialog';
 
 export default function ColumnManager({ tableId, tableName }) {
   const {

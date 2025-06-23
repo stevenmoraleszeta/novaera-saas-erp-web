@@ -1,5 +1,5 @@
 import React from 'react';
-import Modal from './Modal';
+import Modal from '../commmon/Modal';
 import Button from './Button';
 
 export default function DeleteConfirmationDialog({

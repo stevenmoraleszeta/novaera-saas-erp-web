@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import DeleteConfirmationModal from './DeleteConfirmationModal';
+import DeleteConfirmationModal from '../commmon/DeleteConfirmationModal';
 
 export default function DeleteLogicalTableButton({ onDelete, disabled }) {
   const [show, setShow] = useState(false);

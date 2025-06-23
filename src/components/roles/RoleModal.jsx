@@ -1,8 +1,8 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import Modal from './Modal';
-import FormInput from './FormInput';
-import Button from './Button';
+import Modal from '../commmon/Modal';
+import FormInput from '../commmon/FormInput';
+import Button from '../commmon/Button';
 
 export default function RoleModal({ open, onClose, onSave, initialData }) {
   const [name, setName] = useState('');

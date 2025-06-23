@@ -5,22 +5,22 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { getModuleById } from '@/services/moduleService'; 
-import Loader from '@/components/Loader'; 
-import StatusBadge from '@/components/ModuleStatusBadge';
+import Loader from '@/components/ui/Loader'; 
+import StatusBadge from '@/components/ui/ModuleStatusBadge';
 import { useModules } from '@/hooks/useModules';
-import Table from '@/components/Table';
+import Table from '@/components/commmon/Table';
 import MainContent from '@/components/MainContent';
-import LogicalTableList from '@/components/LogicalTableList';
-import Modal from '@/components/Modal';
+import LogicalTableList from '@/components/tables/LogicalTableList';
+import Modal from '@/components/commmon/Modal';
 import axios from '@/lib/axios';
 import { useLogicalTables } from '@/hooks/useLogicalTables';
-import LogicalTableForm from '@/components/LogicalTableForm';
-import DeleteLogicalTableButton from '@/components/DeleteLogicalTableButton';
-import DynamicTableView from '@/components/DynamicTableView';
-import DynamicRecordForm from '@/components/DynamicRecordForm';
-import LogicalTableColumns from '@/components/LogicalTableColumns';
-import DynamicEditRecordForm from '@/components/DynamicEditRecordForm';
-import EditToggleButton from '@/components/EditToggleButton';
+import LogicalTableForm from '@/components/tables/LogicalTableForm';
+import DeleteLogicalTableButton from '@/components/tables/DeleteLogicalTableButton';
+import DynamicTableView from '@/components/tables/DynamicTableView';
+import DynamicRecordForm from '@/components/records/DynamicRecordForm';
+import LogicalTableColumns from '@/components/tables/LogicalTableColumns';
+import DynamicEditRecordForm from '@/components/records/DynamicEditRecordForm';
+import EditToggleButton from '@/components/commmon/EditToggleButton';
 import ColumnManager from '@/components/columns/ColumnManager'
 
 export default function ModuleDetailPage() {

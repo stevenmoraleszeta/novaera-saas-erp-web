@@ -1,10 +1,10 @@
 // Topbar.jsx
 import React, { useState, useRef, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 import { PiUserCircleBold, PiSignOutBold } from 'react-icons/pi';
 
-import NotificationBell from '../components/NotificationBell';
-import NotificationDropdown from '../components/NotificationDropdown';
+import NotificationBell from '../notifications/NotificationBell';
+import NotificationDropdown from '../notifications/NotificationDropdown';
 import { useNotificationPolling } from '@/hooks/useNotificationPolling';
 import { useNotifications } from '@/hooks/useNotifications'
 

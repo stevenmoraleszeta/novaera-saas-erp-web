@@ -3,9 +3,9 @@
 import React from 'react';
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Sidebar from "../components/Sidebar";
-import Topbar from "../components/Topbar";
-import Footer from "../components/Footer";
+import Sidebar from "../components/layout/Sidebar";
+import Topbar from "../components/layout/Topbar";
+import Footer from "../components/layout/Footer";
 import MainContent from "../components/MainContent";
 import { AuthProvider, AuthContext } from "../context/AuthContext";
 
