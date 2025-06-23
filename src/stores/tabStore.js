@@ -74,7 +74,11 @@ const useTabStore = create(
       // State
       tabs: [HOME_TAB],
       activeTab: "home",
+      loadingTab: null,
       isInitialized: false,
+
+      // Actions
+      setLoadingTab: (tabId) => set({ loadingTab: tabId }),
 
       // Initialize tabs from localStorage
       initializeTabs: () => {
@@ -119,7 +123,7 @@ const useTabStore = create(
 
       // Add tab for a module
       addModuleTab: (moduleId, moduleName) => {
-        const { tabs, setActiveTab } = get();
+        const { tabs, setActiveTab, setLoadingTab } = get();
         const path = `/modulos/${moduleId}`;
 
         // Check if tab already exists for this module
@@ -138,6 +142,7 @@ const useTabStore = create(
 
         const newTabs = [...tabs, newTab];
         set({ tabs: newTabs });
+        setLoadingTab(newTab.id);
         setActiveTab(newTab.id);
 
         // Persist to localStorage
@@ -149,7 +154,7 @@ const useTabStore = create(
 
       // Add generic tab
       addTab: (name, path = null) => {
-        const { tabs, setActiveTab } = get();
+        const { tabs, setActiveTab, setLoadingTab } = get();
 
         // Only allow adding module tabs
         if (!path || !isModulePage(path)) {
@@ -165,6 +170,7 @@ const useTabStore = create(
 
         const newTabs = [...tabs, newTab];
         set({ tabs: newTabs });
+        setLoadingTab(newTab.id);
         setActiveTab(newTab.id);
 
         // Persist to localStorage
@@ -175,8 +181,8 @@ const useTabStore = create(
       },
 
       // Close tab
-      closeTab: (tabId) => {
-        const { tabs, setActiveTab } = get();
+      closeTab: (tabId, router) => {
+        const { tabs, setActiveTab, setLoadingTab } = get();
 
         // Don't allow closing the home tab
         if (tabId === "home") return;
@@ -190,24 +196,43 @@ const useTabStore = create(
 
         set({ tabs: remainingTabs });
 
-        // If closing active tab, activate the next available tab
-        if (get().activeTab === tabId) {
-          const currentIndex = tabs.findIndex((tab) => tab.id === tabId);
-          const nextTab =
-            remainingTabs[currentIndex] ||
-            remainingTabs[currentIndex - 1] ||
-            remainingTabs[0];
-          setActiveTab(nextTab.id);
-        }
-
         // Persist to localStorage
         const moduleTabs = remainingTabs.filter((tab) => !tab.isFixed);
         setStoredTabs(moduleTabs);
+
+        // If closing active tab, navigate to the previous tab
+        if (get().activeTab === tabId) {
+          const currentIndex = tabs.findIndex((tab) => tab.id === tabId);
+
+          // Find the next tab to activate
+          let nextTab;
+          if (currentIndex > 0) {
+            // Go to the previous tab
+            nextTab = remainingTabs[currentIndex - 1];
+          } else {
+            // If it's the first tab (after home), go to home
+            nextTab = remainingTabs[0];
+          }
+
+          // Ensure we have a valid tab
+          if (!nextTab) {
+            nextTab = HOME_TAB;
+          }
+
+          // Set the active tab
+          setLoadingTab(nextTab.id);
+          setActiveTab(nextTab.id);
+
+          // Navigate to the tab's path if router is provided
+          if (router && nextTab.path) {
+            router.push(nextTab.path);
+          }
+        }
       },
 
       // Clear all tabs (for logout/login)
       clearTabs: () => {
-        set({ tabs: [HOME_TAB], activeTab: "home" });
+        set({ tabs: [HOME_TAB], activeTab: "home", loadingTab: null });
         setStoredTabs([]);
         setStoredActiveTab("home");
         console.log("🧹 Tabs cleared - reset to home tab only");

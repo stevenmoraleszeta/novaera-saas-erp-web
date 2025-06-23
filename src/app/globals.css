@@ -170,3 +170,13 @@
 .animate-shake {
   animation: shake 1.2s ease-in-out infinite;
 }
+
+/* Hide scrollbar for tabs */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
