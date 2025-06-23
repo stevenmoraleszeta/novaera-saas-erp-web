@@ -17,7 +17,7 @@ import {
 } from '@dnd-kit/sortable';
 
 import { CSS } from '@dnd-kit/utilities';
-import Button from '../Button';
+import Button from '../commmon/Button';
 
   function SortableRow({ column, onEdit, onDelete }) {
     console.log(column, "  kolumnaa");

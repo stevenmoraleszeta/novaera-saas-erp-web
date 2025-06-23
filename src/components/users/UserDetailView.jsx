@@ -1,11 +1,11 @@
 // UserDetailView.jsx - Component to display detailed user information
 import React, { useContext } from 'react';
 import UserStatusBadge from './UserStatusBadge';
-import Button from './Button';
-import ConfirmationModal from './ConfirmationModal';
-import Alert from './Alert';
-import { useConfirmationModal } from '../hooks/useModal';
-import { AuthContext } from '../context/AuthContext';
+import Button from '../commmon/Button';
+import ConfirmationModal from '../commmon/ConfirmationModal';
+import Alert from '../commmon/Alert';
+import { useConfirmationModal } from '../../hooks/useModal';
+import { AuthContext } from '../../context/AuthContext';
 import {
   PiPencilBold,
   PiTrashBold,

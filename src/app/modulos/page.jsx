@@ -3,14 +3,14 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { useModules } from '@/hooks/useModules';
 import MainContent from '@/components/MainContent';
-import ModuleList from '@/components/ModuleList';
-import ModuleFilter from '@/components/ModuleFilter';
-import Alert from '@/components/Alert';
-import Modal from '@/components/Modal';
-import ModuleForm from '@/components/ModuleForm';
+import ModuleList from '@/components/modules/ModuleList';
+import ModuleFilter from '@/components/modules/ModuleFilter';
+import Alert from '@/components/commmon/Alert';
+import Modal from '@/components/commmon/Modal';
+import ModuleForm from '@/components/modules/ModuleForm';
 import { AuthContext } from '../../context/AuthContext';
-import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
-import EditToggleButton from '@/components/EditToggleButton';
+import DeleteConfirmationDialog from '@/components/commmon/DeleteConfirmationDialog';
+import EditToggleButton from '@/components/commmon/EditToggleButton';
 
 
 

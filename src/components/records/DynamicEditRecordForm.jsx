@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { getLogicalTableStructure, createLogicalTableRecord } from '@/services/logicalTableService';
-import FieldRenderer from './FieldRenderer';
+import { getLogicalTableStructure, updateLogicalTableRecord } from '@/services/logicalTableService';
+import FieldRenderer from '../commmon/FieldRenderer';
 
-export default function DynamicRecordForm({ tableId, onSubmitSuccess }) {
+export default function DynamicEditRecordForm({ tableId, record, onSubmitSuccess, onCancel }) {
   const [columns, setColumns] = useState([]);
   const [values, setValues] = useState({});
   const [errors, setErrors] = useState({});
@@ -13,15 +13,15 @@ export default function DynamicRecordForm({ tableId, onSubmitSuccess }) {
     const fetchColumns = async () => {
       const cols = await getLogicalTableStructure(tableId);
       setColumns(cols);
-      // Set default values
+      // Set initial values from record
       const initial = {};
       cols.forEach(col => {
-        initial[col.name] = col.data_type === 'boolean' ? false : '';
+        initial[col.name] = record?.record_data ? record.record_data[col.name] : '';
       });
       setValues(initial);
     };
-    if (tableId) fetchColumns();
-  }, [tableId]);
+    if (tableId && record) fetchColumns();
+  }, [tableId, record]);
 
   const validate = () => {
     const errs = {};
@@ -29,7 +29,6 @@ export default function DynamicRecordForm({ tableId, onSubmitSuccess }) {
       if (col.is_required && (values[col.name] === '' || values[col.name] === null || values[col.name] === undefined)) {
         errs[col.name] = 'Requerido';
       }
-      // Puedes agregar más validaciones aquí (regex, longitud, etc.)
     });
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -45,7 +44,7 @@ export default function DynamicRecordForm({ tableId, onSubmitSuccess }) {
     if (!validate()) return;
     setLoading(true);
     try {
-      await createLogicalTableRecord(tableId, values);
+      await updateLogicalTableRecord(record.id, { record_data: values });
       if (onSubmitSuccess) onSubmitSuccess();
     } catch (err) {
       setSubmitError(err?.response?.data?.message || 'Error al guardar el registro');
@@ -69,9 +68,12 @@ export default function DynamicRecordForm({ tableId, onSubmitSuccess }) {
         </div>
       ))}
       {submitError && <div style={{ color: 'red', marginBottom: 8 }}>{submitError}</div>}
-      <button type="submit" disabled={loading} style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 500, fontSize: 16, width: '100%' }}>
-        {loading ? 'Guardando...' : 'Guardar'}
-      </button>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button type="button" onClick={onCancel} style={{ background: '#e5e7eb', color: '#222', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 500, fontSize: 16, flex: 1 }}>Cancelar</button>
+        <button type="submit" disabled={loading} style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 500, fontSize: 16, flex: 1 }}>
+          {loading ? 'Guardando...' : 'Guardar'}
+        </button>
+      </div>
     </form>
   );
 }

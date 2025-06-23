@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
-import FormInput from '../FormInput';
-import Button from '../Button';
-import Alert from '../Alert';
+import FormInput from '../commmon/FormInput';
+import Button from '../commmon/Button';
+import Alert from '../commmon/Alert';
 import { AuthContext } from '../../context/AuthContext';
 import ColumnTypeSelector from './ColumnTypeSelector';
 import ForeignKeySelector from './ForeignKeySelector';

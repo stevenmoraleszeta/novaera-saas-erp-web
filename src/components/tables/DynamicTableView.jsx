@@ -3,7 +3,7 @@ import { getLogicalTableStructure, getLogicalTableRecords, updateLogicalTableRec
 import ColumnRenderer from './ColumnRenderer';
 import TableFilterBar from './TableFilterBar';
 import TablePagination from './TablePagination';
-import FieldRenderer from './FieldRenderer';
+import FieldRenderer from '../commmon/FieldRenderer';
 
 export default function DynamicTableView({ tableId, refresh, isEditingMode, editingRecordId, setEditingRecordId, onDeleteRecord, onRecordSaved, hideEditDeleteButtons, onEditRecord }) {
   const [columns, setColumns] = useState([]);

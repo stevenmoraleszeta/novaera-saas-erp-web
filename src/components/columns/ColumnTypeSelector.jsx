@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import SelectInput from '../SelectInput';
+import SelectInput from '../commmon/SelectInput';
 
 const DATA_TYPES = [
   { label: 'Texto', value: 'string' },

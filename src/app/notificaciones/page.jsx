@@ -4,15 +4,15 @@ import React, { useContext, useState } from 'react';
 import { AuthContext } from '@/context/AuthContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import MainContent from '@/components/MainContent';
-import Table from '@/components/Table';
-import SearchBar from '../../components/SearchBar';
-import Modal from '@/components/Modal';
-import NotificationItem from '@/components/NotificationItem';
-import NotificationStatusBadge from '@/components/NotificationStatusBadge'
-import Button from '../../components/Button';
+import Table from '@/components/commmon/Table';
+import SearchBar from '../../components/commmon/SearchBar';
+import Modal from '@/components/commmon/Modal';
+import NotificationItem from '@/components/notifications/NotificationItem';
+import NotificationStatusBadge from '@/components/ui/NotificationStatusBadge'
+import Button from '../../components/commmon/Button';
 import { PiChecks, PiTrashLight, PiArrowCounterClockwiseFill  } from "react-icons/pi";
-import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
-import Loader from '@/components/Loader';
+import DeleteConfirmationDialog from '@/components/commmon/DeleteConfirmationDialog';
+import Loader from '@/components/ui/Loader';
 
 export default function NotificationCenterPage() {
   const { user } = useContext(AuthContext);

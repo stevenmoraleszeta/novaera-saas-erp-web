@@ -1,6 +1,6 @@
 // components/NotificationItem.jsx
 import React from 'react';
-import NotificationStatusBadge from './NotificationStatusBadge';
+import NotificationStatusBadge from '../ui/NotificationStatusBadge';
 
 export default function NotificationItem({ notification }) {
   if (!notification) return null;

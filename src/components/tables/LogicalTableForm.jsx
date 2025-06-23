@@ -1,5 +1,5 @@
-import FormInput from './FormInput';
-import SubmitButton from './SubmitButton';
+import FormInput from '../commmon/FormInput';
+import SubmitButton from '../commmon/SubmitButton';
 import { useTableForm } from '@/hooks/useTableForm';
 
 export default function LogicalTableForm({ initialValues, onSubmit, mode = 'create', validate, loading, error, inputStyle }) {

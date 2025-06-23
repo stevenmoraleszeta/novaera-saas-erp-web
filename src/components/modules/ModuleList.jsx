@@ -1,7 +1,7 @@
 import React from 'react';
 import ModuleRow from './ModuleRow';
-import Loader from './Loader';
-import Pagination from './Pagination';
+import Loader from '../ui/Loader';
+import Pagination from '../commmon/Pagination';
 
 export default function ModuleList({
   modules = [],
