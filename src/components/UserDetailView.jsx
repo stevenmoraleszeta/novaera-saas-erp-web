@@ -1,10 +1,10 @@
 // UserDetailView.jsx - Component to display detailed user information
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "./AuthProvider";
+import useUserStore from "./userStore";
 import { Edit3, Trash2, Eye, EyeOff } from "lucide-react";
 import UserStatusBadge from "./UserStatusBadge";
 import ConfirmationModal from "./ConfirmationModal";
@@ -48,7 +48,7 @@ export default function UserDetailView() {
   const [error, setError] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { user: currentUser } = useAuth();
+  const { user: currentUser } = useUserStore();
 
   // Confirmation modal hook
   const {
@@ -381,8 +381,8 @@ export default function UserDetailView() {
 
       {/* Confirmation Modal */}
       <ConfirmationModal
-        isOpen={isConfirmationOpen}
-        onClose={closeConfirmation}
+        open={isConfirmationOpen}
+        onOpenChange={closeConfirmation}
         title={confirmationData.title}
         message={confirmationData.message}
         confirmText={confirmationData.confirmText}

@@ -1,90 +1,208 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-import FormInput from './FormInput';
-import PermissionSelector from './PermissionSelector';
-import Button from './Button';
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
+import PermissionSelector from "./PermissionSelector";
+import { Shield, Save, X, Loader2 } from "lucide-react";
 
-export default function RoleForm({ initialData = {}, permissions = [], onSubmit, onCancel, loading }) {
+export default function RoleForm({
+  open = false,
+  onOpenChange,
+  initialData = {},
+  permissions = [],
+  onSubmit,
+  onCancel,
+  loading = false,
+}) {
   const safeData = initialData || {};
-  const [name, setName] = useState(safeData.name || '');
-  const [description, setDescription] = useState(safeData.description || '');
-  const [selectedPermissions, setSelectedPermissions] = useState(safeData.permissions || []);
+  const [name, setName] = useState(safeData.name || "");
+  const [description, setDescription] = useState(safeData.description || "");
+  const [selectedPermissions, setSelectedPermissions] = useState(
+    safeData.permissions || []
+  );
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const safeData = initialData || {};
-    setName(safeData.name || '');
-    setDescription(safeData.description || '');
-    // Solo setea permisos si es creación, no si es edición
-    if (!safeData.id) {
-      setSelectedPermissions(safeData.permissions || []);
+    if (open) {
+      const safeData = initialData || {};
+      setName(safeData.name || "");
+      setDescription(safeData.description || "");
+      // Solo setea permisos si es creación, no si es edición
+      if (!safeData.id) {
+        setSelectedPermissions(safeData.permissions || []);
+      }
+      setError(null);
     }
-    setError(null);
-  }, [initialData]);
+  }, [initialData, open]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!name.trim() || name.length < 3) {
-      setError('El nombre es obligatorio y debe tener al menos 3 caracteres.');
+      setError("El nombre es obligatorio y debe tener al menos 3 caracteres.");
       return;
     }
     if (selectedPermissions.length === 0) {
-      setError('Debes asignar al menos un permiso.');
+      setError("Debes asignar al menos un permiso.");
       return;
     }
-    onSubmit({ name: name.trim(), description: description.trim(), permissions: selectedPermissions });
+    onSubmit({
+      name: name.trim(),
+      description: description.trim(),
+      permissions: selectedPermissions,
+    });
+  };
+
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    }
+    onOpenChange?.(false);
   };
 
   if (!permissions || permissions.length === 0) {
     return (
-      <div style={{ padding: '2em', textAlign: 'center' }}>
-        <span>Cargando permisos...</span>
-      </div>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[500px]">
+          <div className="flex items-center justify-center py-8">
+            <div className="flex items-center gap-3">
+              <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+              <span className="text-gray-600">Cargando permisos...</span>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="role-form">
-      {error && <div className="form-error-msg">{error}</div>}
-      <FormInput label="Nombre del rol" value={name} onChange={e => setName(e.target.value)} autoFocus minLength={3} placeholder="Ej: Administrador" />
-      <FormInput label="Descripción" value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe brevemente el rol" />
-      <PermissionSelector value={selectedPermissions} onChange={setSelectedPermissions} permissions={permissions} />
-      <div className="role-form-actions">
-        <Button type="submit" disabled={loading}>{loading ? 'Guardando...' : 'Guardar'}</Button>
-        <Button type="button" onClick={onCancel} variant="secondary">Cancelar</Button>
-      </div>
-      <style jsx>{`
-        .role-form {
-          background: #fff;
-          border-radius: 1.1rem;
-          padding: 2.2rem 2.2rem 1.5rem 2.2rem;
-          box-shadow: 0 4px 32px 0 rgba(0,0,0,0.07);
-          display: flex;
-          flex-direction: column;
-          gap: 1.2rem;
-        }
-        .form-error-msg {
-          color: #e53935;
-          background: #fff6f6;
-          border: 1px solid #e53935;
-          border-radius: 8px;
-          padding: 0.7em 1em;
-          margin-bottom: 0.5em;
-          font-weight: 500;
-          font-size: 1.05em;
-        }
-        .role-form-actions {
-          display: flex;
-          gap: 1em;
-          margin-top: 1.2em;
-          justify-content: flex-end;
-        }
-        @media (max-width: 600px) {
-          .role-form {
-            padding: 1.2rem 0.7rem 1rem 0.7rem;
-          }
-        }
-      `}</style>
-    </form>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+              <Shield className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <DialogTitle className="text-xl font-semibold text-gray-900">
+                {initialData?.id ? "Editar Rol" : "Crear Nuevo Rol"}
+              </DialogTitle>
+              <DialogDescription className="text-sm text-gray-500 mt-1">
+                {initialData?.id
+                  ? "Modifica la información del rol"
+                  : "Define un nuevo rol para el sistema"}
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                <p className="text-red-700 text-sm font-medium">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Basic Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">
+              Información Básica
+            </h3>
+
+            <div className="space-y-2">
+              <Label
+                htmlFor="name"
+                className="text-sm font-medium text-gray-700"
+              >
+                Nombre del Rol *
+              </Label>
+              <Input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ej: Administrador, Usuario, Editor..."
+                className="h-11"
+                autoFocus
+                minLength={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label
+                htmlFor="description"
+                className="text-sm font-medium text-gray-700"
+              >
+                Descripción
+              </Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Describe brevemente el rol y sus responsabilidades..."
+                rows={3}
+                className="resize-none"
+              />
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Permissions Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">Permisos</h3>
+            <PermissionSelector
+              value={selectedPermissions}
+              onChange={setSelectedPermissions}
+              permissions={permissions}
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <DialogFooter className="flex items-center justify-between pt-6">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancel}
+              disabled={loading}
+              className="h-11 px-6"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 h-11 px-6"
+            >
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Guardando...
+                </div>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Guardar
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

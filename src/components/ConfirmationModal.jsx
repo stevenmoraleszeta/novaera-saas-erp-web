@@ -1,13 +1,20 @@
 // ConfirmationModal.jsx - Reusable confirmation modal component
-import React from 'react';
-import Modal from './Modal';
-import Button from './Button';
-import { PiWarningBold, PiQuestionBold, PiTrashBold } from 'react-icons/pi';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { AlertTriangle, Trash2, HelpCircle } from "lucide-react";
 
 /**
  * Props:
- *  - isOpen: boolean
- *  - onClose: function
+ *  - open: boolean
+ *  - onOpenChange: function
  *  - title: string
  *  - message: string
  *  - confirmText: string (default: 'Confirmar')
@@ -18,232 +25,114 @@ import { PiWarningBold, PiQuestionBold, PiTrashBold } from 'react-icons/pi';
  *  - loading: boolean (default: false)
  */
 export default function ConfirmationModal({
-    isOpen,
-    onClose,
-    title,
-    message,
-    confirmText = 'Confirmar',
-    cancelText = 'Cancelar',
-    type = 'default',
-    onConfirm,
-    onCancel,
-    loading = false
+  open = false,
+  onOpenChange,
+  title,
+  message,
+  confirmText = "Confirmar",
+  cancelText = "Cancelar",
+  type = "default",
+  onConfirm,
+  onCancel,
+  loading = false,
 }) {
-    const handleConfirm = () => {
-        if (onConfirm && !loading) {
-            onConfirm();
-        }
-    };
+  const handleConfirm = () => {
+    if (onConfirm && !loading) {
+      onConfirm();
+    }
+  };
 
-    const handleCancel = () => {
-        if (loading) return;
+  const handleCancel = () => {
+    if (loading) return;
 
-        if (onCancel) {
-            onCancel();
-        } else {
-            onClose();
-        }
-    };
+    if (onCancel) {
+      onCancel();
+    } else {
+      onOpenChange?.(false);
+    }
+  };
 
-    // Prevent closing modal when loading
-    const handleClose = () => {
-        if (!loading) {
-            onClose();
-        }
-    };
+  // Get icon based on type
+  const getIcon = () => {
+    switch (type) {
+      case "danger":
+        return <Trash2 className="w-6 h-6 text-red-600" />;
+      case "warning":
+        return <AlertTriangle className="w-6 h-6 text-yellow-600" />;
+      default:
+        return <HelpCircle className="w-6 h-6 text-blue-600" />;
+    }
+  };
 
-    // Get icon based on type
-    const getIcon = () => {
-        switch (type) {
-            case 'danger':
-                return <PiTrashBold className="modal-icon danger" />;
-            case 'warning':
-                return <PiWarningBold className="modal-icon warning" />;
-            default:
-                return <PiQuestionBold className="modal-icon default" />;
-        }
-    };
+  // Get icon background color based on type
+  const getIconBgColor = () => {
+    switch (type) {
+      case "danger":
+        return "bg-red-100";
+      case "warning":
+        return "bg-yellow-100";
+      default:
+        return "bg-blue-100";
+    }
+  };
 
-    // Get confirm button variant based on type
-    const getConfirmVariant = () => {
-        switch (type) {
-            case 'danger':
-                return 'danger';
-            case 'warning':
-                return 'primary';
-            default:
-                return 'primary';
-        }
-    };
+  // Get confirm button variant based on type
+  const getConfirmVariant = () => {
+    switch (type) {
+      case "danger":
+        return "destructive";
+      case "warning":
+        return "default";
+      default:
+        return "default";
+    }
+  };
 
-    return (
-        <Modal
-            isOpen={isOpen}
-            onClose={handleClose}
-            size="small"
-            closeOnOverlayClick={!loading}
-            showCloseButton={!loading}
-        >
-            <div className="confirmation-modal">
-                {/* Icon */}
-                <div className="modal-icon-container">
-                    {getIcon()}
-                </div>
-
-                {/* Content */}
-                <div className="modal-content">
-                    {title && <h3 className="modal-title">{title}</h3>}
-                    {message && <p className="modal-message">{message}</p>}
-                </div>
-
-                {/* Actions */}
-                <div className="modal-actions">
-                    <Button
-                        variant="outline"
-                        onClick={handleCancel}
-                        disabled={loading}
-                    >
-                        {cancelText}
-                    </Button>
-                    <Button
-                        variant={getConfirmVariant()}
-                        onClick={handleConfirm}
-                        disabled={loading}
-                        loading={loading}
-                    >
-                        {confirmText}
-                    </Button>
-                </div>
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${getIconBgColor()}`}>
+              {getIcon()}
             </div>
+            <div>
+              <DialogTitle className="text-lg font-semibold text-gray-900">
+                {title}
+              </DialogTitle>
+              <DialogDescription className="text-sm text-gray-600 mt-1">
+                {message}
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
 
-            <style jsx>{`
-        .confirmation-modal {
-          padding: 2rem;
-          text-align: center;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 1.5rem;
-        }
-
-        .modal-icon-container {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 4rem;
-          height: 4rem;
-          border-radius: 50%;
-          margin-bottom: 0.5rem;
-        }
-
-        .modal-icon {
-          font-size: 2rem;
-        }
-
-        .modal-icon.default {
-          color: var(--primary-green, #7ed957);
-          background: rgba(126, 217, 87, 0.1);
-          border-radius: 50%;
-          padding: 1rem;
-        }
-
-        .modal-icon.warning {
-          color: var(--warning, #f59e0b);
-          background: rgba(245, 158, 11, 0.1);
-          border-radius: 50%;
-          padding: 1rem;
-        }
-
-        .modal-icon.danger {
-          color: var(--danger, #ef4444);
-          background: rgba(239, 68, 68, 0.1);
-          border-radius: 50%;
-          padding: 1rem;
-        }
-
-        .modal-content {
-          max-width: 100%;
-        }
-
-        .modal-title {
-          margin: 0 0 0.75rem 0;
-          font-size: 1.25rem;
-          font-weight: 600;
-          color: var(--text-primary, #111827);
-          line-height: 1.3;
-        }
-
-        .modal-message {
-          margin: 0;
-          color: var(--text-secondary, #6b7280);
-          font-size: 0.95rem;
-          line-height: 1.5;
-          max-width: 90%;
-          margin: 0 auto;
-        }
-
-        .modal-actions {
-          display: flex;
-          gap: 0.75rem;
-          justify-content: center;
-          width: 100%;
-          margin-top: 0.5rem;
-        }
-
-        /* Responsive design */
-        @media (max-width: 480px) {
-          .confirmation-modal {
-            padding: 1.5rem;
-            gap: 1.25rem;
-          }
-
-          .modal-icon-container {
-            width: 3.5rem;
-            height: 3.5rem;
-          }
-
-          .modal-icon {
-            font-size: 1.75rem;
-          }
-
-          .modal-title {
-            font-size: 1.125rem;
-          }
-
-          .modal-message {
-            font-size: 0.9rem;
-          }
-
-          .modal-actions {
-            flex-direction: column-reverse;
-          }
-
-          .modal-actions :global(button) {
-            width: 100%;
-          }
-        }
-
-        /* Loading state */
-        .confirmation-modal:global(.loading) {
-          pointer-events: none;
-        }
-
-        /* Animation */
-        .modal-icon-container {
-          animation: modalIconScale 0.3s ease-out;
-        }
-
-        @keyframes modalIconScale {
-          from {
-            transform: scale(0.8);
-            opacity: 0;
-          }
-          to {
-            transform: scale(1);
-            opacity: 1;
-          }
-        }
-      `}</style>
-        </Modal>
-    );
-} 
+        <DialogFooter className="flex gap-3 pt-6">
+          <Button
+            variant="outline"
+            onClick={handleCancel}
+            disabled={loading}
+            className="flex-1"
+          >
+            {cancelText}
+          </Button>
+          <Button
+            variant={getConfirmVariant()}
+            onClick={handleConfirm}
+            disabled={loading}
+            className="flex-1"
+          >
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Procesando...
+              </div>
+            ) : (
+              confirmText
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

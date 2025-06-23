@@ -1,14 +1,34 @@
 // UserForm.jsx - Reusable form for creating and editing users
-import React, { useState, useEffect, useCallback } from 'react';
-import FormInput from './FormInput';
-import SelectInput from './SelectInput';
-import Button from './Button';
-import Alert from './Alert';
-import { fetchRoles, checkEmailExists } from '../services/userService';
-import { PiEyeBold, PiEyeSlashBold, PiCheckBold, PiXBold } from 'react-icons/pi';
+import React, { useState, useEffect, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
+import Alert from "./Alert";
+import { fetchRoles, checkEmailExists } from "../services/userService";
+import { Eye, EyeOff, Check, X, User, Mail, Shield, Lock } from "lucide-react";
 
 /**
  * Props:
+ *  - open: boolean
+ *  - onOpenChange: function
  *  - mode: 'create' | 'edit'
  *  - initialData: object (for edit mode)
  *  - onSubmit: function
@@ -17,559 +37,546 @@ import { PiEyeBold, PiEyeSlashBold, PiCheckBold, PiXBold } from 'react-icons/pi'
  *  - error: string
  */
 export default function UserForm({
-    mode = 'create',
-    initialData = {},
-    onSubmit,
-    onCancel,
-    loading = false,
-    error = null
+  open = false,
+  onOpenChange,
+  mode = "create",
+  initialData = {},
+  onSubmit,
+  onCancel,
+  loading = false,
+  error = null,
 }) {
-    const isEditMode = mode === 'edit';
+  const isEditMode = mode === "edit";
 
-    // Form state
-    const [formData, setFormData] = useState({
-        name: initialData.name || '',
-        email: initialData.email || '',
-        password: '',
-        confirmPassword: '',
-        role: initialData.role || '',
-        isActive: initialData.isActive !== undefined ? initialData.isActive : true
-    });
+  // Form state
+  const [formData, setFormData] = useState({
+    name: initialData.name || "",
+    email: initialData.email || "",
+    password: "",
+    confirmPassword: "",
+    role: initialData.role || "",
+    isActive: initialData.isActive !== undefined ? initialData.isActive : true,
+  });
 
-    // Validation and UI state
-    const [formErrors, setFormErrors] = useState({});
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [emailChecking, setEmailChecking] = useState(false);
-    const [emailValid, setEmailValid] = useState(null);
-    const [roles, setRoles] = useState([]);
-    const [rolesLoading, setRolesLoading] = useState(true);
+  // Validation and UI state
+  const [formErrors, setFormErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [emailChecking, setEmailChecking] = useState(false);
+  const [emailValid, setEmailValid] = useState(null);
+  const [roles, setRoles] = useState([]);
+  const [rolesLoading, setRolesLoading] = useState(true);
 
-    // Load roles on component mount
-    useEffect(() => {
-        loadRoles();
-    }, []);
+  // Load roles on component mount
+  useEffect(() => {
+    if (open) {
+      loadRoles();
+    }
+  }, [open]);
 
-    // Load available roles
-    const loadRoles = async () => {
-        try {
-            setRolesLoading(true);
-            const rolesData = await fetchRoles();
-            console.log('Roles data received:', rolesData);
+  // Reset form when dialog opens/closes
+  useEffect(() => {
+    if (open && initialData) {
+      setFormData({
+        name: initialData.name || "",
+        email: initialData.email || "",
+        password: "",
+        confirmPassword: "",
+        role: initialData.role || "",
+        isActive:
+          initialData.isActive !== undefined ? initialData.isActive : true,
+      });
+    } else if (!open) {
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        role: "",
+        isActive: true,
+      });
+      setFormErrors({});
+      setEmailValid(null);
+    }
+  }, [open, initialData]);
 
-            // Transform roles to options format
-            const roleOptions = rolesData.map(role => ({
-                value: role.name, // Always use role.name as value
-                label: role.label || role.name
-            }));
+  // Load available roles
+  const loadRoles = async () => {
+    try {
+      setRolesLoading(true);
+      const rolesData = await fetchRoles();
+      console.log("Roles data received:", rolesData);
 
-            console.log('Role options transformed:', roleOptions);
-            console.log('Original roles data:', rolesData);
-            setRoles(roleOptions);
-        } catch (err) {
-            console.error('Error loading roles:', err);
-        } finally {
-            setRolesLoading(false);
-        }
-    };
+      // Transform roles to options format
+      const roleOptions = rolesData.map((role) => ({
+        value: role.name, // Always use role.name as value
+        label: role.label || role.name,
+      }));
 
-    // Validate email format
-    const isValidEmail = (email) => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    };
+      console.log("Role options transformed:", roleOptions);
+      console.log("Original roles data:", rolesData);
+      setRoles(roleOptions);
+    } catch (err) {
+      console.error("Error loading roles:", err);
+    } finally {
+      setRolesLoading(false);
+    }
+  };
 
-    // Validate password strength
-    const isValidPassword = (password) => {
-        return password.length >= 6;
-    };
+  // Validate email format
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
-    // Check email uniqueness with debounce
-    const checkEmailUniqueness = useCallback(async (email) => {
-        if (!email || !isValidEmail(email) || (isEditMode && email === initialData.email)) {
-            setEmailValid(null);
-            return;
-        }
+  // Validate password strength
+  const isValidPassword = (password) => {
+    return password.length >= 6;
+  };
 
-        try {
-            setEmailChecking(true);
-            const exists = await checkEmailExists(email);
-            console.log('Email check result for', email, ':', exists);
-            setEmailValid(!exists);
-        } catch (err) {
-            console.error('Error checking email:', err);
-            // En caso de error, no bloquear el formulario
-            setEmailValid(null);
-        } finally {
-            setEmailChecking(false);
-        }
-    }, [isEditMode, initialData.email]);
+  // Check email uniqueness with debounce
+  const checkEmailUniqueness = useCallback(
+    async (email) => {
+      if (
+        !email ||
+        !isValidEmail(email) ||
+        (isEditMode && email === initialData.email)
+      ) {
+        setEmailValid(null);
+        return;
+      }
 
-    // Debounced email check
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            if (formData.email && formData.email.trim() !== '') {
-                checkEmailUniqueness(formData.email);
-            } else {
-                setEmailValid(null);
-                setEmailChecking(false);
-            }
-        }, 500);
+      try {
+        setEmailChecking(true);
+        const exists = await checkEmailExists(email);
+        console.log("Email check result for", email, ":", exists);
+        setEmailValid(!exists);
+      } catch (err) {
+        console.error("Error checking email:", err);
+        // En caso de error, no bloquear el formulario
+        setEmailValid(null);
+      } finally {
+        setEmailChecking(false);
+      }
+    },
+    [isEditMode, initialData.email]
+  );
 
-        return () => clearTimeout(timer);
-    }, [formData.email, checkEmailUniqueness]);
+  // Debounced email check
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (formData.email && formData.email.trim() !== "") {
+        checkEmailUniqueness(formData.email);
+      } else {
+        setEmailValid(null);
+        setEmailChecking(false);
+      }
+    }, 500);
 
-    // Handle form input changes
-    const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        const newValue = type === 'checkbox' ? checked : value;
+    return () => clearTimeout(timer);
+  }, [formData.email, checkEmailUniqueness]);
 
-        setFormData(prev => ({
-            ...prev,
-            [name]: newValue
-        }));
+  // Handle form input changes
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
 
-        // Clear error for this field
-        if (formErrors[name]) {
-            setFormErrors(prev => ({
-                ...prev,
-                [name]: ''
-            }));
-        }
-    };
+    // Clear error for this field
+    if (formErrors[field]) {
+      setFormErrors((prev) => ({
+        ...prev,
+        [field]: "",
+      }));
+    }
+  };
 
-    // Validate form
-    const validateForm = () => {
-        const errors = {};
+  // Validate form
+  const validateForm = () => {
+    const errors = {};
 
-        // Name validation
-        if (!formData.name.trim()) {
-            errors.name = 'El nombre es obligatorio';
-        } else if (formData.name.trim().length < 2) {
-            errors.name = 'El nombre debe tener al menos 2 caracteres';
-        }
+    // Name validation
+    if (!formData.name.trim()) {
+      errors.name = "El nombre es obligatorio";
+    } else if (formData.name.trim().length < 2) {
+      errors.name = "El nombre debe tener al menos 2 caracteres";
+    }
 
-        // Email validation
-        if (!formData.email.trim()) {
-            errors.email = 'El email es obligatorio';
-        } else if (!isValidEmail(formData.email)) {
-            errors.email = 'El formato del email no es válido';
-        } else if (emailValid === false && !emailChecking) {
-            errors.email = 'Este email ya está registrado';
-        }
+    // Email validation
+    if (!formData.email.trim()) {
+      errors.email = "El email es obligatorio";
+    } else if (!isValidEmail(formData.email)) {
+      errors.email = "El formato del email no es válido";
+    } else if (emailValid === false && !emailChecking) {
+      errors.email = "Este email ya está registrado";
+    }
 
-        // Password validation (only for create mode or if password is provided in edit mode)
-        if (!isEditMode) {
-            if (!formData.password) {
-                errors.password = 'La contraseña es obligatoria';
-            } else if (!isValidPassword(formData.password)) {
-                errors.password = 'La contraseña debe tener al menos 6 caracteres';
-            }
+    // Password validation (only for create mode or if password is provided in edit mode)
+    if (!isEditMode) {
+      if (!formData.password) {
+        errors.password = "La contraseña es obligatoria";
+      } else if (!isValidPassword(formData.password)) {
+        errors.password = "La contraseña debe tener al menos 6 caracteres";
+      }
 
-            if (!formData.confirmPassword) {
-                errors.confirmPassword = 'Confirma tu contraseña';
-            } else if (formData.password !== formData.confirmPassword) {
-                errors.confirmPassword = 'Las contraseñas no coinciden';
-            }
-        } else if (formData.password && formData.password !== formData.confirmPassword) {
-            errors.confirmPassword = 'Las contraseñas no coinciden';
-        }
+      if (!formData.confirmPassword) {
+        errors.confirmPassword = "Confirma tu contraseña";
+      } else if (formData.password !== formData.confirmPassword) {
+        errors.confirmPassword = "Las contraseñas no coinciden";
+      }
+    } else if (
+      formData.password &&
+      formData.password !== formData.confirmPassword
+    ) {
+      errors.confirmPassword = "Las contraseñas no coinciden";
+    }
 
-        // Role validation
-        if (!formData.role || formData.role.trim() === '') {
-            errors.role = 'Selecciona un rol';
-        }
+    // Role validation
+    if (!formData.role || formData.role.trim() === "") {
+      errors.role = "Selecciona un rol";
+    }
 
-        setFormErrors(errors);
-        return Object.keys(errors).length === 0;
-    };
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
-    // Handle form submission
-    const handleSubmit = (e) => {
-        e.preventDefault();
+  // Handle form submission
+  const handleSubmit = (e) => {
+    e.preventDefault();
 
-        if (!validateForm()) {
-            return;
-        }
+    if (!validateForm()) {
+      return;
+    }
 
-        if (emailChecking) {
-            console.log('Esperando validación de email...');
-            return; // Wait for email validation
-        }
+    if (emailChecking) {
+      console.log("Esperando validación de email...");
+      return; // Wait for email validation
+    }
 
-        // Si el email no se pudo validar pero el formato es correcto, permitir continuar
-        if (emailValid === null && isValidEmail(formData.email)) {
-            console.log('Email validation failed, but format is valid. Proceeding...');
-        }
+    // Si el email no se pudo validar pero el formato es correcto, permitir continuar
+    if (emailValid === null && isValidEmail(formData.email)) {
+      console.log(
+        "Email validation failed, but format is valid. Proceeding..."
+      );
+    }
 
-        // Prepare data for submission
-        const submitData = { ...formData };
+    // Prepare data for submission
+    const submitData = { ...formData };
 
-        // Remove confirmPassword from submission
-        delete submitData.confirmPassword;
+    // Remove confirmPassword from submission
+    delete submitData.confirmPassword;
 
-        // Remove empty password in edit mode
-        if (isEditMode && !submitData.password) {
-            delete submitData.password;
-        }
+    // Remove empty password in edit mode
+    if (isEditMode && !submitData.password) {
+      delete submitData.password;
+    }
 
-        console.log('🚀 UserForm submitting data:', submitData);
-        console.log('📋 Selected role:', submitData.role);
-        console.log('📊 Available role options:', roles);
+    console.log("🚀 UserForm submitting data:", submitData);
+    console.log("📋 Selected role:", submitData.role);
+    console.log("📊 Available role options:", roles);
 
-        onSubmit(submitData);
-    };
+    onSubmit(submitData);
+  };
 
-    return (
-        <div className="user-form">
-            <div className="form-header">
-                <h2>{isEditMode ? 'Editar Usuario' : 'Crear Nuevo Usuario'}</h2>
-                <p>{isEditMode ? 'Modifica la información del usuario' : 'Completa los datos del nuevo usuario'}</p>
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    }
+    onOpenChange?.(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+              <User className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <DialogTitle className="text-xl font-semibold text-gray-900">
+                {isEditMode ? "Editar Usuario" : "Crear Nuevo Usuario"}
+              </DialogTitle>
+              <DialogDescription className="text-sm text-gray-500 mt-1">
+                {isEditMode
+                  ? "Modifica la información del usuario"
+                  : "Completa los datos del nuevo usuario"}
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                <p className="text-red-700 text-sm font-medium">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Basic Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+              <User className="w-5 h-5" />
+              Información Básica
+            </h3>
+
+            {/* Name Field */}
+            <div className="space-y-2">
+              <Label
+                htmlFor="name"
+                className="text-sm font-medium text-gray-700"
+              >
+                Nombre completo *
+              </Label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                value={formData.name}
+                onChange={(e) => handleChange("name", e.target.value)}
+                placeholder="Ingresa el nombre completo"
+                className={formErrors.name ? "border-red-500" : ""}
+                disabled={loading}
+              />
+              {formErrors.name && (
+                <p className="text-xs text-red-600">{formErrors.name}</p>
+              )}
             </div>
 
-            {error && (
-                <Alert type="error" message={error} />
+            {/* Email Field */}
+            <div className="space-y-2">
+              <Label
+                htmlFor="email"
+                className="text-sm font-medium text-gray-700 flex items-center gap-2"
+              >
+                <Mail className="w-4 h-4" />
+                Correo electrónico *
+              </Label>
+              <div className="relative">
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleChange("email", e.target.value)}
+                  placeholder="usuario@empresa.com"
+                  className={formErrors.email ? "border-red-500" : ""}
+                  disabled={loading}
+                />
+                {emailChecking && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2 text-gray-500">
+                    <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+                    <span className="text-xs">Verificando...</span>
+                  </div>
+                )}
+                {emailValid === true && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1 text-green-600">
+                    <Check className="w-4 h-4" />
+                    <span className="text-xs">Disponible</span>
+                  </div>
+                )}
+                {emailValid === false && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1 text-red-600">
+                    <X className="w-4 h-4" />
+                    <span className="text-xs">Ya registrado</span>
+                  </div>
+                )}
+              </div>
+              {formErrors.email && (
+                <p className="text-xs text-red-600">{formErrors.email}</p>
+              )}
+            </div>
+
+            {/* Role Field */}
+            <div className="space-y-2">
+              <Label
+                htmlFor="role"
+                className="text-sm font-medium text-gray-700 flex items-center gap-2"
+              >
+                <Shield className="w-4 h-4" />
+                Rol *
+              </Label>
+              <Select
+                value={formData.role}
+                onValueChange={(value) => handleChange("role", value)}
+                disabled={loading || rolesLoading}
+              >
+                <SelectTrigger
+                  className={formErrors.role ? "border-red-500" : ""}
+                >
+                  <SelectValue
+                    placeholder={
+                      rolesLoading ? "Cargando roles..." : "Selecciona un rol"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((role) => (
+                    <SelectItem key={role.value} value={role.value}>
+                      {role.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {formErrors.role && (
+                <p className="text-xs text-red-600">{formErrors.role}</p>
+              )}
+            </div>
+
+            {/* Status Field (only in edit mode) */}
+            {isEditMode && (
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="isActive"
+                    checked={formData.isActive}
+                    onCheckedChange={(checked) =>
+                      handleChange("isActive", checked)
+                    }
+                    disabled={loading}
+                  />
+                  <Label
+                    htmlFor="isActive"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Usuario activo
+                  </Label>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Los usuarios inactivos no pueden acceder al sistema
+                </p>
+              </div>
             )}
+          </div>
 
-            <form onSubmit={handleSubmit} className="form-content">
-                <div className="form-grid">
-                    {/* Name Field */}
-                    <FormInput
-                        label="Nombre completo *"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        error={formErrors.name}
-                        placeholder="Ingresa el nombre completo"
-                        autoFocus
-                    />
+          <Separator />
 
-                    {/* Email Field */}
-                    <div className="email-field">
-                        <FormInput
-                            label="Correo electrónico *"
-                            name="email"
-                            type="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            error={formErrors.email}
-                            placeholder="usuario@empresa.com"
-                        />
-                        {emailChecking && (
-                            <div className="email-status checking">
-                                <div className="spinner"></div>
-                                <span>Verificando...</span>
-                            </div>
-                        )}
-                        {emailValid === true && (
-                            <div className="email-status valid">
-                                <PiCheckBold />
-                                <span>Email disponible</span>
-                            </div>
-                        )}
-                        {emailValid === false && (
-                            <div className="email-status invalid">
-                                <PiXBold />
-                                <span>Email ya registrado</span>
-                            </div>
-                        )}
-                    </div>
+          {/* Password Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+              <Lock className="w-5 h-5" />
+              {isEditMode ? "Cambiar Contraseña (Opcional)" : "Contraseña *"}
+            </h3>
 
-                    {/* Role Field */}
-                    <SelectInput
-                        label="Rol *"
-                        name="role"
-                        value={formData.role}
-                        onChange={handleChange}
-                        options={roles}
-                        error={formErrors.role}
-                        placeholder={rolesLoading ? "Cargando roles..." : "Selecciona un rol"}
-                        loading={rolesLoading}
-                    />
-
-                    {/* Status Field (only in edit mode) */}
-                    {isEditMode && (
-                        <div className="status-field">
-                            <label className="checkbox-label">
-                                <input
-                                    type="checkbox"
-                                    name="isActive"
-                                    checked={formData.isActive}
-                                    onChange={handleChange}
-                                />
-                                <span className="checkmark"></span>
-                                Usuario activo
-                            </label>
-                            <p className="field-helper">Los usuarios inactivos no pueden acceder al sistema</p>
-                        </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Password Field */}
+              <div className="space-y-2">
+                <Label
+                  htmlFor="password"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  {isEditMode ? "Nueva contraseña" : "Contraseña *"}
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => handleChange("password", e.target.value)}
+                    placeholder="Mínimo 6 caracteres"
+                    className={formErrors.password ? "border-red-500" : ""}
+                    disabled={loading}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
                     )}
+                  </Button>
                 </div>
+                {formErrors.password && (
+                  <p className="text-xs text-red-600">{formErrors.password}</p>
+                )}
+              </div>
 
-                {/* Password Fields (create mode or optional in edit mode) */}
-                <div className="password-section">
-                    <h3>{isEditMode ? 'Cambiar Contraseña (Opcional)' : 'Contraseña *'}</h3>
-
-                    <div className="form-grid">
-                        <div className="password-field">
-                            <FormInput
-                                label={isEditMode ? "Nueva contraseña" : "Contraseña *"}
-                                name="password"
-                                type={showPassword ? "text" : "password"}
-                                value={formData.password}
-                                onChange={handleChange}
-                                error={formErrors.password}
-                                placeholder="Mínimo 6 caracteres"
-                            />
-                            <button
-                                type="button"
-                                className="password-toggle"
-                                onClick={() => setShowPassword(!showPassword)}
-                                title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                            >
-                                {showPassword ? <PiEyeSlashBold /> : <PiEyeBold />}
-                            </button>
-                        </div>
-
-                        <div className="password-field">
-                            <FormInput
-                                label={isEditMode ? "Confirmar nueva contraseña" : "Confirmar contraseña *"}
-                                name="confirmPassword"
-                                type={showConfirmPassword ? "text" : "password"}
-                                value={formData.confirmPassword}
-                                onChange={handleChange}
-                                error={formErrors.confirmPassword}
-                                placeholder="Repite la contraseña"
-                            />
-                            <button
-                                type="button"
-                                className="password-toggle"
-                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                title={showConfirmPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                            >
-                                {showConfirmPassword ? <PiEyeSlashBold /> : <PiEyeBold />}
-                            </button>
-                        </div>
-                    </div>
+              {/* Confirm Password Field */}
+              <div className="space-y-2">
+                <Label
+                  htmlFor="confirmPassword"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  {isEditMode
+                    ? "Confirmar nueva contraseña"
+                    : "Confirmar contraseña *"}
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={formData.confirmPassword}
+                    onChange={(e) =>
+                      handleChange("confirmPassword", e.target.value)
+                    }
+                    placeholder="Repite la contraseña"
+                    className={
+                      formErrors.confirmPassword ? "border-red-500" : ""
+                    }
+                    disabled={loading}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
                 </div>
+                {formErrors.confirmPassword && (
+                  <p className="text-xs text-red-600">
+                    {formErrors.confirmPassword}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
 
-                {/* Form Actions */}
-                <div className="form-actions">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={onCancel}
-                        disabled={loading}
-                    >
-                        Cancelar
-                    </Button>
-                    <Button
-                        type="submit"
-                        variant="primary"
-                        loading={loading || emailChecking}
-                        disabled={loading || (emailValid === false && !emailChecking)}
-                    >
-                        {isEditMode ? 'Actualizar Usuario' : 'Crear Usuario'}
-                    </Button>
+          {/* Action Buttons */}
+          <DialogFooter className="flex items-center justify-between pt-6">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancel}
+              disabled={loading}
+              className="h-11 px-6"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={loading || (emailValid === false && !emailChecking)}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 h-11 px-6"
+            >
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  {isEditMode ? "Actualizando..." : "Creando..."}
                 </div>
-            </form>
-
-            <style jsx>{`
-        .user-form {
-          background: white;
-          border-radius: 0.75rem;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-          overflow: hidden;
-          max-width: 800px;
-          margin: 0 auto;
-        }
-
-        .form-header {
-          padding: 2rem 2rem 1rem;
-          border-bottom: 1px solid var(--border-color, #e5e7eb);
-          background: var(--background, #f9fafb);
-        }
-
-        .form-header h2 {
-          margin: 0 0 0.5rem 0;
-          color: var(--text-primary, #111827);
-          font-size: 1.5rem;
-          font-weight: 600;
-        }
-
-        .form-header p {
-          margin: 0;
-          color: var(--text-secondary, #6b7280);
-          font-size: 0.875rem;
-        }
-
-        .form-content {
-          padding: 2rem;
-        }
-
-        .form-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: 1.5rem;
-          margin-bottom: 2rem;
-        }
-
-        .email-field {
-          position: relative;
-        }
-
-        .email-status {
-          position: absolute;
-          right: 0.75rem;
-          top: 2.25rem;
-          display: flex;
-          align-items: center;
-          gap: 0.375rem;
-          font-size: 0.75rem;
-          font-weight: 500;
-          pointer-events: none;
-          z-index: 10;
-        }
-
-        .email-status.checking {
-          color: var(--text-secondary, #6b7280);
-        }
-
-        .email-status.valid {
-          color: var(--success-text, #16a34a);
-        }
-
-        .email-status.invalid {
-          color: var(--error-text, #dc2626);
-        }
-
-        .spinner {
-          width: 12px;
-          height: 12px;
-          border: 2px solid var(--border-color, #e5e7eb);
-          border-top: 2px solid var(--primary-green, #7ed957);
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-
-        .status-field {
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-        }
-
-        .checkbox-label {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          cursor: pointer;
-          font-weight: 500;
-          color: var(--text-primary, #111827);
-        }
-
-        .checkbox-label input[type="checkbox"] {
-          display: none;
-        }
-
-        .checkmark {
-          width: 20px;
-          height: 20px;
-          border: 2px solid var(--border-color, #e5e7eb);
-          border-radius: 4px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s ease;
-          position: relative;
-        }
-
-        .checkbox-label input[type="checkbox"]:checked + .checkmark {
-          background-color: var(--primary-green, #7ed957);
-          border-color: var(--primary-green, #7ed957);
-        }
-
-        .checkbox-label input[type="checkbox"]:checked + .checkmark::after {
-          content: '✓';
-          color: white;
-          font-size: 12px;
-          font-weight: bold;
-        }
-
-        .field-helper {
-          font-size: 0.75rem;
-          color: var(--text-secondary, #6b7280);
-          margin: 0;
-        }
-
-        .password-section {
-          margin-bottom: 2rem;
-        }
-
-        .password-section h3 {
-          margin: 0 0 1rem 0;
-          color: var(--text-primary, #111827);
-          font-size: 1.125rem;
-          font-weight: 600;
-        }
-
-        .password-field {
-          position: relative;
-        }
-
-        .password-toggle {
-          position: absolute;
-          right: 0.75rem;
-          top: 2.25rem;
-          background: none;
-          border: none;
-          color: var(--text-secondary, #6b7280);
-          cursor: pointer;
-          padding: 0.25rem;
-          border-radius: 0.25rem;
-          transition: color 0.2s ease;
-          z-index: 10;
-        }
-
-        .password-toggle:hover {
-          color: var(--text-primary, #111827);
-        }
-
-        .form-actions {
-          display: flex;
-          justify-content: flex-end;
-          gap: 1rem;
-          padding-top: 1.5rem;
-          border-top: 1px solid var(--border-color, #e5e7eb);
-        }
-
-        /* Responsive design */
-        @media (max-width: 768px) {
-          .form-header {
-            padding: 1.5rem 1.5rem 1rem;
-          }
-
-          .form-content {
-            padding: 1.5rem;
-          }
-
-          .form-grid {
-            grid-template-columns: 1fr;
-            gap: 1rem;
-          }
-
-          .form-actions {
-            flex-direction: column-reverse;
-          }
-
-          .form-actions :global(button) {
-            width: 100%;
-          }
-        }
-      `}</style>
-        </div>
-    );
-} 
+              ) : (
+                <>{isEditMode ? "Actualizar Usuario" : "Crear Usuario"}</>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

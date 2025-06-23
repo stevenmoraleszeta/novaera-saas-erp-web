@@ -1,7 +1,17 @@
 "use client";
 
 import React from "react";
-import { Settings, Bell, Edit3, Eye, Users, Shield, Key } from "lucide-react";
+import {
+  Settings,
+  Bell,
+  Edit3,
+  Eye,
+  Users,
+  Shield,
+  Key,
+  User,
+  LogOut,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -18,18 +28,33 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuth } from "./AuthProvider";
+import useUserStore from "../stores/userStore";
 import { useEditMode } from "../context/EditModeContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { logout as authServiceLogout } from "@/services/authService";
 
 export default function Header() {
-  const { user } = useAuth();
+  const { user, clearUser } = useUserStore();
   const { isEditingMode, toggleEditMode } = useEditMode();
   const router = useRouter();
 
   const handleNavigation = (path) => {
     router.push(path);
+  };
+
+  const handleLogout = async () => {
+    try {
+      // Call logout API to clear httpOnly cookie
+      await authServiceLogout();
+      clearUser();
+      router.push("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Fallback: just clear local state
+      clearUser();
+      router.push("/login");
+    }
   };
 
   return (
@@ -106,20 +131,36 @@ export default function Header() {
             </TooltipContent>
           </Tooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Avatar className="w-8 h-8">
-                <AvatarImage
-                  src="https://github.com/shadcn.png"
-                  alt="@shadcn"
-                />
-                <AvatarFallback>CN</AvatarFallback>
-              </Avatar>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Mi Perfil</p>
-            </TooltipContent>
-          </Tooltip>
+          {/* Profile Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full cursor-pointer"
+              >
+                <Avatar className="text-black w-8 h-8">
+                  {user?.name?.charAt(0)}
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href="/profile" className="flex items-center">
+                  <User className="w-4 h-4 mr-2" />
+                  Mi Perfil
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleLogout}
+                className="text-red-600 focus:text-red-600 focus:bg-red-50"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Cerrar Sesión
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </TooltipProvider>
       </div>
     </header>

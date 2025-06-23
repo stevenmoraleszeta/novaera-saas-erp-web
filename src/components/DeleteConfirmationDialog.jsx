@@ -1,57 +1,85 @@
-import React from 'react';
-import Modal from './Modal';
-import Button from './Button';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { AlertTriangle, Trash2 } from "lucide-react";
 
 export default function DeleteConfirmationDialog({
-  isOpen,
-  onClose,
+  open = false,
+  onOpenChange,
   onConfirm,
-  title = '¿Estás seguro?',
-  message = 'Esta acción no se puede deshacer.',
-  confirmText = 'Eliminar',
-  cancelText = 'Cancelar',
-  loading = false
+  title = "¿Estás seguro?",
+  message = "Esta acción no se puede deshacer.",
+  confirmText = "Eliminar",
+  cancelText = "Cancelar",
+  loading = false,
 }) {
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} size="small" showCloseButton>
-      <div className="dialog">
-        <h3 className="dialog-title">{title}</h3>
-        <p className="dialog-message">{message}</p>
+  const handleConfirm = () => {
+    if (onConfirm && !loading) {
+      onConfirm();
+    }
+  };
 
-        <div className="dialog-actions">
-          <Button variant="outline" onClick={onClose} disabled={loading}>
+  const handleCancel = () => {
+    if (!loading) {
+      onOpenChange?.(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-red-100 rounded-lg">
+              <AlertTriangle className="w-6 h-6 text-red-600" />
+            </div>
+            <div>
+              <DialogTitle className="text-lg font-semibold text-gray-900">
+                {title}
+              </DialogTitle>
+              <DialogDescription className="text-sm text-gray-600 mt-1">
+                {message}
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <DialogFooter className="flex gap-3 pt-6">
+          <Button
+            variant="outline"
+            onClick={handleCancel}
+            disabled={loading}
+            className="flex-1"
+          >
             {cancelText}
           </Button>
-          <Button variant="danger" onClick={onConfirm} disabled={loading}>
-            {loading ? 'Eliminando...' : confirmText}
+          <Button
+            variant="destructive"
+            onClick={handleConfirm}
+            disabled={loading}
+            className="flex-1 bg-red-600 hover:bg-red-700"
+          >
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Eliminando...
+              </div>
+            ) : (
+              <>
+                <Trash2 className="w-4 h-4 mr-2" />
+                {confirmText}
+              </>
+            )}
           </Button>
-        </div>
-      </div>
-
-      <style jsx>{`
-        .dialog {
-          padding: 1.5rem;
-          text-align: center;
-        }
-
-        .dialog-title {
-          font-size: 1.25rem;
-          font-weight: 600;
-          color: #1f2937;
-          margin-bottom: 0.75rem;
-        }
-
-        .dialog-message {
-          color: #4b5563;
-          margin-bottom: 1.5rem;
-        }
-
-        .dialog-actions {
-          display: flex;
-          justify-content: center;
-          gap: 1rem;
-        }
-      `}</style>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
