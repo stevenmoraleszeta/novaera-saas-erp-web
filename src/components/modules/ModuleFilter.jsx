@@ -1,7 +1,6 @@
 import React from 'react';
 import SearchBar from '../commmon/SearchBar';
 
-
 export default function ModuleFilter({
   searchQuery = '',
   filters = { status: '', category: '' },
@@ -10,28 +9,14 @@ export default function ModuleFilter({
 }) {
   return (
     <div className="module-filter">
-
-
-{/* 
-
-      <input
-        type="search"
+      <SearchBar
+        onSearch={onSearch}
         placeholder="Buscar por nombre o descripción..."
-        value={searchQuery}
-        onChange={e => onSearch(e.target.value)}
-        className="search-input"
-        aria-label="Buscar módulos"
       />
- */}
 
-        <SearchBar
-            onSearch={onSearch}
-            placeholder="Buscar por nombre o descripción...."
-        />
-        
-        {/* 
-
-              <select
+      {/* 
+      // Puedes habilitar filtros si los necesitas
+      <select
         value={filters.status}
         onChange={e => onFilterChange({ status: e.target.value })}
         className="filter-select"
@@ -52,11 +37,8 @@ export default function ModuleFilter({
         <option value="inventory">Inventario</option>
         <option value="hr">Recursos Humanos</option>
         <option value="finance">Finanzas</option>
-        {/* Agrega aquí más categorías según tu sistema 
       </select>
-        
-         */}
-
+      */}
 
       <style jsx>{`
         .module-filter {
@@ -66,7 +48,6 @@ export default function ModuleFilter({
           flex-wrap: wrap;
           align-items: center;
         }
-
         .search-input {
           flex: 1 1 250px;
           padding: 0.5em 1em;
@@ -80,7 +61,6 @@ export default function ModuleFilter({
           border-color: #7ed957;
           box-shadow: 0 0 5px #7ed957aa;
         }
-
         .filter-select {
           flex: 0 0 180px;
           padding: 0.5em 1em;

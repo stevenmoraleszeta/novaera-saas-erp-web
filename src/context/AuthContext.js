@@ -1,121 +1,105 @@
 'use client';
 
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useCallback } from 'react';
 import { setToken, removeToken } from '../lib/cookies';
-import { login as loginService, register as registerService, getUser } from '../services/authService';
+import {
+  login as loginService,
+  register as registerService,
+  getUser
+} from '../services/authService';
 import axios from '../lib/axios';
 
 export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [status, setStatus] = useState('checking');
+  const [status, setStatus] = useState('checking'); // checking | authenticated | unauthenticated | authenticating
   const [error, setError] = useState(null);
 
-  // Refetch user from API (cookie-based)
-  const refetchUser = async () => {
-    console.log('AuthContext: refetchUser - Obteniendo usuario actual');
+  const handleAuthError = (err, fallbackMessage) => {
+    const message = err?.response?.data?.error || err?.message || fallbackMessage;
+    setUser(null);
+    setStatus('unauthenticated');
+    setError(message);
+    return false;
+  };
+
+  const refetchUser = useCallback(async () => {
     setStatus('authenticating');
     setError(null);
     try {
       const userData = await getUser();
-      console.log('AuthContext: Usuario obtenido:', userData);
       setUser(userData);
       setStatus('authenticated');
       return true;
     } catch (err) {
-      console.error('AuthContext: Error al obtener usuario:', err);
-      setUser(null);
-      setStatus('unauthenticated');
-      setError(err?.response?.data?.error || 'Sesión expirada o inválida');
-      return false;
+      return handleAuthError(err, 'Sesión expirada o inválida');
     }
-  };
+  }, []);
 
-  // Login method
   const login = async (email, password) => {
-    console.log('AuthContext: login - Iniciando proceso con email:', email);
     setStatus('authenticating');
     setError(null);
     try {
-      console.log('AuthContext: Llamando a loginService');
       const response = await loginService(email, password);
-      console.log('AuthContext: Respuesta de loginService:', response);
 
-      // Verificar si la respuesta contiene un usuario
-      if (response && response.user) {
-        console.log('AuthContext: Usuario encontrado en respuesta');
+      if (response?.user) {
         setUser(response.user);
         setStatus('authenticated');
-
-        // Si estamos en modo demo, establecer cookie de demo
-        if (!response.token) {
-          console.log('AuthContext: No hay token');
-        }
-
         return true;
       }
 
-      // Si no hay usuario en la respuesta, intentar obtenerlo
-      console.log('AuthContext: No hay usuario en respuesta, intentando refetchUser');
+      // fallback: reintentar obtener usuario si no viene incluido
       return await refetchUser();
     } catch (err) {
-      console.error('AuthContext: Error en login:', err);
-      setUser(null);
-      setStatus('unauthenticated');
-      setError(err?.message || err?.response?.data?.error || 'Error de autenticación');
-      return false;
+      return handleAuthError(err, 'Error de autenticación');
     }
   };
 
-  // Register method
   const register = async (name, email, password) => {
-    console.log('AuthContext: register - Iniciando proceso de registro', { name, email });
     setStatus('registering');
     setError(null);
     try {
-      console.log('AuthContext: Llamando a registerService');
-      const response = await registerService(name, email, password);
-      console.log('AuthContext: Respuesta de registerService:', response);
-
-      // No autenticamos al usuario automáticamente después del registro
-      // Solo devolvemos la respuesta para que la página de registro pueda mostrar un mensaje
-      return response;
+      return await registerService(name, email, password);
     } catch (err) {
-      console.error('AuthContext: Error en registro:', err);
-      setError(err?.message || err?.response?.data?.error || 'Error de registro');
-      throw err; // Re-lanzar el error para que la página de registro pueda manejarlo
+      const message = err?.response?.data?.error || err?.message || 'Error de registro';
+      setError(message);
+      throw err;
     } finally {
       setStatus('unauthenticated');
     }
   };
 
   const logout = async () => {
-    console.log('AuthContext: logout - Cerrando sesión');
     try {
       await axios.post('/auth/logout');
-    } catch (err) {
-      console.warn('AuthContext: Error en logout (ignorado):', err);
+    } catch {
+      // Silenciar errores de logout
     }
-
-    // Limpiar cookies
     removeToken();
-
     setUser(null);
     setStatus('unauthenticated');
     if (typeof window !== 'undefined') {
-      window.location.href = '/login';
+      window.location.assign('/login');
     }
   };
 
   useEffect(() => {
-    console.log('AuthContext: useEffect - Verificando sesión inicial');
-    // Siempre intentar obtener el usuario desde el backend usando el token httpOnly
     refetchUser();
-  }, []);
+  }, [refetchUser]);
 
   return (
-    <AuthContext.Provider value={{ user, status, error, login, register, logout, refetchUser }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        status,
+        error,
+        login,
+        register,
+        logout,
+        refetchUser
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

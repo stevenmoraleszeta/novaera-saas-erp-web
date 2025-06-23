@@ -218,7 +218,7 @@ export default function NotificationCenterPage() {
         <Button
           variant="primary"
           onClick={handleDeleteAllClick}
-          rightIcon={PiTrashLight}
+          rightIcon={<PiTrashLight />}
           title="Borrar todas las notificaciones"
         >
         Borrar todas las notificaciones

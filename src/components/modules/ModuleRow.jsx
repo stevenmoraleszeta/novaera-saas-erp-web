@@ -1,18 +1,17 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { PiPencilSimpleBold, PiTrashBold } from 'react-icons/pi';
 
-export default function ModuleRow({ module, onEdit, onDelete, isEditingMode }) {
+function ModuleRowComponent({ module, onEdit, onDelete, isEditingMode }) {
   const router = useRouter();
 
-  const handleCardClick = () => {
+  const handleCardClick = useCallback(() => {
     if (isEditingMode) {
-      onEdit?.(module); // Abrir modal
+      onEdit?.(module); // Abre modal en modo edición
     } else {
-      router.push(`/modulos/${module.id}`); // Redirigir
-
+      router.push(`/modulos/${module.id}`); // Navega a detalle
     }
-  };
+  }, [isEditingMode, module, onEdit, router]);
+
   return (
     <div className="module-wrapper">
       <div className="module-card" onClick={handleCardClick}>
@@ -21,16 +20,6 @@ export default function ModuleRow({ module, onEdit, onDelete, isEditingMode }) {
         ) : (
           <div className="no-icon">📦</div>
         )}
-
-      {/*<div className="actions" onClick={(e) => e.stopPropagation()}>
-          <button title="Editar" onClick={onEdit} className="btn btn-edit">
-            <PiPencilSimpleBold />
-          </button>
-          <button title="Eliminar" onClick={onDelete} className="btn btn-delete">
-            <PiTrashBold />
-          </button>
-        </div> */}
-
       </div>
 
       <div className="module-name" title={module.name}>
@@ -45,7 +34,6 @@ export default function ModuleRow({ module, onEdit, onDelete, isEditingMode }) {
           width: 120px;
           margin: 0.5rem;
         }
-
         .module-card {
           width: 110px;
           height: 110px;
@@ -55,23 +43,20 @@ export default function ModuleRow({ module, onEdit, onDelete, isEditingMode }) {
           align-items: center;
           justify-content: center;
           position: relative;
-          box-shadow: 0 4px 16px 0 rgba(0,0,0,0.10);
+          box-shadow: 0 4px 16px rgba(0,0,0,0.10);
           cursor: pointer;
           transition: transform 0.2s ease, box-shadow 0.2s;
         }
-
         .module-card:hover {
           transform: scale(1.05);
-          box-shadow: 0 8px 24px 0 rgba(0,0,0,0.13);
+          box-shadow: 0 8px 24px rgba(0,0,0,0.13);
         }
-
         .module-icon,
         .no-icon {
           width: 56px;
           height: 56px;
           object-fit: contain;
         }
-
         .no-icon {
           font-size: 2.5rem;
           color: #222;
@@ -79,7 +64,6 @@ export default function ModuleRow({ module, onEdit, onDelete, isEditingMode }) {
           align-items: center;
           justify-content: center;
         }
-
         .module-name {
           font-size: 1rem;
           color: #222;
@@ -92,32 +76,9 @@ export default function ModuleRow({ module, onEdit, onDelete, isEditingMode }) {
           text-overflow: ellipsis;
           letter-spacing: 0.01em;
         }
-
-        .actions {
-          position: absolute;
-          top: 4px;
-          right: 4px;
-          display: flex;
-          gap: 4px;
-        }
-
-        .btn {
-          background: none;
-          border: none;
-          font-size: 1rem;
-          cursor: pointer;
-          padding: 2px;
-          color: #6b7280;
-        }
-
-        .btn-edit:hover {
-          color: #22c55e;
-        }
-
-        .btn-delete:hover {
-          color: #ef4444;
-        }
       `}</style>
     </div>
   );
 }
+
+export default React.memo(ModuleRowComponent);

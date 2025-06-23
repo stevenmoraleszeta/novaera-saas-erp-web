@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import ModuleRow from './ModuleRow';
 import Loader from '../ui/Loader';
 import Pagination from '../commmon/Pagination';
@@ -17,13 +17,17 @@ export default function ModuleList({
   isEditingMode = true
 }) {
   const addModule = {
-    id: 1,
+    id: '__add__',
     name: 'Agregar',
     description: '',
     iconUrl: 'https://icon2.cleanpng.com/20180610/yr/aa8tqkh1s.webp',
     createdBy: 1,
     createdAt: '2024-01-15T10:30:00Z'
   };
+
+  // Memoiza handlers para evitar recrearlos en cada render
+  const handleEdit = useCallback((mod) => () => onEdit(mod), [onEdit]);
+  const handleDelete = useCallback((mod) => () => onDelete(mod), [onDelete]);
 
   if (loading) {
     return (
@@ -42,8 +46,8 @@ export default function ModuleList({
           <ModuleRow
             key={module.id}
             module={module}
-            onEdit={() => onEdit(module)}
-            onDelete={() => onDelete(module)}
+            onEdit={handleEdit(module)}
+            onDelete={handleDelete(module)}
             isEditingMode={isEditingMode}
           />
         ))}
@@ -59,26 +63,26 @@ export default function ModuleList({
         )}
       </div>
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={totalItems}
-        itemsPerPage={itemsPerPage}
-        onPageChange={onPageChange}
-      />
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={onPageChange}
+        />
+      )}
 
       <style jsx>{`
         .module-grid-wrapper {
           padding: 1rem;
         }
-
         .module-grid {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 2.2rem 2.2rem;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 2.2rem;
           justify-items: center;
         }
-
         .no-data {
           text-align: center;
           padding: 2rem 0 1rem 0;

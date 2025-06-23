@@ -1,20 +1,23 @@
 'use client';
 
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { useModules } from '@/hooks/useModules';
 import MainContent from '@/components/MainContent';
 import ModuleList from '@/components/modules/ModuleList';
 import ModuleFilter from '@/components/modules/ModuleFilter';
 import Alert from '@/components/commmon/Alert';
 import Modal from '@/components/commmon/Modal';
-import ModuleForm from '@/components/modules/ModuleForm';
 import { AuthContext } from '../../context/AuthContext';
-import DeleteConfirmationDialog from '@/components/commmon/DeleteConfirmationDialog';
 import EditToggleButton from '@/components/commmon/EditToggleButton';
 
-
+const ModuleForm = React.lazy(() => import('@/components/modules/ModuleForm'));
+const DeleteConfirmationDialog = React.lazy(() => import('@/components/commmon/DeleteConfirmationDialog'));
 
 export default function ModulesPage() {
+  const { user, status } = useContext(AuthContext);
+
+  if (status !== 'authenticated') return null;
+
   const {
     modules,
     loading,
@@ -37,24 +40,41 @@ export default function ModulesPage() {
     clearMessages,
   } = useModules();
 
-  const { user, status } = useContext(AuthContext);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [moduleToDelete, setModuleToDelete] = useState(null);
   const [isEditingMode, setIsEditingMode] = useState(false);
-
-  const [modalState, setModalState] = React.useState({
+  const [modalState, setModalState] = useState({
     showModal: false,
     selectedModule: null,
     formLoading: false,
-    formError: null
+    formError: null,
   });
 
-  const handleDeleteClick = (module) => {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [moduleToDelete, setModuleToDelete] = useState(null);
+
+  const selectedModuleRef = useRef(null);
+
+  useEffect(() => {
+    selectedModuleRef.current = modalState.selectedModule;
+  }, [modalState.selectedModule]);
+
+  const openCreateModal = useCallback(() => {
+    setModalState({ showModal: true, selectedModule: null, formLoading: false, formError: null });
+  }, []);
+
+  const openEditModal = useCallback((module) => {
+    setModalState({ showModal: true, selectedModule: module, formLoading: false, formError: null });
+  }, []);
+
+  const closeModal = useCallback(() => {
+    setModalState({ showModal: false, selectedModule: null, formLoading: false, formError: null });
+  }, []);
+
+  const handleDeleteClick = useCallback((module) => {
     setModuleToDelete(module);
     setShowDeleteDialog(true);
-  };
+  }, []);
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = useCallback(async () => {
     try {
       await handleDeleteModule(moduleToDelete);
       setShowDeleteDialog(false);
@@ -63,52 +83,35 @@ export default function ModulesPage() {
     } catch (err) {
       console.error('Error al eliminar módulo:', err);
     }
-  };
+  }, [handleDeleteModule, moduleToDelete, closeModal]);
 
-  const handleCancelDelete = () => {
+  const handleCancelDelete = useCallback(() => {
     setShowDeleteDialog(false);
     setModuleToDelete(null);
-  };
+  }, []);
 
-   const handleFormCancel = () => {
-    setSelectedColumn(null);
-    setFormMode('create');
-  };
-
-  const openCreateModal = () =>
-    setModalState({ showModal: true, selectedModule: null, formLoading: false, formError: null });
-
-  const openEditModal = (module) =>
-    setModalState({ showModal: true, selectedModule: module, formLoading: false, formError: null });
-
-  const closeModal = () =>
-    setModalState({ showModal: false, selectedModule: null, formLoading: false, formError: null });
-
-  const handleFormSubmit = async (data) => {
+  const handleFormSubmit = useCallback(async (data) => {
+    setModalState(prev => ({ ...prev, formLoading: true, formError: null }));
     try {
-      setModalState((prev) => ({ ...prev, formLoading: true, formError: null }));
-      if (modalState.selectedModule) {
-        await handleUpdateModule(modalState.selectedModule.id, data);
+      if (selectedModuleRef.current) {
+        await handleUpdateModule(selectedModuleRef.current.id, data);
       } else {
         await handleCreateModule(data);
       }
       closeModal();
     } catch (err) {
-      setModalState((prev) => ({
+      setModalState(prev => ({
         ...prev,
         formError: err?.response?.data?.error || 'Error al guardar módulo',
-        formLoading: false
+        formLoading: false,
       }));
     }
-  };
+  }, [handleCreateModule, handleUpdateModule, closeModal]);
 
   return (
     <MainContent>
       <div className="modules-page">
-        {/* Fondo degradado global eliminado para evitar error de estilos anidados. Agrega el fondo en tu CSS global. */}
-
         {error && <Alert type="error" message={error} onClose={clearMessages} />}
-
         {success && <Alert type="success" message={success} onClose={clearMessages} />}
 
         <div className="filter-toolbar">
@@ -124,7 +127,6 @@ export default function ModulesPage() {
             {isEditingMode && <span className="edit-label">Modo edición</span>}
           </div>
         </div>
-
 
         <ModuleList
           modules={modules}
@@ -142,32 +144,35 @@ export default function ModulesPage() {
           isEditingMode={isEditingMode}
         />
 
-        <Modal
-          isOpen={modalState.showModal}
-          onClose={closeModal}
-          size="large"
-          showCloseButton
-        >
-          <ModuleForm
-            mode={modalState.selectedModule ? 'edit' : 'create'}
-            initialData={modalState.selectedModule}
-            onSubmit={handleFormSubmit}
-            onCancel={closeModal}
-            onDelete={handleDeleteClick}
-            loading={modalState.formLoading}
-            error={modalState.formError}
-          />
-        </Modal>
+        {modalState.showModal && (
+          <Modal isOpen={modalState.showModal} onClose={closeModal} size="large" showCloseButton>
+            <React.Suspense fallback={<p>Cargando formulario...</p>}>
+              <ModuleForm
+                mode={modalState.selectedModule ? 'edit' : 'create'}
+                initialData={modalState.selectedModule}
+                onSubmit={handleFormSubmit}
+                onCancel={closeModal}
+                onDelete={handleDeleteClick}
+                loading={modalState.formLoading}
+                error={modalState.formError}
+              />
+            </React.Suspense>
+          </Modal>
+        )}
 
-        <DeleteConfirmationDialog
-          isOpen={showDeleteDialog}
-          onClose={handleCancelDelete}
-          onConfirm={handleConfirmDelete}
-          title="¿Eliminar módulo?"
-          message={`¿Estás seguro de que deseas eliminar "${moduleToDelete?.name}"?`}
-          confirmText="Sí, eliminar"
-          cancelText="Cancelar"
-        />
+        {showDeleteDialog && (
+          <React.Suspense fallback={null}>
+            <DeleteConfirmationDialog
+              isOpen={showDeleteDialog}
+              onClose={handleCancelDelete}
+              onConfirm={handleConfirmDelete}
+              title="¿Eliminar módulo?"
+              message={`¿Estás seguro de que deseas eliminar "${moduleToDelete?.name}"?`}
+              confirmText="Sí, eliminar"
+              cancelText="Cancelar"
+            />
+          </React.Suspense>
+        )}
       </div>
 
       <style jsx>{`
@@ -175,30 +180,17 @@ export default function ModulesPage() {
           max-width: 1200px;
           margin: 0 auto;
         }
-        .page-header {
-          margin-bottom: 1.5em;
-        }
-        h1 {
-          font-size: 2em;
-          margin: 0;
-        }
-        p {
-          color: #6b7280;
-          margin-bottom: 1em;
-        }
         .filter-toolbar {
           display: flex;
           justify-content: space-between;
           align-items: center;
           margin-bottom: 1rem;
         }
-
         .edit-toggle-container {
           display: flex;
           align-items: center;
           gap: 0.5rem;
         }
-
         .edit-label {
           font-size: 0.9rem;
           color: #10b981;

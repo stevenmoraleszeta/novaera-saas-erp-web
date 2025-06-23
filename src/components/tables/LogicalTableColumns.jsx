@@ -6,40 +6,61 @@ export default function LogicalTableColumns({ tableId, refreshKey }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!tableId) return;
+    let isMounted = true;
+
     const fetchColumns = async () => {
       setLoading(true);
       try {
         const cols = await getLogicalTableStructure(tableId);
-        setColumns(cols);
-      } catch (err) {
-        setColumns([]);
+        if (isMounted) setColumns(cols);
+      } catch {
+        if (isMounted) setColumns([]);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
-    if (tableId) fetchColumns();
+
+    fetchColumns();
+
+    return () => {
+      isMounted = false;
+    };
   }, [tableId, refreshKey]);
 
   if (loading) return <div>Cargando columnas...</div>;
   if (!columns.length) return <div>No hay columnas definidas.</div>;
 
+  const headerStyle = {
+    borderBottom: '1px solid #e5e7eb',
+    padding: 8,
+    background: '#0284fe',
+    color: '#fff',
+    textAlign: 'left',
+  };
+
+  const cellStyle = {
+    padding: 8,
+    borderBottom: '1px solid #f3f4f6',
+  };
+
   return (
     <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 12 }}>
       <thead>
         <tr>
-          <th style={{ borderBottom: '1px solid #e5e7eb', padding: 8, background: '#0284fe', color: '#fff' }}>Nombre</th>
-          <th style={{ borderBottom: '1px solid #e5e7eb', padding: 8, background: '#0284fe', color: '#fff' }}>Tipo</th>
-          <th style={{ borderBottom: '1px solid #e5e7eb', padding: 8, background: '#0284fe', color: '#fff' }}>Obligatorio</th>
-          <th style={{ borderBottom: '1px solid #e5e7eb', padding: 8, background: '#0284fe', color: '#fff' }}>Foránea</th>
+          <th style={headerStyle}>Nombre</th>
+          <th style={headerStyle}>Tipo</th>
+          <th style={headerStyle}>Obligatorio</th>
+          <th style={headerStyle}>Foránea</th>
         </tr>
       </thead>
       <tbody>
-        {columns.map(col => (
-          <tr key={col.id}>
-            <td style={{ padding: 8, borderBottom: '1px solid #f3f4f6' }}>{col.name}</td>
-            <td style={{ padding: 8, borderBottom: '1px solid #f3f4f6' }}>{col.data_type}</td>
-            <td style={{ padding: 8, borderBottom: '1px solid #f3f4f6' }}>{col.is_required ? 'Sí' : 'No'}</td>
-            <td style={{ padding: 8, borderBottom: '1px solid #f3f4f6' }}>{col.is_foreign_key ? 'Sí' : 'No'}</td>
+        {columns.map(({ id, name, data_type, is_required, is_foreign_key }) => (
+          <tr key={id}>
+            <td style={cellStyle}>{name}</td>
+            <td style={cellStyle}>{data_type}</td>
+            <td style={cellStyle}>{is_required ? 'Sí' : 'No'}</td>
+            <td style={cellStyle}>{is_foreign_key ? 'Sí' : 'No'}</td>
           </tr>
         ))}
       </tbody>

@@ -1,5 +1,4 @@
-// Modal.jsx - Reusable modal component
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { PiXBold } from 'react-icons/pi';
 
 /**
@@ -13,77 +12,73 @@ import { PiXBold } from 'react-icons/pi';
  *  - showCloseButton: boolean (default: true)
  */
 export default function Modal({
-    isOpen,
-    onClose,
-    title,
-    size = 'medium',
-    children,
-    closeOnOverlayClick = true,
-    showCloseButton = true
+  isOpen,
+  onClose,
+  title,
+  size = 'medium',
+  children,
+  closeOnOverlayClick = true,
+  showCloseButton = true,
 }) {
-    // Handle escape key press
-    useEffect(() => {
-        const handleEscape = (e) => {
-            if (e.key === 'Escape' && isOpen) {
-                onClose();
-            }
-        };
+  // Memoize overlay click handler to avoid recreations
+  const handleOverlayClick = useCallback(
+    (e) => {
+      if (closeOnOverlayClick && e.target === e.currentTarget) {
+        onClose();
+      }
+    },
+    [closeOnOverlayClick, onClose]
+  );
 
-        if (isOpen) {
-            document.addEventListener('keydown', handleEscape);
-            // Prevent body scroll when modal is open
-            document.body.style.overflow = 'hidden';
-        }
+  // Handle Escape key press and body scroll lock
+  useEffect(() => {
+    if (!isOpen) return;
 
-        return () => {
-            document.removeEventListener('keydown', handleEscape);
-            document.body.style.overflow = 'auto';
-        };
-    }, [isOpen, onClose]);
-
-    // Handle overlay click
-    const handleOverlayClick = (e) => {
-        if (closeOnOverlayClick && e.target === e.currentTarget) {
-            onClose();
-        }
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
     };
 
-    if (!isOpen) return null;
+    document.addEventListener('keydown', handleEscape);
+    document.body.style.overflow = 'hidden';
 
-    return (
-        <div className={`modal-overlay ${size}`} onClick={handleOverlayClick}>
-            <div className="modal-content" role="dialog" aria-modal="true">
-                {/* Modal Header */}
-                {(title || showCloseButton) && (
-                    <div className="modal-header">
-                        {title && <h2 className="modal-title">{title}</h2>}
-                        {showCloseButton && (
-                            <button
-                                className="modal-close"
-                                onClick={onClose}
-                                aria-label="Cerrar modal"
-                                title="Cerrar"
-                            >
-                                <PiXBold />
-                            </button>
-                        )}
-                    </div>
-                )}
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'auto';
+    };
+  }, [isOpen, onClose]);
 
-                {/* Modal Body */}
-                <div className="modal-body">
-                    {children}
-                </div>
-            </div>
+  if (!isOpen) return null;
 
-            <style jsx>{`
+  return (
+    <div className={`modal-overlay ${size}`} onClick={handleOverlayClick}>
+      <div className="modal-content" role="dialog" aria-modal="true">
+        {(title || showCloseButton) && (
+          <div className="modal-header">
+            {title && <h2 className="modal-title">{title}</h2>}
+            {showCloseButton && (
+              <button
+                className="modal-close"
+                onClick={onClose}
+                aria-label="Cerrar modal"
+                title="Cerrar"
+                type="button"
+              >
+                <PiXBold />
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="modal-body">{children}</div>
+      </div>
+
+      <style jsx>{`
         .modal-overlay {
           position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.18); /* más suave para tema claro */
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0, 0, 0, 0.18);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -94,18 +89,16 @@ export default function Modal({
         }
 
         @keyframes modalFadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
 
         .modal-content {
           background: var(--background, #fff);
           border-radius: 0.75rem;
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.03);
+          box-shadow:
+            0 20px 25px -5px rgba(0, 0, 0, 0.08),
+            0 10px 10px -5px rgba(0, 0, 0, 0.03);
           max-height: 90vh;
           overflow: hidden;
           display: flex;
@@ -125,22 +118,19 @@ export default function Modal({
           }
         }
 
-        /* Modal sizes */
+        /* Sizes */
         .modal-overlay.small .modal-content {
           width: 100%;
           max-width: 400px;
         }
-
         .modal-overlay.medium .modal-content {
           width: 100%;
           max-width: 600px;
         }
-
         .modal-overlay.large .modal-content {
           width: 100%;
           max-width: 900px;
         }
-
         .modal-overlay.full .modal-content {
           width: 95%;
           max-width: 1200px;
@@ -175,12 +165,10 @@ export default function Modal({
           align-items: center;
           justify-content: center;
         }
-
         .modal-close:hover {
           background: rgba(0, 0, 0, 0.05);
           color: var(--primary, #0070f3);
         }
-
         .modal-close:focus {
           outline: none;
           box-shadow: 0 0 0 3px rgba(0, 112, 243, 0.1);
@@ -192,33 +180,29 @@ export default function Modal({
           padding: 0;
         }
 
-        /* Responsive design */
+        /* Responsive */
         @media (max-width: 768px) {
           .modal-overlay {
             padding: 0.5rem;
           }
-
           .modal-overlay.small .modal-content,
           .modal-overlay.medium .modal-content,
           .modal-overlay.large .modal-content {
             width: 100%;
             max-width: none;
           }
-
           .modal-overlay.full .modal-content {
             width: 100%;
             height: 95vh;
           }
-
           .modal-header {
             padding: 1rem 1.5rem;
           }
-
           .modal-title {
             font-size: 1.125rem;
           }
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 }

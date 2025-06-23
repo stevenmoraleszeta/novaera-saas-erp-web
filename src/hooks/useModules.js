@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   getModules,
   createModule,
@@ -6,6 +6,15 @@ import {
   deleteModule,
   getModuleById
 } from '@/services/moduleService';
+
+function useDebounce(value, delay = 500) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debounced;
+}
 
 export function useModules(initialParams = {}) {
   const [modules, setModules] = useState([]);
@@ -16,15 +25,23 @@ export function useModules(initialParams = {}) {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [error, setError] = useState(null);
-  const [succes, setSucces] = useState(null);
+  const [success, setSuccess] = useState(null);
+
+  const debouncedSearch = useDebounce(search);
+
+  // Use a ref to avoid stale closure on currentPage/itemsPerPage/debouncedSearch
+  const paramsRef = useRef({ currentPage, itemsPerPage, debouncedSearch });
+  useEffect(() => {
+    paramsRef.current = { currentPage, itemsPerPage, debouncedSearch };
+  }, [currentPage, itemsPerPage, debouncedSearch]);
 
   const loadModules = useCallback(async (params = {}) => {
     setLoading(true);
     try {
       const response = await getModules({
-        page: params.page || currentPage,
-        limit: params.limit || itemsPerPage,
-        search: params.search !== undefined ? params.search : search
+        page: params.page || paramsRef.current.currentPage,
+        limit: params.limit || paramsRef.current.itemsPerPage,
+        search: params.search !== undefined ? params.search : paramsRef.current.debouncedSearch
       });
 
       setModules(response.modules);
@@ -38,71 +55,61 @@ export function useModules(initialParams = {}) {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, itemsPerPage, search]);
+  }, []);
 
   useEffect(() => {
-    loadModules();
+    loadModules({ search: debouncedSearch, page: currentPage, limit: itemsPerPage });
+  }, [debouncedSearch, currentPage, itemsPerPage, loadModules]);
+
+  const handleSearch = useCallback((query) => {
+    setSearch(query);
+    setCurrentPage(1);
+  }, []);
+
+  const handlePageChange = useCallback((page) => {
+    setCurrentPage(page);
+  }, []);
+
+  const handleCreateModule = useCallback(async (data) => {
+    const newModule = await createModule(data);
+    await loadModules();
+    return newModule;
   }, [loadModules]);
 
-     
-  const handleSearch = useCallback((query) => {
-        setSearch(query);
-        setCurrentPage(1);
-        loadModules({ search: query, page: 1 });
-    }, []);
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-    loadModules({ page });
-  };
-
-  const handleCreateModule = async (data) => {
-    const newModule = await createModule(data);
-    loadModules();
-    return newModule;
-  };
-
-  const handleUpdateModule = async (id, data) => {
+  const handleUpdateModule = useCallback(async (id, data) => {
     const updatedModule = await updateModule(id, data);
-    loadModules();
+    await loadModules();
     return updatedModule;
-  };
+  }, [loadModules]);
 
   const handleDeleteModule = useCallback(async (id) => {
-      try {
-          setError(null);
-          await deleteModule(id);
-          setSucces('Usuario eliminado correctamente');
-          loadModules();
+    try {
+      setError(null);
+      await deleteModule(id);
+      setSuccess('Módulo eliminado correctamente');
+      await loadModules();
+    } catch (err) {
+      console.error('Error deleting module:', err);
+      setError(err?.response?.data?.error || 'Error al eliminar el módulo');
+    }
+  }, [loadModules]);
 
-      } catch (err) {
-          console.error('Error deleting module:', err);
-          setError(err?.response?.data?.error || 'Error al eliminar el módulo');
-      }
+  const getById = useCallback(async (id) => {
+    try {
+      setError(null);
+      const module = await getModuleById(id);
+      return module;
+    } catch (err) {
+      console.error('Error getting Module by ID:', err);
+      setError(err?.response?.data?.error || 'Error al obtener el módulo');
+      throw err;
+    }
   }, []);
-
-
-
-      // Get user by ID
-    const getById = useCallback(async (id) => {
-        try {
-            setError(null);
-            const module = await getModuleById(id);
-            console.log('Module retrieved by ID:', module);
-            return module;
-
-        } catch (err) {
-            console.error('Error getting Module by ID:', err);
-            setError(err?.response?.data?.error || 'Error al obtener el usuario');
-            throw err;
-        }
-    }, []);
 
   const clearMessages = useCallback(() => {
-        setError(null);
-        setSuccess(null);
+    setError(null);
+    setSuccess(null);
   }, []);
-
 
   return {
     modules,
@@ -112,7 +119,8 @@ export function useModules(initialParams = {}) {
     itemsPerPage,
     loading,
     error,
-    searchQuery : search,
+    success,
+    searchQuery: search,
     handleSearch,
     handlePageChange,
     loadModules,

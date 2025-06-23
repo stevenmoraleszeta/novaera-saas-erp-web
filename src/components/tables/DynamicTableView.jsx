@@ -1,11 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { getLogicalTableStructure, getLogicalTableRecords, updateLogicalTableRecord } from '@/services/logicalTableService';
+import {
+  getLogicalTableStructure,
+  getLogicalTableRecords,
+  updateLogicalTableRecord
+} from '@/services/logicalTableService';
 import ColumnRenderer from './ColumnRenderer';
 import TableFilterBar from './TableFilterBar';
 import TablePagination from './TablePagination';
 import FieldRenderer from '../commmon/FieldRenderer';
 
-export default function DynamicTableView({ tableId, refresh, isEditingMode, editingRecordId, setEditingRecordId, onDeleteRecord, onRecordSaved, hideEditDeleteButtons, onEditRecord }) {
+export default function DynamicTableView({
+  tableId,
+  refresh,
+  isEditingMode,
+  editingRecordId,
+  setEditingRecordId,
+  onDeleteRecord,
+  onRecordSaved,
+  hideEditDeleteButtons,
+  onEditRecord
+}) {
   const [columns, setColumns] = useState([]);
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,8 +37,14 @@ export default function DynamicTableView({ tableId, refresh, isEditingMode, edit
       try {
         const cols = await getLogicalTableStructure(tableId);
         setColumns(cols);
-        const data = await getLogicalTableRecords(tableId, { page, pageSize, ...filters });
-        setRecords(data.records || data); // soporta ambos formatos
+
+        const data = await getLogicalTableRecords(tableId, {
+          page,
+          pageSize,
+          ...filters
+        });
+
+        setRecords(data.records || data);
         setTotal(data.total || (data.records ? data.records.length : data.length));
       } catch (err) {
         setRecords([]);
@@ -33,6 +53,7 @@ export default function DynamicTableView({ tableId, refresh, isEditingMode, edit
         setLoading(false);
       }
     };
+
     if (tableId) fetchData();
   }, [tableId, page, pageSize, filters, refresh]);
 
@@ -61,7 +82,7 @@ export default function DynamicTableView({ tableId, refresh, isEditingMode, edit
       });
       setEditingRecordId(null);
       if (onRecordSaved) onRecordSaved();
-    } catch (err) {
+    } catch {
       setSaveError('Error al guardar cambios');
     } finally {
       setSaving(false);
@@ -74,17 +95,19 @@ export default function DynamicTableView({ tableId, refresh, isEditingMode, edit
   return (
     <div>
       <TableFilterBar columns={columns} onFilter={setFilters} />
+
       <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 12 }}>
         <thead>
           <tr>
             {columns.map(col => (
-              <th key={col.id} style={{ borderBottom: '1px solid #e5e7eb', padding: 8 }}>{col.name}</th>
+              <th key={col.id} style={{ borderBottom: '1px solid #e5e7eb', padding: 8 }}>
+                {col.name}
+              </th>
             ))}
-            {isEditingMode && (
-              <th style={{ borderBottom: '1px solid #e5e7eb', padding: 8 }}>Acciones</th>
-            )}
+            {isEditingMode && !hideEditDeleteButtons && <th style={{ borderBottom: '1px solid #e5e7eb', padding: 8 }}>Acciones</th>}
           </tr>
         </thead>
+
         <tbody>
           {records.map((rec, idx) => {
             const isEditing = isEditingMode && editingRecordId === rec.id;
@@ -99,17 +122,21 @@ export default function DynamicTableView({ tableId, refresh, isEditingMode, edit
                         onChange={e => handleFieldChange(col.name, e.target.value ?? (e.target.checked ?? ''))}
                       />
                     ) : (
-                      <ColumnRenderer value={rec.record_data ? rec.record_data[col.name] : rec[col.name]} column={col} />
+                      <ColumnRenderer
+                        value={rec.record_data ? rec.record_data[col.name] : rec[col.name]}
+                        column={col}
+                      />
                     )}
                   </td>
                 ))}
-                {isEditingMode && (
+
+                {isEditingMode && !hideEditDeleteButtons && (
                   <td style={{ padding: 8, borderBottom: '1px solid #f3f4f6', textAlign: 'center' }}>
-                    {!isEditing && (
+                    {!isEditing ? (
                       <>
                         <button
                           title="Editar"
-                          onClick={() => onEditRecord ? onEditRecord(rec) : setEditingRecordId && setEditingRecordId(rec.id)}
+                          onClick={() => (onEditRecord ? onEditRecord(rec) : setEditingRecordId && setEditingRecordId(rec.id))}
                           style={{
                             marginRight: 8,
                             background: '#2563eb',
@@ -118,7 +145,7 @@ export default function DynamicTableView({ tableId, refresh, isEditingMode, edit
                             borderRadius: 4,
                             padding: '4px 12px',
                             cursor: 'pointer',
-                            fontWeight: 500
+                            fontWeight: 500,
                           }}
                         >
                           Editar
@@ -133,19 +160,41 @@ export default function DynamicTableView({ tableId, refresh, isEditingMode, edit
                             borderRadius: 4,
                             padding: '4px 12px',
                             cursor: 'pointer',
-                            fontWeight: 500
+                            fontWeight: 500,
                           }}
                         >
                           Eliminar
                         </button>
                       </>
-                    )}
-                    {isEditing && (
+                    ) : (
                       <>
-                        <button onClick={() => handleSave(rec)} disabled={saving} style={{ marginRight: 8, background: '#2563eb', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 12px', fontWeight: 500 }}>
+                        <button
+                          onClick={() => handleSave(rec)}
+                          disabled={saving}
+                          style={{
+                            marginRight: 8,
+                            background: '#2563eb',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: 4,
+                            padding: '4px 12px',
+                            fontWeight: 500,
+                          }}
+                        >
                           {saving ? 'Guardando...' : 'Guardar'}
                         </button>
-                        <button onClick={() => setEditingRecordId(null)} disabled={saving} style={{ background: '#e5e7eb', color: '#222', border: 'none', borderRadius: 4, padding: '4px 12px', fontWeight: 500 }}>
+                        <button
+                          onClick={() => setEditingRecordId(null)}
+                          disabled={saving}
+                          style={{
+                            background: '#e5e7eb',
+                            color: '#222',
+                            border: 'none',
+                            borderRadius: 4,
+                            padding: '4px 12px',
+                            fontWeight: 500,
+                          }}
+                        >
                           Cancelar
                         </button>
                         {saveError && <div style={{ color: 'red', marginTop: 4 }}>{saveError}</div>}
@@ -158,6 +207,7 @@ export default function DynamicTableView({ tableId, refresh, isEditingMode, edit
           })}
         </tbody>
       </table>
+
       <TablePagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={setPageSize} />
     </div>
   );

@@ -15,17 +15,20 @@ export function useLogicalTables(moduleId) {
   }, []);
 
   // Crear o actualizar una tabla lógica
-  const createOrUpdateTable = useCallback(async (data) => {
-    if (data.id) {
-      // Actualizar
-      const res = await axios.put(`/tables/${data.id}`, data);
-      return res.data;
-    } else {
-      // Crear
-      const res = await axios.post(`/tables`, { ...data, moduleId });
-      return res.data;
-    }
-  }, [moduleId]);
+  const createOrUpdateTable = useCallback(
+    async (data) => {
+      if (data.id) {
+        // Actualizar
+        const res = await axios.put(`/tables/${data.id}`, data);
+        return res.data;
+      } else {
+        // Crear
+        const res = await axios.post(`/tables`, { ...data, moduleId });
+        return res.data;
+      }
+    },
+    [moduleId]
+  );
 
   // Eliminar una tabla lógica
   const deleteTable = useCallback(async (id) => {

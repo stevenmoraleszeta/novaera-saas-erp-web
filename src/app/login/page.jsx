@@ -1,21 +1,24 @@
-// Login Page
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../hooks/useAuth';
-import FormInput from '../../components/commmon/FormInput';
-import Button from '../../components/commmon/Button';
-import Loader from '../../components/ui/Loader';
-import Alert from '../../components/commmon/Alert';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
+
+const Loader = dynamic(() => import('../../components/ui/Loader'), { ssr: false, loading: () => <p>Cargando...</p> });
+const Alert = dynamic(() => import('../../components/commmon/Alert'), { ssr: false });
+const FormInput = dynamic(() => import('../../components/commmon/FormInput'), { ssr: false });
+const Button = dynamic(() => import('../../components/commmon/Button'), { ssr: false });
 
 export default function LoginPage() {
   const { login, status, error } = useAuth();
   const router = useRouter();
+
   const [form, setForm] = useState({ email: '', password: '' });
   const [formError, setFormError] = useState({});
-  const [submitting, setSubmitting] = useState(false);
   const [localError, setLocalError] = useState('');
+
+  const isSubmitting = status === 'authenticating';
 
   const validate = () => {
     const err = {};
@@ -25,43 +28,29 @@ export default function LoginPage() {
     return Object.keys(err).length === 0;
   };
 
-  const handleChange = (e) => {
+  const handleChange = useCallback((e) => {
     const { name, value } = e.target;
-    console.log(`Campo ${name} cambiado a: ${value}`);
-    setForm({ ...form, [name]: value });
-    setFormError({ ...formError, [name]: '' });
+    setForm(prev => ({ ...prev, [name]: value }));
+    setFormError(prev => ({ ...prev, [name]: '' }));
     setLocalError('');
-  };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Iniciando proceso de login...', form);
 
-    if (!validate()) {
-      console.log('Validación fallida', formError);
-      return;
-    }
+    if (!validate()) return;
 
-    setSubmitting(true);
     setLocalError('');
 
     try {
-      console.log('Intentando login con:', form.email);
       const ok = await login(form.email, form.password);
-      console.log('Resultado login:', ok);
-
       if (ok) {
-        console.log('Login exitoso, redirigiendo...');
         router.replace('/dashboard');
       } else {
-        console.log('Login fallido');
         setLocalError('No se pudo iniciar sesión. Verifica tus credenciales.');
       }
     } catch (err) {
-      console.error('Error en login:', err);
       setLocalError(err.message || 'Error al intentar iniciar sesión');
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -89,9 +78,9 @@ export default function LoginPage() {
         />
         <Button
           type="submit"
-          disabled={submitting || status === 'authenticating'}
+          disabled={isSubmitting}
         >
-          {submitting || status === 'authenticating' ? <Loader text="Validando..." /> : 'Ingresar'}
+          {isSubmitting ? <Loader text="Validando..." /> : 'Ingresar'}
         </Button>
         <div style={{ textAlign: 'center', marginTop: 8 }}>
           <Link href="/register">¿No tienes cuenta? Regístrate</Link>

@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { useColumns } from '@/hooks/useColumns';  // Hook para manejar CRUD columnas
+import React, { useState, useEffect, useCallback } from 'react';
+import { useColumns } from '@/hooks/useColumns';
 import ColumnListTable from './ColumnListTable';
 import ColumnForm from './ColumnForm';
 import Modal from '@/components/commmon/Modal';
-import TablePreview from './TablePreview'
+import TablePreview from './TablePreview';
 import DeleteConfirmationDialog from '@/components/commmon/DeleteConfirmationDialog';
 
 export default function ColumnManager({ tableId, tableName }) {
@@ -12,28 +12,32 @@ export default function ColumnManager({ tableId, tableName }) {
     loading,
     error,
     fetchColumns,
-    success,
     handleCreate,
     handleUpdate,
     handleDelete,
     handleUpdatePosition,
-    
   } = useColumns(tableId);
 
   const [selectedColumn, setSelectedColumn] = useState(null);
   const [formMode, setFormMode] = useState('create'); // 'create' o 'edit'
-   const [columnToDelete, setColumnToDelete] = useState(null);
-   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [columnToDelete, setColumnToDelete] = useState(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-    const [modalState, setModalState] = React.useState({
-      showModal: false,
-      formLoading: false,
-      formError: null
-    });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
+  const [formError, setFormError] = useState(null);
 
   useEffect(() => {
     if (tableId) fetchColumns();
   }, [tableId, fetchColumns]);
+
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedColumn(null);
+    setFormMode('create');
+    setFormError(null);
+  };
 
   const handleDeleteClick = (column) => {
     setColumnToDelete(column);
@@ -45,7 +49,7 @@ export default function ColumnManager({ tableId, tableName }) {
       await handleDelete(columnToDelete);
       setShowDeleteDialog(false);
       setColumnToDelete(null);
-      closeModal();
+      closeModal(); // Opcional, depende de UX
     } catch (err) {
       console.error('Error al eliminar la columna:', err);
     }
@@ -56,40 +60,48 @@ export default function ColumnManager({ tableId, tableName }) {
     setColumnToDelete(null);
   };
 
-
   const handleFormSubmit = async (formData) => {
-    if (formMode === 'create') {
-      await handleCreate(formData);
-    } else if (formMode === 'edit') {
-      await handleUpdate(selectedColumn.id, formData);
+    setFormLoading(true);
+    setFormError(null);
+    try {
+      if (formMode === 'create') {
+        await handleCreate(formData);
+      } else if (formMode === 'edit') {
+        await handleUpdate(selectedColumn.id, formData);
+      }
+      fetchColumns();
+      closeModal();
+    } catch (err) {
+      setFormError(err?.message || 'Error al guardar');
+    } finally {
+      setFormLoading(false);
     }
-    setSelectedColumn(null);
-    setFormMode('create');
-    fetchColumns();
-    setModalState({ showModal: false, formLoading: false, formError: null });
   };
 
   const handleFormCancel = () => {
+    closeModal();
+  };
+
+  const handleCreateCol = () => {
     setSelectedColumn(null);
     setFormMode('create');
+    openModal();
   };
 
-    const handleCreateCol = (column) => {
-    setSelectedColumn(column);
-    setFormMode('create');
-    setModalState({ showModal: true, formLoading: false, formError: null });
-  };
-
-    const handleEdit = (column) => {
+  const handleEdit = (column) => {
     setSelectedColumn(column);
     setFormMode('edit');
-    setModalState({ showModal: true, formLoading: false, formError: null });
+    openModal();
   };
 
-
-
-  const closeModal = () =>
-    setModalState({ showModal: false, formLoading: false, formError: null });
+  const handleReorder = useCallback(
+    (reorderedCols) => {
+      reorderedCols.forEach((col, index) => {
+        handleUpdatePosition(col.id, index + 1);
+      });
+    },
+    [handleUpdatePosition]
+  );
 
   return (
     <div>
@@ -101,31 +113,22 @@ export default function ColumnManager({ tableId, tableName }) {
         onEdit={handleEdit}
         onDelete={handleDeleteClick}
         onAdd={handleCreateCol}
-        onReorder={(reorderedCols) => {
-          reorderedCols.forEach((col, index) => {
-            handleUpdatePosition(col.id, index + 1);
-        });
-  }}
+        onReorder={handleReorder}
       />
 
-      <Modal
-        isOpen={modalState.showModal}
-        onClose={closeModal}
-        size="large"
-        showCloseButton
-      >
-      <ColumnForm
-        mode={formMode}
-        initialData={selectedColumn}
-        onSubmit={handleFormSubmit}
-        onCancel={handleFormCancel}
-        onDelete={handleDeleteClick}
-        loading={loading}
-        error={error}
-        tableId={tableId}
-        lastPosition={columns.length} 
-      />
-        </Modal>
+      <Modal isOpen={isModalOpen} onClose={closeModal} size="large" showCloseButton>
+        <ColumnForm
+          mode={formMode}
+          initialData={selectedColumn}
+          onSubmit={handleFormSubmit}
+          onCancel={handleFormCancel}
+          onDelete={handleDeleteClick}
+          loading={formLoading || loading}
+          error={formError || error}
+          tableId={tableId}
+          lastPosition={columns.length}
+        />
+      </Modal>
 
       <DeleteConfirmationDialog
         isOpen={showDeleteDialog}
@@ -137,8 +140,7 @@ export default function ColumnManager({ tableId, tableName }) {
         cancelText="Cancelar"
       />
 
-        <TablePreview tableName={tableName} columns={columns} />
-      
+      <TablePreview tableName={tableName} columns={columns} />
     </div>
   );
 }

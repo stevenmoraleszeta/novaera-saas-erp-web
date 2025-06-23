@@ -10,6 +10,7 @@ const modules = [
   { name: 'Módulos', path: '/modulos', icon: <PiLayoutBold size={22} /> },
   { name: 'Roles', path: '/roles', icon: <PiShieldStarBold size={22} /> },
   { name: 'Permisos', path: '/permissions', icon: <PiLayoutBold size={22} /> },
+   { name: 'Test', path: '/test', icon: <PiLayoutBold size={22} /> },
   // Agrega más módulos según permisos
 ];
 

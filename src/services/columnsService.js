@@ -75,6 +75,7 @@ export async function getColumnById(columnId) {
 // Actualizar columna
 export async function updateColumn(columnId, updatedColumn) {
   const payload = mapColumnToBackend(updatedColumn);
+  console.log("payload", payload);
   const res = await axios.put(`/columns/${columnId}`, payload);
   return mapColumnFromBackend(res.data);
 }
