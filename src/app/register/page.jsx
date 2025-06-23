@@ -2,7 +2,7 @@
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "../../hooks/useAuth";
+import { register as authServiceRegister } from "@/services/authService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,6 @@ import { Eye, EyeOff } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register, status, error: authError } = useAuth();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -57,7 +56,7 @@ export default function RegisterPage() {
     setSuccess(null);
 
     try {
-      const response = await register(
+      const response = await authServiceRegister(
         form.name.trim(),
         form.email.trim(),
         form.password
@@ -67,7 +66,7 @@ export default function RegisterPage() {
       );
       setTimeout(() => router.replace("/login"), 2000);
     } catch (err) {
-      setError(err?.message || authError || "Error al registrar usuario");
+      setError(err?.message || "Error al registrar usuario");
     } finally {
       setSubmitting(false);
     }
@@ -115,7 +114,7 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 placeholder="Tu Nombre Completo"
                 autoFocus
-                disabled={submitting || status === "registering"}
+                disabled={submitting}
                 className={formError.name ? "border-red-500" : ""}
               />
               {formError.name && (
@@ -137,7 +136,7 @@ export default function RegisterPage() {
                 placeholder="usuario@ejemplo.com"
                 value={form.email}
                 onChange={handleChange}
-                disabled={submitting || status === "registering"}
+                disabled={submitting}
                 className={formError.email ? "border-red-500" : ""}
               />
               {formError.email && (
@@ -159,7 +158,7 @@ export default function RegisterPage() {
                 placeholder="••••••••"
                 value={form.password}
                 onChange={handleChange}
-                disabled={submitting || status === "registering"}
+                disabled={submitting}
                 className={`pr-10 ${
                   formError.password ? "border-red-500" : ""
                 }`}
@@ -198,7 +197,7 @@ export default function RegisterPage() {
                 placeholder="••••••••"
                 value={form.confirmPassword}
                 onChange={handleChange}
-                disabled={submitting || status === "registering"}
+                disabled={submitting}
                 className={`pr-10 ${
                   formError.confirmPassword ? "border-red-500" : ""
                 }`}
@@ -226,11 +225,9 @@ export default function RegisterPage() {
             <Button
               type="submit"
               className="w-full h-12 text-lg font-semibold"
-              disabled={submitting || status === "registering"}
+              disabled={submitting}
             >
-              {submitting || status === "registering"
-                ? "Registrando..."
-                : "Registrarse"}
+              {submitting ? "Registrando..." : "Registrarse"}
             </Button>
 
             <div className="text-center mt-2">

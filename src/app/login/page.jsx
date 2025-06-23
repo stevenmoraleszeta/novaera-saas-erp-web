@@ -2,15 +2,16 @@
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "../../hooks/useAuth";
+import useUserStore from "../../stores/userStore";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
+import { login as authServiceLogin } from "@/services/authService";
 
 export default function LoginPage() {
-  const { login, status, error } = useAuth();
+  const { setUser } = useUserStore();
   const router = useRouter();
   const [form, setForm] = useState({ email: "", password: "" });
   const [formError, setFormError] = useState({});
@@ -39,8 +40,9 @@ export default function LoginPage() {
     setSubmitting(true);
     setLocalError("");
     try {
-      const ok = await login(form.email, form.password);
-      if (ok) {
+      const response = await authServiceLogin(form.email, form.password);
+      if (response.user) {
+        setUser(response.user);
         router.replace("/");
       } else {
         setLocalError("No se pudo iniciar sesión. Verifica tus credenciales.");
@@ -69,11 +71,6 @@ export default function LoginPage() {
                 Accede a tu cuenta del sistema ERP
               </p>
             </div>
-            {error && error !== "No autenticado" && (
-              <div className="bg-red-100 text-red-700 rounded px-3 py-2 text-sm text-center">
-                {error}
-              </div>
-            )}
             {localError && (
               <div className="bg-red-100 text-red-700 rounded px-3 py-2 text-sm text-center">
                 {localError}
@@ -94,7 +91,7 @@ export default function LoginPage() {
                 value={form.email}
                 onChange={handleChange}
                 autoFocus
-                disabled={submitting || status === "authenticating"}
+                disabled={submitting}
                 className={formError.email ? "border-red-500" : ""}
                 aria-invalid={!!formError.email}
                 aria-describedby="email-error"
@@ -119,7 +116,7 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 value={form.password}
                 onChange={handleChange}
-                disabled={submitting || status === "authenticating"}
+                disabled={submitting}
                 className={`pr-10 ${
                   formError.password ? "border-red-500" : ""
                 }`}
@@ -148,11 +145,9 @@ export default function LoginPage() {
             <Button
               type="submit"
               className="w-full h-12 text-lg font-semibold"
-              disabled={submitting || status === "authenticating"}
+              disabled={submitting}
             >
-              {submitting || status === "authenticating"
-                ? "Validando..."
-                : "Ingresar"}
+              {submitting ? "Validando..." : "Ingresar"}
             </Button>
             <div className="text-center mt-2">
               <Link href="/register" className="hover:underline font-medium">

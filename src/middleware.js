@@ -1,47 +1,75 @@
 import { NextResponse } from "next/server";
 
-// Auth pages that don't need authentication
-const AUTH_PAGES = ["/login", "/register"];
-
-// Pages that require authentication
-const PROTECTED_PAGES = ["/modulos", "/usuarios", "/roles", "/permissions"];
-
 export function middleware(request) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("token")?.value;
 
-  // Check if it's an auth page
-  const isAuthPage = AUTH_PAGES.some((page) => pathname.startsWith(page));
-
-  // Check if it's a protected page
-  const isProtectedPage =
-    PROTECTED_PAGES.some((page) => pathname.startsWith(page)) ||
-    pathname.startsWith("/modulos/");
-
-  // If accessing protected page without token, redirect to login
-  if (isProtectedPage && !token) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(loginUrl);
+  // Skip middleware for static assets and API routes
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api") ||
+    pathname.includes(".")
+  ) {
+    return NextResponse.next();
   }
 
-  // If accessing auth page with token, redirect to home
-  if (isAuthPage && token) {
+  console.log(
+    `🔍 Middleware: ${pathname} - Token: ${token ? "Present" : "Missing"}`
+  );
+
+  // Define auth routes (login/register)
+  const authRoutes = ["/login", "/register"];
+
+  // Define protected routes (require authentication)
+  const protectedRoutes = [
+    "/modulos",
+    "/usuarios",
+    "/roles",
+    "/permissions",
+    "/profile",
+  ];
+
+  // Check if current path is an auth route
+  const isAuthRoute = authRoutes.includes(pathname);
+
+  // Check if current path is a protected route (exact match or starts with)
+  const isProtectedRoute =
+    protectedRoutes.some((route) => pathname.startsWith(route)) ||
+    pathname === "/";
+
+  console.log(
+    `🔍 Middleware: isProtectedRoute: ${isProtectedRoute}, isAuthRoute: ${isAuthRoute}`
+  );
+
+  // If user is authenticated and tries to access auth pages, redirect to dashboard
+  if (isAuthRoute && token) {
+    console.log(
+      `🔍 Middleware: Authenticated user accessing auth route, redirecting to /`
+    );
     return NextResponse.redirect(new URL("/", request.url));
   }
 
+  // If user is not authenticated and tries to access protected routes, redirect to login
+  if (isProtectedRoute && !token) {
+    console.log(
+      `🔍 Middleware: Unauthenticated user accessing protected route, redirecting to /login`
+    );
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  console.log(`🔍 Middleware: Allowing access to ${pathname}`);
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    "/",
+    "/login",
+    "/register",
+    "/modulos/:path*",
+    "/usuarios/:path*",
+    "/roles/:path*",
+    "/permissions/:path*",
+    "/profile/:path*",
   ],
 };

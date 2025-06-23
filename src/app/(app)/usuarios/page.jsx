@@ -1,17 +1,37 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../../components/AuthProvider";
+import useUserStore from "../../stores/userStore";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Edit3, Trash2, Plus, Search, Filter } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import UserList from "../../components/UserList";
 import Alert from "../../components/Alert";
-import Modal from "../../components/Modal";
-import UserForm from "../../components/UserForm";
-import { useEditMode } from "../../context/EditModeContext";
-import DeleteConfirmationDialog from "../../components/DeleteConfirmationDialog";
-import { Badge } from "../../components/ui/badge";
-import { Edit3 } from "lucide-react";
+import UserForm from "@/components/UserForm";
+import { useEditMode } from "@/context/EditModeContext";
+import DeleteConfirmationDialog from "@/components/DeleteConfirmationDialog";
 
-export default function UsersPage() {
+export default function UsuariosPage() {
+  const { user } = useUserStore();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -22,7 +42,6 @@ export default function UsersPage() {
   const [totalUsers, setTotalUsers] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  const { user, status } = useAuth();
   const { isEditingMode } = useEditMode();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
@@ -257,26 +276,25 @@ export default function UsersPage() {
         onSearch={handleSearch}
       />
 
-      <Modal
-        isOpen={modalState.showModal}
-        onClose={closeModal}
-        size="large"
-        showCloseButton
-      >
-        <UserForm
-          mode={modalState.selectedUser ? "edit" : "create"}
-          initialData={modalState.selectedUser}
-          onSubmit={handleFormSubmit}
-          onCancel={closeModal}
-          onDelete={handleDeleteClick}
-          loading={modalState.formLoading}
-          error={modalState.formError}
-        />
-      </Modal>
+      <UserForm
+        open={modalState.showModal}
+        onOpenChange={(open) => {
+          if (!open) closeModal();
+        }}
+        mode={modalState.selectedUser ? "edit" : "create"}
+        initialData={modalState.selectedUser}
+        onSubmit={handleFormSubmit}
+        onCancel={closeModal}
+        onDelete={handleDeleteClick}
+        loading={modalState.formLoading}
+        error={modalState.formError}
+      />
 
       <DeleteConfirmationDialog
-        isOpen={showDeleteDialog}
-        onClose={handleCancelDelete}
+        open={showDeleteDialog}
+        onOpenChange={(open) => {
+          if (!open) handleCancelDelete();
+        }}
         onConfirm={handleConfirmDelete}
         title="¿Eliminar usuario?"
         message={`¿Estás seguro de que deseas eliminar "${userToDelete?.name}"?`}

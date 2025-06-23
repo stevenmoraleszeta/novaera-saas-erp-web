@@ -4,9 +4,8 @@ import React, { useState, useEffect } from "react";
 import { useModules } from "@/hooks/useModules";
 import ModuleList from "@/components/ModuleList";
 import Alert from "@/components/Alert";
-import Modal from "@/components/Modal";
 import ModuleForm from "@/components/ModuleForm";
-import { useAuth } from "@/components/AuthProvider";
+import useUserStore from "@/stores/userStore";
 import { useEditMode } from "@/context/EditModeContext";
 import DeleteConfirmationDialog from "@/components/DeleteConfirmationDialog";
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +34,7 @@ export default function ModulesPage() {
     clearMessages,
   } = useModules();
 
-  const { user, status } = useAuth();
+  const { user } = useUserStore();
   const { isEditingMode } = useEditMode();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [moduleToDelete, setModuleToDelete] = useState(null);
@@ -151,26 +150,25 @@ export default function ModulesPage() {
         isEditingMode={isEditingMode}
       />
 
-      <Modal
-        isOpen={modalState.showModal}
-        onClose={closeModal}
-        size="large"
-        showCloseButton
-      >
-        <ModuleForm
-          mode={modalState.selectedModule ? "edit" : "create"}
-          initialData={modalState.selectedModule}
-          onSubmit={handleFormSubmit}
-          onCancel={closeModal}
-          onDelete={handleDeleteClick}
-          loading={modalState.formLoading}
-          error={modalState.formError}
-        />
-      </Modal>
+      <ModuleForm
+        open={modalState.showModal}
+        onOpenChange={(open) => {
+          if (!open) closeModal();
+        }}
+        mode={modalState.selectedModule ? "edit" : "create"}
+        initialData={modalState.selectedModule}
+        onSubmit={handleFormSubmit}
+        onCancel={closeModal}
+        onDelete={handleDeleteClick}
+        loading={modalState.formLoading}
+        error={modalState.formError}
+      />
 
       <DeleteConfirmationDialog
-        isOpen={showDeleteDialog}
-        onClose={handleCancelDelete}
+        open={showDeleteDialog}
+        onOpenChange={(open) => {
+          if (!open) handleCancelDelete();
+        }}
         onConfirm={handleConfirmDelete}
         title="¿Eliminar módulo?"
         message={`¿Estás seguro de que deseas eliminar "${moduleToDelete?.name}"?`}

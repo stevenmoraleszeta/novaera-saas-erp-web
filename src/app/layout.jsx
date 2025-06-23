@@ -1,9 +1,7 @@
 import React from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "../components/AuthProvider";
 import { EditModeProvider } from "../context/EditModeContext";
-import { ServerLayoutWrapper } from "../components/ServerLayoutWrapper";
 import { TabProvider } from "@/context/TabContext";
 
 const geistSans = Geist({
@@ -22,13 +20,9 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-erp-gradient`}
       >
-        <AuthProvider>
-          <EditModeProvider>
-            <TabProvider>
-              <ServerLayoutWrapper>{children}</ServerLayoutWrapper>
-            </TabProvider>
-          </EditModeProvider>
-        </AuthProvider>
+        <EditModeProvider>
+          <TabProvider>{children}</TabProvider>
+        </EditModeProvider>
       </body>
     </html>
   );
