@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useContext } from "react";
+import React from "react";
 import { Settings, Bell, Edit3, Eye, Users, Shield, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,13 +18,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AuthContext } from "../context/AuthContext";
+import { useAuth } from "./AuthProvider";
 import { useEditMode } from "../context/EditModeContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function Header() {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const { isEditingMode, toggleEditMode } = useEditMode();
   const router = useRouter();
 

@@ -1,11 +1,15 @@
 // UserDetailView.jsx - Component to display detailed user information
-import React, { useContext } from 'react';
-import UserStatusBadge from './UserStatusBadge';
-import Button from './Button';
-import ConfirmationModal from './ConfirmationModal';
-import Alert from './Alert';
-import { useConfirmationModal } from '../hooks/useModal';
-import { AuthContext } from '../context/AuthContext';
+import React, { useState, useEffect, useContext } from "react";
+import { useParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "./AuthProvider";
+import { Edit3, Trash2, Eye, EyeOff } from "lucide-react";
+import UserStatusBadge from "./UserStatusBadge";
+import ConfirmationModal from "./ConfirmationModal";
+import Alert from "./Alert";
+import { useConfirmationModal } from "../hooks/useModal";
 import {
   PiPencilBold,
   PiTrashBold,
@@ -16,8 +20,8 @@ import {
   PiToggleLeftBold,
   PiToggleRightBold,
   PiLockBold,
-  PiLockOpenBold
-} from 'react-icons/pi';
+  PiLockOpenBold,
+} from "react-icons/pi";
 
 /**
  * Props:
@@ -37,25 +41,14 @@ import {
  *  - canManageStatus: boolean (default: true)
  *  - canBlockUsers: boolean (default: false)
  */
-export default function UserDetailView({
-  user,
-  onEdit,
-  onDelete,
-  onToggleStatus,
-  onBlockUser,
-  onUnblockUser,
-  onClose,
-  loading = false,
-  error = null,
-  success = null,
-  onClearMessages,
-  canEdit = true,
-  canDelete = true,
-  canManageStatus = true,
-  canBlockUsers = false
-}) {
-  // Get current user context for permissions
-  const { user: currentUser } = useContext(AuthContext);
+export default function UserDetailView() {
+  const { id } = useParams();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const { user: currentUser } = useAuth();
 
   // Confirmation modal hook
   const {
@@ -64,45 +57,109 @@ export default function UserDetailView({
     openConfirmation,
     closeConfirmation,
     handleConfirm,
-    handleCancel
   } = useConfirmationModal();
+
+  // Mock user data - replace with actual API call
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        setLoading(true);
+        // Simulate API call
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        const mockUser = {
+          id: parseInt(id),
+          name: "Juan Pérez",
+          email: "juan.perez@empresa.com",
+          role: "Administrador",
+          department: "IT",
+          status: "Activo",
+          createdAt: "2024-01-15",
+          lastLogin: "2024-01-20T10:30:00Z",
+          permissions: ["read", "write", "delete", "admin"],
+          phone: "+1 234 567 8900",
+          address: "123 Main St, City, State 12345",
+        };
+
+        setUser(mockUser);
+      } catch (err) {
+        setError("Error al cargar el usuario");
+        console.error("Error fetching user:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, [id]);
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleSave = () => {
+    // Handle save logic here
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+  };
+
+  const handleDelete = () => {
+    // Handle delete logic here
+    console.log("Deleting user:", user.id);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
-      <div className="user-detail-view">
-        <div className="no-user">
-          <PiUserBold className="no-user-icon" />
-          <p>No se encontró información del usuario</p>
-        </div>
+      <div className="p-8 text-center">
+        <p>Usuario no encontrado</p>
       </div>
     );
   }
 
   // Format date
   const formatDate = (dateString) => {
-    if (!dateString) return 'No disponible';
+    if (!dateString) return "No disponible";
     try {
-      return new Date(dateString).toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+      return new Date(dateString).toLocaleDateString("es-ES", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     } catch (error) {
-      return 'Fecha inválida';
+      return "Fecha inválida";
     }
   };
 
   // Get role display name
   const getRoleDisplayName = (role) => {
-    if (!role) return 'Sin rol';
+    if (!role) return "Sin rol";
 
     const roleMap = {
-      admin: 'Administrador',
-      manager: 'Gerente',
-      supervisor: 'Supervisor',
-      user: 'Usuario'
+      admin: "Administrador",
+      manager: "Gerente",
+      supervisor: "Supervisor",
+      user: "Usuario",
     };
 
     const displayName = roleMap[role.toLowerCase()] || role;
@@ -118,20 +175,22 @@ export default function UserDetailView({
     const targetUserRole = user.role?.toLowerCase();
 
     switch (action) {
-      case 'edit':
-        return canEdit && (
-          currentUserRole === 'admin' ||
-          (currentUserRole === 'manager' && targetUserRole !== 'admin')
+      case "edit":
+        return (
+          canEdit &&
+          (currentUserRole === "admin" ||
+            (currentUserRole === "manager" && targetUserRole !== "admin"))
         );
-      case 'delete':
-        return canDelete && currentUserRole === 'admin';
-      case 'toggleStatus':
-        return canManageStatus && (
-          currentUserRole === 'admin' ||
-          (currentUserRole === 'manager' && targetUserRole !== 'admin')
+      case "delete":
+        return canDelete && currentUserRole === "admin";
+      case "toggleStatus":
+        return (
+          canManageStatus &&
+          (currentUserRole === "admin" ||
+            (currentUserRole === "manager" && targetUserRole !== "admin"))
         );
-      case 'block':
-        return canBlockUsers && currentUserRole === 'admin';
+      case "block":
+        return canBlockUsers && currentUserRole === "admin";
       default:
         return false;
     }
@@ -139,248 +198,185 @@ export default function UserDetailView({
 
   // Handle status toggle with confirmation
   const handleToggleStatus = () => {
-    const action = user.isActive ? 'desactivar' : 'activar';
-    const actionCapitalized = user.isActive ? 'Desactivar' : 'Activar';
+    const action = user.status === "Activo" ? "desactivar" : "activar";
+    const actionCapitalized =
+      user.status === "Activo" ? "Desactivar" : "Activar";
 
     openConfirmation({
       title: `${actionCapitalized} Usuario`,
-      message: `¿Estás seguro de que deseas ${action} a ${user.name}? ${user.isActive
-        ? 'El usuario no podrá acceder al sistema.'
-        : 'El usuario podrá acceder al sistema nuevamente.'
-        }`,
+      message: `¿Estás seguro de que deseas ${action} a ${user.name}? ${
+        user.status === "Activo"
+          ? "El usuario no podrá acceder al sistema."
+          : "El usuario podrá acceder al sistema nuevamente."
+      }`,
       confirmText: `Sí, ${action}`,
-      cancelText: 'Cancelar',
-      type: user.isActive ? 'warning' : 'default',
-      onConfirm: () => onToggleStatus && onToggleStatus(user)
+      cancelText: "Cancelar",
+      type: user.status === "Activo" ? "warning" : "default",
+      onConfirm: () => onToggleStatus && onToggleStatus(user),
     });
   };
 
   // Handle user blocking with confirmation
   const handleBlockUser = () => {
     openConfirmation({
-      title: 'Bloquear Usuario',
+      title: "Bloquear Usuario",
       message: `¿Estás seguro de que deseas bloquear a ${user.name}? El usuario no podrá acceder al sistema hasta ser desbloqueado.`,
-      confirmText: 'Sí, bloquear',
-      cancelText: 'Cancelar',
-      type: 'danger',
-      onConfirm: () => onBlockUser && onBlockUser(user)
+      confirmText: "Sí, bloquear",
+      cancelText: "Cancelar",
+      type: "danger",
+      onConfirm: () => onBlockUser && onBlockUser(user),
     });
   };
 
   // Handle user unblocking with confirmation
   const handleUnblockUser = () => {
     openConfirmation({
-      title: 'Desbloquear Usuario',
+      title: "Desbloquear Usuario",
       message: `¿Estás seguro de que deseas desbloquear a ${user.name}? El usuario podrá acceder al sistema nuevamente.`,
-      confirmText: 'Sí, desbloquear',
-      cancelText: 'Cancelar',
-      type: 'default',
-      onConfirm: () => onUnblockUser && onUnblockUser(user)
+      confirmText: "Sí, desbloquear",
+      cancelText: "Cancelar",
+      type: "default",
+      onConfirm: () => onUnblockUser && onUnblockUser(user),
     });
   };
 
   // Handle user deletion with confirmation
   const handleDeleteUser = () => {
     openConfirmation({
-      title: 'Eliminar Usuario',
+      title: "Eliminar Usuario",
       message: `¿Estás seguro de que deseas eliminar a ${user.name}? Esta acción no se puede deshacer.`,
-      confirmText: 'Sí, eliminar',
-      cancelText: 'Cancelar',
-      type: 'danger',
-      onConfirm: () => onDelete && onDelete(user)
+      confirmText: "Sí, eliminar",
+      cancelText: "Cancelar",
+      type: "danger",
+      onConfirm: () => onDelete && onDelete(user),
     });
   };
 
   return (
-    <div className="user-detail-view">
-      {/* Notifications */}
-      {error && (
-        <Alert
-          type="error"
-          message={error}
-          onClose={onClearMessages}
-        />
-      )}
-      {success && (
-        <Alert
-          type="success"
-          message={success}
-          onClose={onClearMessages}
-        />
-      )}
-
-      {/* User Header */}
-      <div className="user-header">
-        <div className="user-avatar-large">
-          {user.avatar ? (
-            <img src={user.avatar} alt={user.name} />
+    <div className="max-w-4xl mx-auto p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">
+          Detalles del Usuario
+        </h1>
+        <div className="flex gap-2">
+          {isEditing ? (
+            <>
+              <Button
+                onClick={handleSave}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Guardar
+              </Button>
+              <Button onClick={handleCancel} variant="outline">
+                Cancelar
+              </Button>
+            </>
           ) : (
-            <span className="avatar-initials">
-              {user.name?.charAt(0)?.toUpperCase() || 'U'}
-            </span>
+            <>
+              <Button onClick={handleEdit} variant="outline">
+                <Edit3 className="w-4 h-4 mr-2" />
+                Editar
+              </Button>
+              <Button onClick={handleDeleteUser} variant="destructive">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Eliminar
+              </Button>
+            </>
           )}
-        </div>
-        <div className="user-info">
-          <h2 className="user-name">{user.name || 'Sin nombre'}</h2>
-          <p className="user-email">{user.email}</p>
-          <div className="user-badges">
-            <UserStatusBadge isActive={user.isActive} size="medium" />
-            {user.isBlocked && (
-              <span className="blocked-badge">Bloqueado</span>
-            )}
-          </div>
         </div>
       </div>
 
-      {/* User Details */}
-      <div className="user-details">
-        <div className="detail-section">
-          <h3>Información Personal</h3>
-          <div className="detail-grid">
-            <div className="detail-item">
-              <PiUserBold className="detail-icon" />
-              <div className="detail-content">
-                <label>Nombre completo</label>
-                <span>{user.name || 'No especificado'}</span>
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Basic Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Información Básica</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-600">
+                Nombre
+              </label>
+              <p className="text-lg">{user.name}</p>
             </div>
-
-            <div className="detail-item">
-              <PiEnvelopeBold className="detail-icon" />
-              <div className="detail-content">
-                <label>Correo electrónico</label>
-                <span>{user.email}</span>
-              </div>
+            <div>
+              <label className="text-sm font-medium text-gray-600">Email</label>
+              <p className="text-lg">{user.email}</p>
             </div>
-          </div>
-        </div>
-
-        <div className="detail-section">
-          <h3>Información del Sistema</h3>
-          <div className="detail-grid">
-            <div className="detail-item">
-              <PiShieldBold className="detail-icon" />
-              <div className="detail-content">
-                <label>Rol</label>
-                <span className={`role-badge ${user.role?.toLowerCase()}`}>
-                  {getRoleDisplayName(user.role)}
-                </span>
-              </div>
+            <div>
+              <label className="text-sm font-medium text-gray-600">
+                Teléfono
+              </label>
+              <p className="text-lg">{user.phone}</p>
             </div>
-
-            <div className="detail-item">
-              <PiCalendarBold className="detail-icon" />
-              <div className="detail-content">
-                <label>Fecha de registro</label>
-                <span>{formatDate(user.createdAt)}</span>
-              </div>
+            <div>
+              <label className="text-sm font-medium text-gray-600">
+                Dirección
+              </label>
+              <p className="text-lg">{user.address}</p>
             </div>
+          </CardContent>
+        </Card>
 
-            {user.lastLogin && (
-              <div className="detail-item">
-                <PiCalendarBold className="detail-icon" />
-                <div className="detail-content">
-                  <label>Último acceso</label>
-                  <span>{formatDate(user.lastLogin)}</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Status Information */}
-        <div className="detail-section">
-          <h3>Estado de la Cuenta</h3>
-          <div className="status-info">
-            <div className="status-item">
-              <span className="status-label">Estado:</span>
-              <UserStatusBadge isActive={user.isActive} size="small" />
-              <span className="status-description">
-                {user.isActive ? 'Cuenta activa y operativa' : 'Cuenta desactivada'}
-              </span>
+        {/* Work Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Información Laboral</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-600">Rol</label>
+              <Badge variant="secondary" className="text-sm">
+                {getRoleDisplayName(user.role)}
+              </Badge>
             </div>
+            <div>
+              <label className="text-sm font-medium text-gray-600">
+                Departamento
+              </label>
+              <p className="text-lg">{user.department}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-600">
+                Estado
+              </label>
+              <Badge
+                variant={user.status === "Activo" ? "default" : "destructive"}
+                className="text-sm"
+              >
+                {user.status}
+              </Badge>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-600">
+                Fecha de Creación
+              </label>
+              <p className="text-lg">{formatDate(user.createdAt)}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-600">
+                Último Acceso
+              </label>
+              <p className="text-lg">{formatDate(user.lastLogin)}</p>
+            </div>
+          </CardContent>
+        </Card>
 
-            {user.isBlocked && (
-              <div className="status-item blocked">
-                <span className="status-label">Bloqueo:</span>
-                <span className="blocked-badge">Bloqueado</span>
-                <span className="status-description">
-                  Usuario bloqueado por el administrador
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="detail-actions">
-        <div className="primary-actions">
-          {hasPermission('edit') && (
-            <Button
-              variant="primary"
-              onClick={() => onEdit(user)}
-              leftIcon={<PiPencilBold />}
-              disabled={loading}
-            >
-              Editar Usuario
-            </Button>
-          )}
-
-          {hasPermission('toggleStatus') && (
-            <Button
-              variant={user.isActive ? "outline" : "primary"}
-              onClick={handleToggleStatus}
-              leftIcon={user.isActive ? <PiToggleLeftBold /> : <PiToggleRightBold />}
-              disabled={loading}
-            >
-              {user.isActive ? 'Desactivar' : 'Activar'}
-            </Button>
-          )}
-
-          {hasPermission('block') && !user.isBlocked && (
-            <Button
-              variant="outline"
-              onClick={handleBlockUser}
-              leftIcon={<PiLockBold />}
-              disabled={loading}
-            >
-              Bloquear
-            </Button>
-          )}
-
-          {hasPermission('block') && user.isBlocked && (
-            <Button
-              variant="primary"
-              onClick={handleUnblockUser}
-              leftIcon={<PiLockOpenBold />}
-              disabled={loading}
-            >
-              Desbloquear
-            </Button>
-          )}
-        </div>
-
-        <div className="secondary-actions">
-          {hasPermission('delete') && (
-            <Button
-              variant="danger"
-              onClick={handleDeleteUser}
-              leftIcon={<PiTrashBold />}
-              disabled={loading}
-            >
-              Eliminar Usuario
-            </Button>
-          )}
-
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={loading}
-          >
-            Cerrar
-          </Button>
-        </div>
+        {/* Permissions */}
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Permisos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {user.permissions.map((permission) => (
+                <Badge key={permission} variant="outline">
+                  {permission}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Confirmation Modal */}
@@ -672,4 +668,4 @@ export default function UserDetailView({
       `}</style>
     </div>
   );
-} 
+}

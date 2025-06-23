@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useContext, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useModules } from "@/hooks/useModules";
 import ModuleList from "@/components/ModuleList";
 import Alert from "@/components/Alert";
 import Modal from "@/components/Modal";
 import ModuleForm from "@/components/ModuleForm";
-import { AuthContext } from "@/context/AuthContext";
+import { useAuth } from "@/components/AuthProvider";
 import { useEditMode } from "@/context/EditModeContext";
 import DeleteConfirmationDialog from "@/components/DeleteConfirmationDialog";
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +35,7 @@ export default function ModulesPage() {
     clearMessages,
   } = useModules();
 
-  const { user, status } = useContext(AuthContext);
+  const { user, status } = useAuth();
   const { isEditingMode } = useEditMode();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [moduleToDelete, setModuleToDelete] = useState(null);

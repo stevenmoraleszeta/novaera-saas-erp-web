@@ -1,224 +1,137 @@
-import React, { useState, useEffect, useContext } from 'react';
-import FormInput from './FormInput';
-import Button from './Button';
-import Alert from './Alert';
-import { AuthContext } from '../context/AuthContext';
- 
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "./AuthProvider";
+import { Trash2, Save, X } from "lucide-react";
 
-export default function ModuleForm({ mode = 'create', initialData = {}, onSubmit, onCancel, onDelete, loading, error }) {
-  const { user, status } = useContext(AuthContext);
-  const [formError, setFormError] = useState(null);
+export default function ModuleForm({
+  mode = "create",
+  initialData = null,
+  onSubmit,
+  onCancel,
+  onDelete,
+  loading = false,
+  error = null,
+}) {
+  const { user, status } = useAuth();
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    iconUrl: '',
-    isActive: true,
-    category: '',
-    created_by: user.id,
+    name: "",
+    description: "",
+    iconUrl: "",
   });
 
   useEffect(() => {
     if (initialData) {
       setFormData({
-        name: initialData.name || '',
-        description: initialData.description || '',
-        iconUrl: initialData.iconUrl || '',
-        isActive: initialData.isActive !== undefined ? initialData.isActive : true,
-        category: initialData.category || '',
-        created_by: user.id,
+        name: initialData.name || "",
+        description: initialData.description || "",
+        iconUrl: initialData.iconUrl || "",
       });
     }
   }, [initialData]);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (onSubmit) {
+      onSubmit(formData);
+    }
+  };
+
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [field]: value,
     }));
   };
 
-    const handleSubmit = async (e) => {
-      e.preventDefault();
-
-      if (!formData.name.trim()) {
-        setFormError('El nombre es obligatorio');
-        return;
-      }
-
-      try {
-        setFormError(null); 
-        await onSubmit(formData);
-      } catch (err) {
-        const errorMessage =
-          err?.response?.data?.error ||
-          err?.message ||
-          'Error al guardar el módulo';
-        setFormError(errorMessage);
-      }
-    };
-
-
-    const handleDelete = (e) => {
-    e.preventDefault();
-
-
-    onDelete(initialData.id);
+  const handleDelete = () => {
+    if (onDelete && initialData) {
+      onDelete(initialData);
+    }
   };
 
   return (
-      <div className="module-form">
-        <div className="form-header">
-            <h2>{mode === 'create' ? 'Crear Nuevo Módulo' : 'Editar Módulo'}</h2>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="name">Nombre del Módulo</Label>
+          <Input
+            id="name"
+            type="text"
+            value={formData.name}
+            onChange={(e) => handleChange("name", e.target.value)}
+            placeholder="Ingrese el nombre del módulo"
+            required
+            disabled={loading}
+          />
         </div>
 
-        {error && (
-            <Alert type="error" message={error} />
-        )}
-        {formError && (
-          <Alert type="error" message={formError} />
-        )}
+        <div>
+          <Label htmlFor="description">Descripción</Label>
+          <Textarea
+            id="description"
+            value={formData.description}
+            onChange={(e) => handleChange("description", e.target.value)}
+            placeholder="Ingrese la descripción del módulo"
+            rows={3}
+            disabled={loading}
+          />
+        </div>
 
-    <form onSubmit={handleSubmit} className="module-content" noValidate>
-      
-
-        <FormInput
-            label="Nombre"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            placeholder="Nombre del módulo"
-            autoFocus
-        />
-
-        <FormInput
-            label="URL del Ícono"
-            name="iconUrl"
+        <div>
+          <Label htmlFor="iconUrl">URL del Icono</Label>
+          <Input
+            id="iconUrl"
+            type="url"
             value={formData.iconUrl}
-            onChange={handleChange}
-            placeholder="Nombre del módulo"
-            autoFocus
-        />
-
-      <div className="form-actions">
-
-        <Button
-            type="submit"
-            variant="outline"
+            onChange={(e) => handleChange("iconUrl", e.target.value)}
+            placeholder="https://ejemplo.com/icono.png"
             disabled={loading}
-        >
-           {loading ? 'Guardando...' : (mode === 'create' ? 'Crear' : 'Actualizar')}
-        </Button>
-        {initialData && (
-        <Button
-            type="button"
-            variant="outline"
-            onClick={handleDelete}
-            disabled={loading}
-        >
-            Eliminar
-        </Button>
-        )}
+          />
+        </div>
       </div>
 
-      <style jsx>{`
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-red-600 text-sm">{error}</p>
+        </div>
+      )}
 
-        .module-form {
-          background: white;
-          border-radius: 0.75rem;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-          overflow: hidden;
-          max-width: 800px;
-          margin: 0 auto;
-        }
-        .module-content {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-          max-width: 500px;
-          margin: 0 auto;
-        }
+      <div className="flex justify-between">
+        <div className="flex gap-2">
+          <Button
+            type="submit"
+            disabled={loading}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {mode === "edit" ? "Actualizar" : "Crear"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={loading}
+          >
+            <X className="w-4 h-4 mr-2" />
+            Cancelar
+          </Button>
+        </div>
 
-        label {
-          font-weight: 600;
-          margin-bottom: 0.25rem;
-          color: #374151;
-        }
-
-        input[type="text"],
-        input[type="url"],
-        select,
-        textarea {
-          padding: 0.5em 0.75em;
-          border: 1.5px solid #d1d5db;
-          border-radius: 6px;
-          font-size: 1rem;
-          transition: border-color 0.2s;
-        }
-
-        input[type="text"]:focus,
-        input[type="url"]:focus,
-        select:focus,
-        textarea:focus {
-          outline: none;
-          border-color: #7ed957;
-          box-shadow: 0 0 5px #7ed957aa;
-        }
-
-        .checkbox-label {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          font-weight: 600;
-          color: #374151;
-        }
-
-        .error-message {
-          color: #b91c1c;
-          font-weight: 600;
-          background: #fee2e2;
-          padding: 0.5em 1em;
-          border-radius: 6px;
-        }
-
-        .form-actions {
-          display: flex;
-          gap: 1rem;
-          justify-content: flex-end;
-          margin-top: 1rem;
-        }
-
-        button {
-          padding: 0.6em 1.2em;
-          font-weight: 700;
-          font-size: 1rem;
-          border-radius: 8px;
-          cursor: pointer;
-          border: none;
-          transition: background-color 0.2s;
-        }
-
-        button[type="submit"] {
-          background-color: #7ed957;
-          color: white;
-        }
-
-        button[type="submit"]:disabled {
-          background-color: #a7d97d;
-          cursor: not-allowed;
-        }
-
-        .cancel-btn {
-          background-color: #e5e7eb;
-          color: #374151;
-        }
-
-        .cancel-btn:disabled {
-          background-color: #f3f4f6;
-          cursor: not-allowed;
-        }
-      `}</style>
+        {mode === "edit" && onDelete && (
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={loading}
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Eliminar
+          </Button>
+        )}
+      </div>
     </form>
-    </div>
   );
 }

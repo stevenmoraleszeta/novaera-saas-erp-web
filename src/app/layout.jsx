@@ -1,11 +1,9 @@
-"use client";
-
-import React, { Suspense } from "react";
+import React from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "../context/AuthContext";
+import { AuthProvider } from "../components/AuthProvider";
 import { EditModeProvider } from "../context/EditModeContext";
-import { LayoutWrapper } from "../components/LayoutWrapper";
+import { ServerLayoutWrapper } from "../components/ServerLayoutWrapper";
 import { TabProvider } from "@/context/TabContext";
 
 const geistSans = Geist({
@@ -27,9 +25,7 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <EditModeProvider>
             <TabProvider>
-              <Suspense fallback={<LoadingFallback />}>
-                <LayoutWrapper>{children}</LayoutWrapper>
-              </Suspense>
+              <ServerLayoutWrapper>{children}</ServerLayoutWrapper>
             </TabProvider>
           </EditModeProvider>
         </AuthProvider>

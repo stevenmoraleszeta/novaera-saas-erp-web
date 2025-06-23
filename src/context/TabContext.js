@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useState, useContext, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const TabContext = createContext();
 
@@ -73,6 +73,7 @@ const HOME_TAB = {
 
 export function TabProvider({ children }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [tabs, setTabs] = useState([HOME_TAB]);
   const [activeTab, setActiveTab] = useState("home");
   const [isInitialized, setIsInitialized] = useState(false);
@@ -231,8 +232,8 @@ export function TabProvider({ children }) {
   const navigateToTab = (tabId) => {
     const tab = tabs.find((t) => t.id === tabId);
     if (tab && tab.path) {
-      // Use Next.js router to navigate
-      window.location.href = tab.path;
+      // Use Next.js router for client-side navigation
+      router.push(tab.path);
     } else {
       setActiveTab(tabId);
     }

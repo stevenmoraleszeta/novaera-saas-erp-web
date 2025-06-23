@@ -1,32 +1,19 @@
 // Footer.jsx
-import React from 'react';
+import React from "react";
 
 export default function Footer() {
   return (
-    <footer className="footer">
+    <footer className="w-full bg-white text-black text-center py-4 fixed left-0 bottom-0 z-10 text-sm border-t border-gray-200">
+      <div>&copy; {new Date().getFullYear()} ERP System &mdash; v1.0.0</div>
       <div>
-        &copy; {new Date().getFullYear()} ERP System &mdash; v1.0.0
+        <a href="/legal" className="mx-2 hover:underline">
+          Legales
+        </a>{" "}
+        |
+        <a href="/soporte" className="mx-2 hover:underline">
+          Soporte
+        </a>
       </div>
-      <div>
-        <a href="/legal">Legales</a> | <a href="/soporte">Soporte</a>
-      </div>
-      <style jsx>{`
-        .footer {
-          width: 100%;
-          background: var(--secondary);
-          color: var(--foreground);
-          text-align: center;
-          padding: 1em 0;
-          position: fixed;
-          left: 0;
-          bottom: 0;
-          z-index: 10;
-          font-size: 0.95em;
-          border-top: 1px solid var(--border);
-        }
-        a { color: var(--primary); margin: 0 0.5em; }
-        a:hover { text-decoration: underline; }
-      `}</style>
     </footer>
   );
 }
