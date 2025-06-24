@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 import {
   getModules,
   createModule,
   updateModule,
   deleteModule,
-  getModuleById
-} from '@/services/moduleService';
+  getModuleById,
+} from "@/services/moduleService";
 
 export function useModules(initialParams = {}) {
   const [modules, setModules] = useState([]);
@@ -14,42 +14,44 @@ export function useModules(initialParams = {}) {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [error, setError] = useState(null);
   const [succes, setSucces] = useState(null);
 
-  const loadModules = useCallback(async (params = {}) => {
-    setLoading(true);
-    try {
-      const response = await getModules({
-        page: params.page || currentPage,
-        limit: params.limit || itemsPerPage,
-        search: params.search !== undefined ? params.search : search
-      });
+  const loadModules = useCallback(
+    async (params = {}) => {
+      setLoading(true);
+      try {
+        const response = await getModules({
+          page: params.page || currentPage,
+          limit: params.limit || itemsPerPage,
+          search: params.search !== undefined ? params.search : search,
+        });
 
-      setModules(response.modules);
-      setTotal(response.total);
-      setTotalPages(response.totalPages);
-      setCurrentPage(response.currentPage);
-      setItemsPerPage(response.itemsPerPage);
-    } catch (err) {
-      console.error('Failed to load modules:', err);
-      setError(err.message || 'Error loading modules');
-    } finally {
-      setLoading(false);
-    }
-  }, [currentPage, itemsPerPage, search]);
+        setModules(response.modules);
+        setTotal(response.total);
+        setTotalPages(response.totalPages);
+        setCurrentPage(response.currentPage);
+        setItemsPerPage(response.itemsPerPage);
+      } catch (err) {
+        console.error("Failed to load modules:", err);
+        setError(err.message || "Error loading modules");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [currentPage, itemsPerPage, search]
+  );
 
   useEffect(() => {
     loadModules();
   }, [loadModules]);
 
-     
   const handleSearch = useCallback((query) => {
-        setSearch(query);
-        setCurrentPage(1);
-        loadModules({ search: query, page: 1 });
-    }, []);
+    setSearch(query);
+    setCurrentPage(1);
+    loadModules({ search: query, page: 1 });
+  }, []);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -57,6 +59,7 @@ export function useModules(initialParams = {}) {
   };
 
   const handleCreateModule = async (data) => {
+    console.log("🚀 ~ handleCreateModule ~ data:", data);
     const newModule = await createModule(data);
     loadModules();
     return newModule;
@@ -69,40 +72,35 @@ export function useModules(initialParams = {}) {
   };
 
   const handleDeleteModule = useCallback(async (id) => {
-      try {
-          setError(null);
-          await deleteModule(id);
-          setSucces('Usuario eliminado correctamente');
-          loadModules();
-
-      } catch (err) {
-          console.error('Error deleting module:', err);
-          setError(err?.response?.data?.error || 'Error al eliminar el módulo');
-      }
+    try {
+      setError(null);
+      await deleteModule(id);
+      setSucces("Usuario eliminado correctamente");
+      loadModules();
+    } catch (err) {
+      console.error("Error deleting module:", err);
+      setError(err?.response?.data?.error || "Error al eliminar el módulo");
+    }
   }, []);
 
-
-
-      // Get user by ID
-    const getById = useCallback(async (id) => {
-        try {
-            setError(null);
-            const module = await getModuleById(id);
-            console.log('Module retrieved by ID:', module);
-            return module;
-
-        } catch (err) {
-            console.error('Error getting Module by ID:', err);
-            setError(err?.response?.data?.error || 'Error al obtener el usuario');
-            throw err;
-        }
-    }, []);
+  // Get user by ID
+  const getById = useCallback(async (id) => {
+    try {
+      setError(null);
+      const module = await getModuleById(id);
+      console.log("Module retrieved by ID:", module);
+      return module;
+    } catch (err) {
+      console.error("Error getting Module by ID:", err);
+      setError(err?.response?.data?.error || "Error al obtener el usuario");
+      throw err;
+    }
+  }, []);
 
   const clearMessages = useCallback(() => {
-        setError(null);
-        setSuccess(null);
+    setError(null);
+    setSuccess(null);
   }, []);
-
 
   return {
     modules,
@@ -112,7 +110,7 @@ export function useModules(initialParams = {}) {
     itemsPerPage,
     loading,
     error,
-    searchQuery : search,
+    searchQuery: search,
     handleSearch,
     handlePageChange,
     loadModules,
@@ -120,6 +118,6 @@ export function useModules(initialParams = {}) {
     handleUpdateModule,
     handleDeleteModule,
     getById,
-    clearMessages
+    clearMessages,
   };
 }
