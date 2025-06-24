@@ -59,7 +59,6 @@ export function useModules(initialParams = {}) {
   };
 
   const handleCreateModule = async (data) => {
-    console.log("🚀 ~ handleCreateModule ~ data:", data);
     const newModule = await createModule(data);
     loadModules();
     return newModule;

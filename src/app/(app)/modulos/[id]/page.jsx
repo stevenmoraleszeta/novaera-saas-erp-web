@@ -11,6 +11,12 @@ import { useModules } from "@/hooks/useModules";
 import Table from "@/components/Table";
 import MainContent from "@/components/MainContent";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useLogicalTables } from "@/hooks/useLogicalTables";
+import LogicalTablesSidebar from "@/components/LogicalTablesSidebar";
+import LogicalTableDetails from "@/components/LogicalTableDetails";
+import LogicalTableModal from "@/components/LogicalTableModal";
+import { Package } from "lucide-react";
 
 export default function ModuleDetailPage() {
   const { modules, getById } = useModules();
@@ -20,6 +26,25 @@ export default function ModuleDetailPage() {
   const [loading, setLoading] = useState(true);
   const [moduleData, setModuleData] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
+
+  // Logical tables state
+  const [tables, setTables] = useState([]);
+  const [tablesLoading, setTablesLoading] = useState(true);
+  const [showTableModal, setShowTableModal] = useState(false);
+  const [selectedTable, setSelectedTable] = useState(null);
+
+  // Inline editing state
+  const [editFields, setEditFields] = useState({});
+  const [isDirty, setIsDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+
+  // Form state
+  const [formLoading, setFormLoading] = useState(false);
+  const [formError, setFormError] = useState(null);
+
+  const { getAllTables, getTableById, createOrUpdateTable, deleteTable } =
+    useLogicalTables(id);
 
   // Dynamic columns based on module type or data structure
   const getColumns = (data) => {
@@ -98,46 +123,244 @@ export default function ModuleDetailPage() {
     fetchModule();
   }, [id, getById]);
 
+  // Fetch logical tables
+  useEffect(() => {
+    const fetchTables = async () => {
+      try {
+        setTablesLoading(true);
+        const data = await getAllTables();
+        setTables(data);
+      } catch (err) {
+        console.error("Error al obtener tablas lógicas:", err);
+      } finally {
+        setTablesLoading(false);
+      }
+    };
+    if (id) fetchTables();
+  }, [id, getAllTables]);
+
+  // Update edit fields when selected table changes
+  useEffect(() => {
+    if (selectedTable) {
+      setEditFields({
+        name: selectedTable.name,
+        alias: selectedTable.alias || "",
+        description: selectedTable.description || "",
+      });
+      setIsDirty(false);
+      setSaveError(null);
+    }
+  }, [selectedTable]);
+
+  // Form validation
+  const validateTable = (values) => {
+    const errors = {};
+    if (!values.name) errors.name = "El nombre es requerido";
+    if (!values.id && tables.some((t) => t.name === values.name))
+      errors.name = "El nombre ya existe";
+    return errors;
+  };
+
+  // Handle table form submission
+  const handleSubmitTable = async (values) => {
+    setFormLoading(true);
+    setFormError(null);
+    try {
+      let data;
+      if (!values.id) {
+        // CREATE
+        data = await createOrUpdateTable({
+          name: values.name,
+          description: values.description,
+          module_id: Number(id),
+        });
+      } else {
+        // UPDATE
+        data = await createOrUpdateTable({
+          id: values.id,
+          name: values.name,
+          description: values.description,
+        });
+      }
+      setTables((prev) => {
+        const idx = prev.findIndex((t) => t.id === data.id);
+        if (idx >= 0) {
+          const updated = [...prev];
+          updated[idx] = data;
+          return updated;
+        }
+        return [...prev, data];
+      });
+      setShowTableModal(false);
+      setSelectedTable(data);
+      // Refresh tables list
+      try {
+        const refreshed = await getAllTables();
+        setTables(refreshed);
+      } catch (refreshErr) {
+        // If refresh fails, at least the new table remains in the list
+      }
+    } catch (err) {
+      setFormError(err?.response?.data?.message || "Error al guardar");
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  // Handle table deletion
+  const handleDeleteTable = async (table) => {
+    try {
+      await deleteTable(table.id);
+      setTables((prev) => prev.filter((t) => t.id !== table.id));
+      if (selectedTable?.id === table.id) setSelectedTable(null);
+    } catch (err) {
+      alert(
+        err?.response?.data?.message ||
+          "No se pudo eliminar la tabla. Puede tener dependencias."
+      );
+    }
+  };
+
+  // Action handlers
+  const handleAddTable = () => {
+    setSelectedTable(null);
+    setShowTableModal(true);
+  };
+
+  const handleEditTable = (table) => {
+    setSelectedTable(table);
+    setShowTableModal(true);
+  };
+
+  const handleViewTable = (table) => {
+    setSelectedTable(table);
+  };
+
+  // Inline editing handler
+  const handleFieldChange = (field, value) => {
+    setEditFields((prev) => ({ ...prev, [field]: value }));
+    setIsDirty(true);
+  };
+
+  // Save inline changes
+  const handleSaveChanges = async () => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const updated = {
+        id: selectedTable.id,
+        name: editFields.name ?? selectedTable.name,
+        description: editFields.description ?? selectedTable.description,
+      };
+      const data = await createOrUpdateTable(updated);
+      setTables((prev) => prev.map((t) => (t.id === data.id ? data : t)));
+      setSelectedTable(data);
+      setIsDirty(false);
+      try {
+        const refreshed = await getAllTables();
+        setTables(refreshed);
+      } catch (refreshErr) {}
+    } catch (err) {
+      setSaveError("Error al guardar cambios");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) return <Loader text="Cargando módulo..." />;
   if (!module) return <p>No se encontró el módulo con ID {id}.</p>;
 
   const columns = getColumns(moduleData);
 
   return (
-    <div className="max-w-full mx-auto">
-      {/* Header Section - Outside the card */}
-      <div className="mb-6">
+    <div>
+      {/* Header Section */}
+      <div>
         <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-2xl font-bold text-gray-900">{module.name}</h1>
-          <Badge variant="secondary" className="text-sm">
-            {module.category || "Sin categoría"}
-          </Badge>
-        </div>
-        <p className="text-gray-600 text-lg">
-          {module.description || "Sin descripción"}
-        </p>
-        <div className="mt-3">
-          <StatusBadge status={module.status} />
+          <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center">
+            <Package className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{module.name}</h1>
+            <p className="text-gray-600 text-sm">
+              {module.description || "Sin descripción"}
+            </p>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            <Badge variant="secondary" className="text-sm">
+              {module.category || "Sin categoría"}
+            </Badge>
+            <StatusBadge status={module.status} />
+          </div>
         </div>
       </div>
 
-      {/* Table Section - Inside card */}
-      <div className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm">
-        {dataLoading ? (
-          <Loader text="Cargando datos del módulo..." />
-        ) : (
-          <Table
-            columns={columns}
-            data={moduleData}
-            searchable={true}
-            filterable={true}
-            pagination={true}
-            itemsPerPageOptions={[10, 25, 50]}
-            defaultItemsPerPage={10}
-            customizable={true}
-          />
-        )}
+      {/* Main Content Split */}
+      <div className="flex h-[calc(100vh-200px)] bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        {/* Logical Tables Sidebar */}
+        <LogicalTablesSidebar
+          tables={tables}
+          selectedTable={selectedTable}
+          onTableSelect={handleViewTable}
+          onTableEdit={handleEditTable}
+          onTableDelete={handleDeleteTable}
+          onAddTable={handleAddTable}
+          loading={tablesLoading}
+        />
+
+        {/* Table Details */}
+        <LogicalTableDetails
+          table={selectedTable}
+          editFields={editFields}
+          isDirty={isDirty}
+          saving={saving}
+          saveError={saveError}
+          onFieldChange={handleFieldChange}
+          onSaveChanges={handleSaveChanges}
+          onDeleteTable={handleDeleteTable}
+        />
       </div>
+
+      {/* Module Data Table */}
+      <div className="mt-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="w-5 h-5" />
+              Datos del módulo
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {dataLoading ? (
+              <Loader text="Cargando datos del módulo..." />
+            ) : (
+              <Table
+                columns={columns}
+                data={moduleData}
+                searchable={true}
+                filterable={true}
+                pagination={true}
+                itemsPerPageOptions={[10, 25, 50]}
+                defaultItemsPerPage={10}
+                customizable={true}
+              />
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Table Modal */}
+      <LogicalTableModal
+        open={showTableModal}
+        onOpenChange={(open) => setShowTableModal(open)}
+        mode={selectedTable ? "edit" : "create"}
+        initialData={selectedTable}
+        onSubmit={handleSubmitTable}
+        onCancel={() => setShowTableModal(false)}
+        validate={validateTable}
+        loading={formLoading}
+        error={formError}
+      />
     </div>
   );
 }
