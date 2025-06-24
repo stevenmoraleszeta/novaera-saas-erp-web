@@ -4,12 +4,10 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { getModuleById } from "@/services/moduleService";
 import Loader from "@/components/Loader";
 import StatusBadge from "@/components/ModuleStatusBadge";
 import { useModules } from "@/hooks/useModules";
 import Table from "@/components/Table";
-import MainContent from "@/components/MainContent";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLogicalTables } from "@/hooks/useLogicalTables";

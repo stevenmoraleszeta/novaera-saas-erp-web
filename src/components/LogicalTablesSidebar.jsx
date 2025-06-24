@@ -24,7 +24,7 @@ export default function LogicalTablesSidebar({
   );
 
   return (
-    <div className="w-64 min-w-[256px] border-r border-gray-200 bg-gray-50/50">
+    <div className="w-72 min-w-[288px] border-r border-gray-200 bg-gray-50/50">
       {/* Header */}
       <div className="p-4 border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between mb-3">
@@ -64,11 +64,11 @@ export default function LogicalTablesSidebar({
       </div>
 
       {/* Tables List */}
-      <ScrollArea className="h-[calc(100vh-280px)]">
-        <div className="p-2">
+      <ScrollArea className="h-[calc(100vh-360px)]">
+        <div className="p-2 pb-8">
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="w-4 h-4 border-2 border-g border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : filteredTables.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
@@ -86,11 +86,11 @@ export default function LogicalTablesSidebar({
                     selectedTable && selectedTable.id === table.id
                       ? "bg-gray-100 border border-gray-300"
                       : "hover:bg-gray-100 border border-transparent"
-                  }`}
+                  } ${idx === filteredTables.length - 1 ? "mb-2" : ""}`}
                   onClick={() => onTableSelect(table)}
                 >
-                  <div className="flex items-center justify-between p-2">
-                    <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between p-2 pr-1">
+                    <div className="flex-1 min-w-0 mr-1 overflow-hidden">
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-black flex-shrink-0" />
                         <span
@@ -104,15 +104,17 @@ export default function LogicalTablesSidebar({
                         </span>
                       </div>
                       {table.description && (
-                        <p className="text-xs text-gray-500 truncate mt-1 ml-4">
-                          {table.description}
-                        </p>
+                        <div className="ml-4 mt-1 max-w-[180px]">
+                          <p className="text-xs text-gray-500 truncate">
+                            {table.description}
+                          </p>
+                        </div>
                       )}
                     </div>
 
                     {/* Actions */}
                     {isEditingMode && (
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                         <Button
                           variant="ghost"
                           size="sm"
