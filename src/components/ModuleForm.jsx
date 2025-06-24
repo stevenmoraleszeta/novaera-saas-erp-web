@@ -33,6 +33,7 @@ export default function ModuleForm({
   error = null,
 }) {
   const { user } = useUserStore();
+  console.log("🚀 ~ user in form:", user);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -58,7 +59,7 @@ export default function ModuleForm({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (onSubmit) {
-      onSubmit(formData);
+      onSubmit({ ...formData, createdBy: user.id });
     }
   };
 
