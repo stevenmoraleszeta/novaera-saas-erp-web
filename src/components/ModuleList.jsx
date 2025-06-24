@@ -22,15 +22,6 @@ export default function ModuleList({
   const router = useRouter();
   const { addModuleTab } = useTabStore();
 
-  const addModule = {
-    id: 1,
-    name: "Agregar",
-    description: "",
-    iconUrl: "https://icon2.cleanpng.com/20180610/yr/aa8tqkh1s.webp",
-    createdBy: 1,
-    createdAt: "2024-01-15T10:30:00Z",
-  };
-
   const handleModuleClick = (module) => {
     if (isEditingMode) {
       onEdit(module);
