@@ -54,7 +54,7 @@ export default function ModulesPage() {
 
   const handleConfirmDelete = async () => {
     try {
-      await handleDeleteModule(moduleToDelete);
+      await handleDeleteModule(moduleToDelete.id);
       setShowDeleteDialog(false);
       setModuleToDelete(null);
       closeModal();
