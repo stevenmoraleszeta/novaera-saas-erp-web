@@ -19,7 +19,7 @@ const mapModuleToBackend = (frontendModule) => {
     name: frontendModule.name,
     description: frontendModule.description,
     icon_url: frontendModule.iconUrl,
-    created_by: frontendModule.created_by
+    created_by: frontendModule.createdBy
   };
 };
 
