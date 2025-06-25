@@ -33,6 +33,7 @@ export default function ModuleDetailPage() {
   const [selectedTable, setSelectedTable] = useState(null);
   const [refreshData, setRefreshData] = useState(0);
   const [shouldRefreshTables, setShouldRefreshTables] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Inline editing state
   const [editFields, setEditFields] = useState({});
@@ -327,6 +328,8 @@ export default function ModuleDetailPage() {
             onTableDelete={handleDeleteTable}
             onAddTable={handleAddTable}
             loading={tablesLoading}
+            collapsed={sidebarCollapsed}
+            onCollapse={(collapsed) => setSidebarCollapsed(collapsed)}
           />
 
           {/* Table Details */}

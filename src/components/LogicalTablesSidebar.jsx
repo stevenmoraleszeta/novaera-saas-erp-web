@@ -3,7 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit3, Trash2, Search, Database } from "lucide-react";
+import {
+  Plus,
+  Edit3,
+  Trash2,
+  Search,
+  Database,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import useEditModeStore from "@/stores/editModeStore";
 
 export default function LogicalTablesSidebar({
@@ -14,6 +22,8 @@ export default function LogicalTablesSidebar({
   onTableDelete,
   onAddTable,
   loading = false,
+  collapsed = false,
+  onCollapse,
 }) {
   const { isEditingMode } = useEditModeStore();
   const [searchTerm, setSearchTerm] = useState("");
@@ -22,6 +32,60 @@ export default function LogicalTablesSidebar({
   const filteredTables = tables.filter((table) =>
     (table.name || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleCollapseToggle = () => {
+    onCollapse(!collapsed);
+  };
+
+  if (collapsed) {
+    return (
+      <div className="w-12 min-w-[48px] border-r border-gray-200 bg-gray-50/50 flex flex-col">
+        {/* Collapse Toggle Button */}
+        <div className="p-2 border-b border-gray-200 bg-white">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleCollapseToggle}
+            className="w-8 h-8 p-0"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
+
+        {/* Tables List - Collapsed View */}
+        <ScrollArea className="flex-1">
+          <div className="p-1">
+            {loading ? (
+              <div className="flex items-center justify-center py-4">
+                <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : filteredTables.length === 0 ? (
+              <div className="text-center py-4 text-gray-500">
+                <Database className="w-6 h-6 mx-auto mb-1 text-gray-300" />
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {filteredTables.map((table, idx) => (
+                  <div
+                    key={table.id ?? `table-idx-${idx}`}
+                    className={`group relative cursor-pointer rounded-md transition-all duration-200 p-1 ${
+                      selectedTable && selectedTable.id === table.id
+                        ? "bg-gray-100 border border-gray-300"
+                        : "hover:bg-gray-100 border border-transparent"
+                    }`}
+                    onClick={() => onTableSelect(table)}
+                    title={table.name}
+                  >
+                    <div className="w-2 h-2 rounded-full bg-black mx-auto" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
+    );
+  }
 
   return (
     <div className="w-72 min-w-[288px] border-r border-gray-200 bg-gray-50/50">
@@ -34,9 +98,19 @@ export default function LogicalTablesSidebar({
               Tablas lógicas
             </h2>
           </div>
-          <Badge variant="secondary" className="text-xs">
-            {tables.length}
-          </Badge>
+          <div className="flex items-center gap-1">
+            <Badge variant="secondary" className="text-xs">
+              {tables.length}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCollapseToggle}
+              className="w-6 h-6 p-0 ml-1"
+            >
+              <ChevronLeft className="w-3 h-3" />
+            </Button>
+          </div>
         </div>
 
         {/* Search */}
