@@ -3,6 +3,7 @@ import {
   getLogicalTableStructure,
   getLogicalTableRecords,
   updateLogicalTableRecord,
+  deleteLogicalTableRecord,
 } from "@/services/logicalTableService";
 import Table from "@/components/Table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +21,8 @@ import {
   Minus,
 } from "lucide-react";
 import useEditModeStore from "@/stores/editModeStore";
+import DynamicRecordFormDialog from "./DynamicRecordFormDialog";
+import DeleteConfirmationModal from "./DeleteConfirmationModal";
 
 const CONDITIONS = [
   { value: "equals", label: "Igual a" },
@@ -50,6 +53,8 @@ export default function LogicalTableDataView({
   const [editFields, setEditFields] = useState({});
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
+  const [showAddRecordDialog, setShowAddRecordDialog] = useState(false);
+  const [deleteConfirmRecord, setDeleteConfirmRecord] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -169,9 +174,24 @@ export default function LogicalTableDataView({
   };
 
   const handleDeleteRecord = async (record) => {
-    if (onDeleteRecord) {
-      onDeleteRecord(record);
+    setDeleteConfirmRecord(record);
+  };
+
+  const confirmDeleteRecord = async () => {
+    if (!deleteConfirmRecord) return;
+
+    try {
+      await deleteLogicalTableRecord(deleteConfirmRecord.id);
+      if (onRecordSaved) onRecordSaved();
+      setDeleteConfirmRecord(null);
+    } catch (err) {
+      console.error("Error deleting record:", err);
+      // You could add error handling here, like showing a toast notification
     }
+  };
+
+  const cancelDeleteRecord = () => {
+    setDeleteConfirmRecord(null);
   };
 
   // Transform columns for the Table component
@@ -439,8 +459,40 @@ export default function LogicalTableDataView({
               />
             </div>
           )}
+
+          {/* Add Record Button */}
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <Button
+              onClick={() => setShowAddRecordDialog(true)}
+              className="w-full"
+              size="lg"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Agregar Nuevo Registro
+            </Button>
+          </div>
         </CardContent>
       </Card>
+
+      {/* Add Record Dialog */}
+      <DynamicRecordFormDialog
+        open={showAddRecordDialog}
+        onOpenChange={setShowAddRecordDialog}
+        tableId={tableId}
+        onSubmitSuccess={() => {
+          if (onRecordSaved) onRecordSaved();
+        }}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationModal
+        open={!!deleteConfirmRecord}
+        onOpenChange={() => setDeleteConfirmRecord(null)}
+        title="¿Eliminar registro?"
+        message="Esta acción no se puede deshacer. Se eliminará permanentemente el registro."
+        onConfirm={confirmDeleteRecord}
+        onCancel={cancelDeleteRecord}
+      />
     </div>
   );
 }

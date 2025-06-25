@@ -7,7 +7,7 @@ import Alert from "@/components/Alert";
 import ModuleForm from "@/components/ModuleForm";
 import useUserStore from "@/stores/userStore";
 import useEditModeStore from "@/stores/editModeStore";
-import DeleteConfirmationDialog from "@/components/DeleteConfirmationDialog";
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import { Badge } from "@/components/ui/badge";
 import { Edit3 } from "lucide-react";
 
@@ -164,16 +164,14 @@ export default function ModulesPage() {
         error={modalState.formError}
       />
 
-      <DeleteConfirmationDialog
+      <DeleteConfirmationModal
         open={showDeleteDialog}
         onOpenChange={(open) => {
           if (!open) handleCancelDelete();
         }}
         onConfirm={handleConfirmDelete}
         title="¿Eliminar módulo?"
-        message={`¿Estás seguro de que deseas eliminar "${moduleToDelete?.name}"?`}
-        confirmText="Sí, eliminar"
-        cancelText="Cancelar"
+        itemName={moduleToDelete?.name}
       />
     </div>
   );

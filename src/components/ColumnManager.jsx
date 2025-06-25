@@ -3,7 +3,7 @@ import { useColumns } from "@/hooks/useColumns";
 import ColumnListTable from "./ColumnListTable";
 import ColumnForm from "./ColumnForm";
 import TablePreview from "./TablePreview";
-import DeleteConfirmationDialog from "@/components/DeleteConfirmationDialog";
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Settings } from "lucide-react";
@@ -142,16 +142,14 @@ export default function ColumnManager({ tableId, tableName }) {
         lastPosition={columns.length}
       />
 
-      <DeleteConfirmationDialog
+      <DeleteConfirmationModal
         open={showDeleteDialog}
         onOpenChange={(open) => {
           if (!open) handleCancelDelete();
         }}
         onConfirm={handleConfirmDelete}
         title="¿Eliminar Columna?"
-        message={`¿Estás seguro de que deseas eliminar "${columnToDelete?.name}"?`}
-        confirmText="Sí, eliminar"
-        cancelText="Cancelar"
+        itemName={columnToDelete?.name}
       />
     </div>
   );

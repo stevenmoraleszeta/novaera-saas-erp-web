@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Edit3 } from "lucide-react";
 import Alert from "@/components/Alert";
 import UserForm from "@/components/UserForm";
-import DeleteConfirmationDialog from "@/components/DeleteConfirmationDialog";
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import UserList from "@/components/UserList";
 
 export default function UsuariosPage() {
@@ -270,16 +270,14 @@ export default function UsuariosPage() {
         error={modalState.formError}
       />
 
-      <DeleteConfirmationDialog
+      <DeleteConfirmationModal
         open={showDeleteDialog}
         onOpenChange={(open) => {
           if (!open) handleCancelDelete();
         }}
         onConfirm={handleConfirmDelete}
         title="¿Eliminar usuario?"
-        message={`¿Estás seguro de que deseas eliminar "${userToDelete?.name}"?`}
-        confirmText="Sí, eliminar"
-        cancelText="Cancelar"
+        itemName={userToDelete?.name}
       />
     </div>
   );
