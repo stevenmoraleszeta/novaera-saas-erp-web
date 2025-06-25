@@ -1,23 +1,18 @@
-import axios from "../lib/axios";
+import axios from '../lib/axios';
 
 // Mapear del backend al frontend
 const mapColumnFromBackend = (c) => ({
-  ...c,
-  id: c.col_id,
+  id: c.column_id,
   tableId: c.table_id,
   name: c.name,
-  type: c.data_type,
-  nullable: !c.is_required,
+  type: c.type,
+  nullable: c.nullable,
   defaultValue: c.default_value,
   createdAt: c.created_at,
   column_position: c.column_position,
   relation_type: c.relation_type,
-  validations: c.validations,
-  data_type: c.data_type,
-  is_required: c.is_required,
-  is_foreign_key: c.is_foreign_key,
-  foreign_table_id: c.foreign_table_id,
-  foreign_column_name: c.foreign_column_name,
+  validations:  c.validations,
+  ...c,
 });
 
 // Mapear del frontend al backend
@@ -30,24 +25,21 @@ const mapColumnToBackend = (c) => {
     is_foreign_key: c.is_foreign_key,
     column_position: c.column_position,
     relation_type: c.relation_type,
-    validations: c.validations,
+    validations:  c.validations,
   };
 
   const makePosition = (c) => ({
-    position: c.position,
-    ...c,
-  });
+      position: c.position,
+      ...c,
+    });
+
 
   // Solo incluir si es foreign key válida
   if (c.is_foreign_key && c.foreign_table_id) {
     payload.foreign_table_id = c.foreign_table_id;
   }
 
-  if (
-    c.is_foreign_key &&
-    c.foreign_column_name &&
-    c.foreign_column_name.trim() !== ""
-  ) {
+  if (c.is_foreign_key && c.foreign_column_name && c.foreign_column_name.trim() !== '') {
     payload.foreign_column_name = c.foreign_column_name;
   }
 
@@ -56,7 +48,7 @@ const mapColumnToBackend = (c) => {
 
 // Obtener todas las columnas
 export async function getColumns() {
-  const res = await axios.get("/columns");
+  const res = await axios.get('/columns');
   return res.data.map(mapColumnFromBackend);
 }
 
@@ -64,7 +56,7 @@ export async function getColumns() {
 export async function createColumn(column) {
   const payload = mapColumnToBackend(column);
   console.log("payload", payload);
-  const res = await axios.post("/columns", payload);
+  const res = await axios.post('/columns', payload);
   return mapColumnFromBackend(res.data);
 }
 
@@ -83,6 +75,7 @@ export async function getColumnById(columnId) {
 // Actualizar columna
 export async function updateColumn(columnId, updatedColumn) {
   const payload = mapColumnToBackend(updatedColumn);
+  console.log("payload", payload);
   const res = await axios.put(`/columns/${columnId}`, payload);
   return mapColumnFromBackend(res.data);
 }
@@ -106,6 +99,7 @@ export async function checkColumnHasRecords(columnId) {
   const res = await axios.get(`/columns/${columnId}/has-records`);
   return res.data.hasRecords;
 }
+
 
 export async function updateColumnPosition(columnId, newPosition) {
   const res = await axios.patch(`/columns/${columnId}/update_cols`, {
