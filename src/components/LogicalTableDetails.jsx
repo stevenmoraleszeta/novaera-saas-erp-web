@@ -7,6 +7,7 @@ import { Save, Database, FileText, Hash, Trash2 } from "lucide-react";
 import useEditModeStore from "@/stores/editModeStore";
 import DeleteLogicalTableButton from "./DeleteLogicalTableButton";
 import LogicalTableDataView from "./LogicalTableDataView";
+import ColumnManager from "./ColumnManager";
 
 export default function LogicalTableDetails({
   table,
@@ -187,6 +188,13 @@ export default function LogicalTableDetails({
           onRecordSaved={onRecordSaved}
         />
       </div>
+
+      {/* Column Manager Section - only in editing mode */}
+      {isEditingMode && (
+        <div className="overflow-hidden border-t border-gray-200">
+          <ColumnManager tableId={table.id} tableName={table.name} />
+        </div>
+      )}
     </div>
   );
 }

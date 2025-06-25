@@ -15,7 +15,6 @@ import LogicalTablesSidebar from "@/components/LogicalTablesSidebar";
 import LogicalTableDetails from "@/components/LogicalTableDetails";
 import LogicalTableModal from "@/components/LogicalTableModal";
 import { Package } from "lucide-react";
-import ColumnManager from '@/components/ColumnManager' 
 import useEditModeStore from "@/stores/editModeStore";
 
 export default function ModuleDetailPage() {
@@ -49,7 +48,6 @@ export default function ModuleDetailPage() {
     useLogicalTables(id);
 
   const { isEditingMode } = useEditModeStore();
-
 
   // Dynamic columns based on module type or data structure
   const getColumns = (data) => {
@@ -317,37 +315,35 @@ export default function ModuleDetailPage() {
       </div>
 
       {/* Main Content Split */}
-      <div className="flex h-[calc(100vh-200px)] bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-        {/* Logical Tables Sidebar */}
-        <LogicalTablesSidebar
-          tables={tables}
-          selectedTable={selectedTable}
-          onTableSelect={handleViewTable}
-          onTableEdit={handleEditTable}
-          onTableDelete={handleDeleteTable}
-          onAddTable={handleAddTable}
-          loading={tablesLoading}
-        />
+      <div className="flex flex-col min-h-[calc(100vh-200px)] bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        {/* Logical Tables Sidebar and Details Row */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Logical Tables Sidebar */}
+          <LogicalTablesSidebar
+            tables={tables}
+            selectedTable={selectedTable}
+            onTableSelect={handleViewTable}
+            onTableEdit={handleEditTable}
+            onTableDelete={handleDeleteTable}
+            onAddTable={handleAddTable}
+            loading={tablesLoading}
+          />
 
-        {/* Table Details */}
-        <LogicalTableDetails
-          table={selectedTable}
-          editFields={editFields}
-          isDirty={isDirty}
-          saving={saving}
-          saveError={saveError}
-          onFieldChange={handleFieldChange}
-          onSaveChanges={handleSaveChanges}
-          onDeleteTable={handleDeleteTable}
-          refresh={refreshData}
-          onDeleteRecord={handleDeleteRecord}
-          onRecordSaved={handleRecordSaved}
-        />
-
-        {selectedTable && isEditingMode && (
-          <ColumnManager tableId={id} tableName={"TABLA"} />
-        )} 
-
+          {/* Table Details */}
+          <LogicalTableDetails
+            table={selectedTable}
+            editFields={editFields}
+            isDirty={isDirty}
+            saving={saving}
+            saveError={saveError}
+            onFieldChange={handleFieldChange}
+            onSaveChanges={handleSaveChanges}
+            onDeleteTable={handleDeleteTable}
+            refresh={refreshData}
+            onDeleteRecord={handleDeleteRecord}
+            onRecordSaved={handleRecordSaved}
+          />
+        </div>
       </div>
 
       {/* Table Modal */}

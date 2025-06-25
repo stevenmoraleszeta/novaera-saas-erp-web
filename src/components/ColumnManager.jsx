@@ -1,9 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { useColumns } from '@/hooks/useColumns';
-import ColumnListTable from './ColumnListTable';
-import ColumnForm from './ColumnForm';
-import TablePreview from './TablePreview';
-import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
+import React, { useEffect, useState } from "react";
+import { useColumns } from "@/hooks/useColumns";
+import ColumnListTable from "./ColumnListTable";
+import ColumnForm from "./ColumnForm";
+import TablePreview from "./TablePreview";
+import DeleteConfirmationDialog from "@/components/DeleteConfirmationDialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Settings } from "lucide-react";
 
 export default function ColumnManager({ tableId, tableName }) {
   const {
@@ -18,7 +21,7 @@ export default function ColumnManager({ tableId, tableName }) {
   } = useColumns(tableId);
 
   const [selectedColumn, setSelectedColumn] = useState(null);
-  const [formMode, setFormMode] = useState('create');
+  const [formMode, setFormMode] = useState("create");
   const [formOpen, setFormOpen] = useState(false);
 
   const [columnToDelete, setColumnToDelete] = useState(null);
@@ -40,7 +43,7 @@ export default function ColumnManager({ tableId, tableName }) {
       setColumnToDelete(null);
       setFormOpen(false); // cerrar el modal si se estaba editando
     } catch (err) {
-      console.error('Error al eliminar la columna:', err);
+      console.error("Error al eliminar la columna:", err);
     }
   };
 
@@ -50,57 +53,79 @@ export default function ColumnManager({ tableId, tableName }) {
   };
 
   const handleFormSubmit = async (formData) => {
-    if (formMode === 'create') {
+    if (formMode === "create") {
       await handleCreate(formData);
-    } else if (formMode === 'edit' && selectedColumn) {
+    } else if (formMode === "edit" && selectedColumn) {
       await handleUpdate(selectedColumn.id, formData);
     }
     setFormOpen(false);
     setSelectedColumn(null);
-    setFormMode('create');
+    setFormMode("create");
     fetchColumns();
   };
 
   const handleFormCancel = () => {
     setFormOpen(false);
     setSelectedColumn(null);
-    setFormMode('create');
+    setFormMode("create");
   };
 
   const handleCreateCol = () => {
     setSelectedColumn(null);
-    setFormMode('create');
+    setFormMode("create");
     setFormOpen(true);
   };
 
   const handleEdit = (column) => {
     setSelectedColumn(column);
-    setFormMode('edit');
+    setFormMode("edit");
     setFormOpen(true);
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-semibold">Gestor de Columnas</h2>
-      
-      {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-700">{error}</p>
-        </div>
-      )}
+    <div className="flex-1 p-6 overflow-hidden">
+      <Card className="h-full flex flex-col">
+        <CardHeader className="flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              Gestor de Columnas
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-xs">
+                {columns.length} columnas
+              </Badge>
+            </div>
+          </div>
+        </CardHeader>
 
-      <ColumnListTable
-        columns={columns}
-        loading={loading}
-        onEdit={handleEdit}
-        onDelete={handleDeleteClick}
-        onAdd={handleCreateCol}
-        onReorder={(reorderedCols) => {
-          reorderedCols.forEach((col, index) => {
-            handleUpdatePosition(col.id, index + 1);
-          });
-        }}
-      />
+        <CardContent className="flex-1 overflow-hidden space-y-6">
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+
+          <div className="flex-1 overflow-auto">
+            <ColumnListTable
+              columns={columns}
+              loading={loading}
+              onEdit={handleEdit}
+              onDelete={handleDeleteClick}
+              onAdd={handleCreateCol}
+              onReorder={(reorderedCols) => {
+                reorderedCols.forEach((col, index) => {
+                  handleUpdatePosition(col.id, index + 1);
+                });
+              }}
+            />
+          </div>
+
+          <div className="flex-shrink-0">
+            <TablePreview tableName={tableName} columns={columns} />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* El nuevo ColumnForm ya incluye su propio <Dialog /> */}
       <ColumnForm
@@ -128,9 +153,6 @@ export default function ColumnManager({ tableId, tableName }) {
         confirmText="Sí, eliminar"
         cancelText="Cancelar"
       />
-
-
-      <TablePreview tableName={tableName} columns={columns} />
     </div>
   );
 }
