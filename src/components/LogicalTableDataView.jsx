@@ -31,12 +31,7 @@ const CONDITIONS = [
   { value: "isNull", label: "Es nulo" },
 ];
 
-export default function LogicalTableDataView({
-  tableId,
-  refresh,
-  onDeleteRecord,
-  onRecordSaved,
-}) {
+export default function LogicalTableDataView({ tableId, refresh }) {
   const { isEditingMode } = useEditModeStore();
 
   const [columns, setColumns] = useState([]);
@@ -157,7 +152,6 @@ export default function LogicalTableDataView({
         record_data: editFields,
       });
       setEditingRecordId(null);
-      if (onRecordSaved) onRecordSaved();
     } catch (err) {
       setSaveError("Error al guardar cambios");
     } finally {
@@ -182,7 +176,6 @@ export default function LogicalTableDataView({
 
     try {
       await deleteLogicalTableRecord(deleteConfirmRecord.id);
-      if (onRecordSaved) onRecordSaved();
       setDeleteConfirmRecord(null);
     } catch (err) {
       console.error("Error deleting record:", err);
@@ -471,28 +464,25 @@ export default function LogicalTableDataView({
               Agregar Nuevo Registro
             </Button>
           </div>
+
+          {/* Add Record Dialog */}
+          <DynamicRecordFormDialog
+            open={showAddRecordDialog}
+            onOpenChange={setShowAddRecordDialog}
+            tableId={tableId}
+          />
+
+          {/* Delete Confirmation Dialog */}
+          <DeleteConfirmationModal
+            open={!!deleteConfirmRecord}
+            onOpenChange={() => setDeleteConfirmRecord(null)}
+            title="¿Eliminar registro?"
+            message="Esta acción no se puede deshacer. Se eliminará permanentemente el registro."
+            onConfirm={confirmDeleteRecord}
+            onCancel={cancelDeleteRecord}
+          />
         </CardContent>
       </Card>
-
-      {/* Add Record Dialog */}
-      <DynamicRecordFormDialog
-        open={showAddRecordDialog}
-        onOpenChange={setShowAddRecordDialog}
-        tableId={tableId}
-        onSubmitSuccess={() => {
-          if (onRecordSaved) onRecordSaved();
-        }}
-      />
-
-      {/* Delete Confirmation Dialog */}
-      <DeleteConfirmationModal
-        open={!!deleteConfirmRecord}
-        onOpenChange={() => setDeleteConfirmRecord(null)}
-        title="¿Eliminar registro?"
-        message="Esta acción no se puede deshacer. Se eliminará permanentemente el registro."
-        onConfirm={confirmDeleteRecord}
-        onCancel={cancelDeleteRecord}
-      />
     </div>
   );
 }

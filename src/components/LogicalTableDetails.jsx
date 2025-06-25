@@ -1,9 +1,8 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Save, Database, FileText, Hash, Trash2 } from "lucide-react";
+import { Database, FileText, Hash, Trash2, Edit3 } from "lucide-react";
 import useEditModeStore from "@/stores/editModeStore";
 import DeleteLogicalTableButton from "./DeleteLogicalTableButton";
 import LogicalTableDataView from "./LogicalTableDataView";
@@ -11,25 +10,12 @@ import ColumnManager from "./ColumnManager";
 
 export default function LogicalTableDetails({
   table,
-  editFields,
-  isDirty,
-  saving,
-  saveError,
-  onFieldChange,
-  onSaveChanges,
-  onDeleteTable,
   refresh,
-  onDeleteRecord,
-  onRecordSaved,
+  onTableEdit,
+  onTableDelete,
+  onRefresh,
 }) {
   const { isEditingMode } = useEditModeStore();
-
-  // Check if values are actually different from original
-  const hasChanges =
-    isEditingMode &&
-    ((editFields.name !== undefined && editFields.name !== table?.name) ||
-      (editFields.description !== undefined &&
-        editFields.description !== table?.description));
 
   if (!table) {
     return (
@@ -54,18 +40,7 @@ export default function LogicalTableDetails({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Database className="w-5 h-5 text-black" />
-                <CardTitle className="text-xl">
-                  {isEditingMode ? (
-                    <Input
-                      type="text"
-                      value={editFields.name ?? table.name ?? ""}
-                      onChange={(e) => onFieldChange("name", e.target.value)}
-                      className="text-xl font-semibold border-0 p-0 bg-transparent focus-visible:ring-0"
-                    />
-                  ) : (
-                    table.name
-                  )}
-                </CardTitle>
+                <CardTitle className="text-xl">{table.name}</CardTitle>
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="text-xs">
@@ -76,47 +51,27 @@ export default function LogicalTableDetails({
                 {isEditingMode && (
                   <>
                     <Button
-                      onClick={onSaveChanges}
-                      disabled={saving || !hasChanges}
+                      onClick={() => onTableEdit(table)}
                       variant="ghost"
                       size="sm"
                       className="h-8 w-8 p-0 hover:bg-gray-100"
-                      title="Guardar cambios"
+                      title="Editar tabla"
                     >
-                      {saving ? (
-                        <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Save className="w-4 h-4 text-blue-600" />
-                      )}
+                      <Edit3 className="w-4 h-4 text-blue-600" />
                     </Button>
                     <DeleteLogicalTableButton
-                      onDelete={() => onDeleteTable(table)}
+                      onDelete={() => onTableDelete(table)}
                       variant="ghost"
                       size="sm"
                       className="h-8 w-8 p-0 hover:bg-red-50"
                     >
                       <Trash2 className="w-4 h-4 text-red-600" />
                     </DeleteLogicalTableButton>
-                    {hasChanges && (
-                      <Badge
-                        variant="outline"
-                        className="text-orange-600 border-orange-200 text-xs"
-                      >
-                        Sin guardar
-                      </Badge>
-                    )}
                   </>
                 )}
               </div>
             </div>
           </CardHeader>
-
-          {/* Error Message */}
-          {saveError && (
-            <div className="px-6 py-3 bg-red-50 border-b border-red-200">
-              <p className="text-sm text-red-600">{saveError}</p>
-            </div>
-          )}
 
           <CardContent className="space-y-6">
             {/* Basic Information */}
@@ -127,21 +82,9 @@ export default function LogicalTableDetails({
                     <FileText className="w-4 h-4" />
                     Descripción
                   </label>
-                  {isEditingMode ? (
-                    <Input
-                      type="text"
-                      value={editFields.description ?? table.description ?? ""}
-                      onChange={(e) =>
-                        onFieldChange("description", e.target.value)
-                      }
-                      placeholder="Describe el propósito de esta tabla..."
-                      className="w-full"
-                    />
-                  ) : (
-                    <p className="text-gray-600 text-sm">
-                      {table.description || "Sin descripción"}
-                    </p>
-                  )}
+                  <p className="text-gray-600 text-sm">
+                    {table.description || "Sin descripción"}
+                  </p>
                 </div>
 
                 <div>
@@ -181,18 +124,17 @@ export default function LogicalTableDetails({
 
       {/* Table Data Section */}
       <div className="flex-1 overflow-hidden">
-        <LogicalTableDataView
-          tableId={table.id}
-          refresh={refresh}
-          onDeleteRecord={onDeleteRecord}
-          onRecordSaved={onRecordSaved}
-        />
+        <LogicalTableDataView tableId={table.id} refresh={refresh} />
       </div>
 
       {/* Column Manager Section - only in editing mode */}
       {isEditingMode && (
         <div className="overflow-hidden border-t border-gray-200">
-          <ColumnManager tableId={table.id} tableName={table.name} />
+          <ColumnManager
+            tableId={table.id}
+            tableName={table.name}
+            onRefresh={onRefresh}
+          />
         </div>
       )}
     </div>

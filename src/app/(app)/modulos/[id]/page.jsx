@@ -35,12 +35,6 @@ export default function ModuleDetailPage() {
   const [shouldRefreshTables, setShouldRefreshTables] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Inline editing state
-  const [editFields, setEditFields] = useState({});
-  const [isDirty, setIsDirty] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState(null);
-
   // Form state
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState(null);
@@ -143,19 +137,6 @@ export default function ModuleDetailPage() {
     if (id) fetchTables();
   }, [id, getAllTables]);
 
-  // Update edit fields when selected table changes
-  useEffect(() => {
-    if (selectedTable) {
-      setEditFields({
-        name: selectedTable.name,
-        alias: selectedTable.alias || "",
-        description: selectedTable.description || "",
-      });
-      setIsDirty(false);
-      setSaveError(null);
-    }
-  }, [selectedTable]);
-
   // Form validation
   const validateTable = (values) => {
     const errors = {};
@@ -186,9 +167,18 @@ export default function ModuleDetailPage() {
           description: values.description,
         });
       }
+
+      // Close the modal
       setShowTableModal(false);
-      setSelectedTable(data);
+
+      // Refresh tables to get the updated data
       setShouldRefreshTables(true);
+
+      // If it's a create operation and we got the new table data, select it
+      if (!values.id && data.id) {
+        setSelectedTable(data);
+      }
+      // For updates, keep the current selection but refresh the data
     } catch (err) {
       setFormError(err?.response?.data?.message || "Error al guardar");
     } finally {
@@ -225,50 +215,6 @@ export default function ModuleDetailPage() {
     setSelectedTable(table);
   };
 
-  // Inline editing handler
-  const handleFieldChange = (field, value) => {
-    setEditFields((prev) => ({ ...prev, [field]: value }));
-    setIsDirty(true);
-  };
-
-  // Save inline changes
-  const handleSaveChanges = async () => {
-    setSaving(true);
-    setSaveError(null);
-    try {
-      const updated = {
-        id: selectedTable.id,
-        name: editFields.name ?? selectedTable.name,
-        description: editFields.description ?? selectedTable.description,
-      };
-      const data = await createOrUpdateTable(updated);
-      setTables((prev) => prev.map((t) => (t.id === data.id ? data : t)));
-      setSelectedTable(data);
-      setIsDirty(false);
-    } catch (err) {
-      setSaveError("Error al guardar cambios");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Handle record operations
-  const handleDeleteRecord = async (record) => {
-    try {
-      // Add delete record logic here
-      console.log("Deleting record:", record);
-      // Refresh data after deletion
-      setRefreshData((prev) => prev + 1);
-    } catch (err) {
-      console.error("Error deleting record:", err);
-    }
-  };
-
-  const handleRecordSaved = () => {
-    // Refresh data after record is saved
-    setRefreshData((prev) => prev + 1);
-  };
-
   // Refresh tables after modal closes and shouldRefreshTables is true
   useEffect(() => {
     if (!showTableModal && shouldRefreshTables) {
@@ -277,6 +223,16 @@ export default function ModuleDetailPage() {
         try {
           const refreshed = await getAllTables();
           setTables(refreshed);
+
+          // If we had a selected table, make sure it stays selected with updated data
+          if (selectedTable) {
+            const updatedSelectedTable = refreshed.find(
+              (t) => t.id === selectedTable.id
+            );
+            if (updatedSelectedTable) {
+              setSelectedTable(updatedSelectedTable);
+            }
+          }
         } catch (err) {
           // handle error if needed
         } finally {
@@ -285,7 +241,17 @@ export default function ModuleDetailPage() {
         }
       })();
     }
-  }, [showTableModal, shouldRefreshTables, getAllTables]);
+  }, [showTableModal, shouldRefreshTables, getAllTables, selectedTable]);
+
+  const handleRecordSaved = () => {
+    // Refresh data after record is saved
+    setRefreshData((prev) => prev + 1);
+  };
+
+  const handleTableRefresh = () => {
+    // Refresh table data view when columns change
+    setRefreshData((prev) => prev + 1);
+  };
 
   if (loading) return <Loader text="Cargando módulo..." />;
   if (!module) return <p>No se encontró el módulo con ID {id}.</p>;
@@ -335,16 +301,10 @@ export default function ModuleDetailPage() {
           {/* Table Details */}
           <LogicalTableDetails
             table={selectedTable}
-            editFields={editFields}
-            isDirty={isDirty}
-            saving={saving}
-            saveError={saveError}
-            onFieldChange={handleFieldChange}
-            onSaveChanges={handleSaveChanges}
-            onDeleteTable={handleDeleteTable}
             refresh={refreshData}
-            onDeleteRecord={handleDeleteRecord}
-            onRecordSaved={handleRecordSaved}
+            onTableEdit={handleEditTable}
+            onTableDelete={handleDeleteTable}
+            onRefresh={handleTableRefresh}
           />
         </div>
       </div>

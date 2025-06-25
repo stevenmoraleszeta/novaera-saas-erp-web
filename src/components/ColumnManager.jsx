@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Settings } from "lucide-react";
 
-export default function ColumnManager({ tableId, tableName }) {
+export default function ColumnManager({ tableId, tableName, onRefresh }) {
   const {
     columns,
     loading,
@@ -26,7 +26,7 @@ export default function ColumnManager({ tableId, tableName }) {
 
   const [columnToDelete, setColumnToDelete] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-   const [visibleError, setVisibleError] = useState(null);
+  const [visibleError, setVisibleError] = useState(null);
 
   useEffect(() => {
     if (tableId) fetchColumns();
@@ -37,16 +37,16 @@ export default function ColumnManager({ tableId, tableName }) {
     setShowDeleteDialog(true);
   };
 
-      useEffect(() => {
-      if (error) {
-        setVisibleError(error);
-        const timeout = setTimeout(() => {
-          setVisibleError(null);
-        }, 5000); // 5 segundos
+  useEffect(() => {
+    if (error) {
+      setVisibleError(error);
+      const timeout = setTimeout(() => {
+        setVisibleError(null);
+      }, 5000); // 5 segundos
 
-        return () => clearTimeout(timeout); // limpiar si cambia antes
-      }
-      }, [error]);
+      return () => clearTimeout(timeout); // limpiar si cambia antes
+    }
+  }, [error]);
 
   const handleConfirmDelete = async () => {
     try {
@@ -54,6 +54,7 @@ export default function ColumnManager({ tableId, tableName }) {
       setShowDeleteDialog(false);
       setColumnToDelete(null);
       setFormOpen(false); // cerrar el modal si se estaba editando
+      onRefresh();
     } catch (err) {
       console.error("Error al eliminar la columna:", err);
     }
@@ -74,6 +75,7 @@ export default function ColumnManager({ tableId, tableName }) {
     setSelectedColumn(null);
     setFormMode("create");
     fetchColumns();
+    onRefresh();
   };
 
   const handleFormCancel = () => {
@@ -110,15 +112,14 @@ export default function ColumnManager({ tableId, tableName }) {
             </div>
           </div>
         </CardHeader>
-        
-        <CardContent className="flex-1 overflow-hidden space-y-6">
 
+        <CardContent className="flex-1 overflow-hidden space-y-6">
           {visibleError && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg transition-all">
               <p className="text-sm text-red-700">{visibleError}</p>
             </div>
           )}
-          
+
           <div className="flex-1 overflow-auto">
             <ColumnListTable
               columns={columns}
@@ -134,9 +135,11 @@ export default function ColumnManager({ tableId, tableName }) {
             />
           </div>
 
-          <div className="flex-shrink-0">
-            <TablePreview tableName={tableName} columns={columns} />
-          </div>
+          {columns.length > 0 && (
+            <div className="flex-shrink-0">
+              <TablePreview tableName={tableName} columns={columns} />
+            </div>
+          )}
         </CardContent>
       </Card>
 
