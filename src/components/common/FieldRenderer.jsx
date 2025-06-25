@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,12 +10,48 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { getLogicalTableRecords } from "@/services/logicalTableService";
 
 export default function FieldRenderer({ id, column, value, onChange, error }) {
-  const baseClassName = `w-full ${
-    error ? "border-red-500 focus:border-red-500" : ""
-  }`;
+  const baseClassName = `w-full ${error ? "border-red-500 focus:border-red-500" : ""}`;
+  const [foreignOptions, setForeignOptions] = useState([]);
 
+  useEffect(() => {
+    if (column.is_foreign_key && column.foreign_table_id && column.foreign_column_name) {
+      getLogicalTableRecords(column.foreign_table_id).then((records) => {
+        const opts = records.map((record) => ({
+          value: record.record_data[column.foreign_column_name],
+          label: record.record_data[column.foreign_column_name],
+        }));
+        setForeignOptions(opts);
+      }).catch((err) => {
+        console.error("Error cargando opciones foráneas", err);
+      });
+    }
+  }, [column]);
+
+  // Claves foráneas: desplegable con valores de tabla relacionada
+  if (column.is_foreign_key && column.foreign_table_id && column.foreign_column_name) {
+    return (
+      <Select
+        value={value || ""}
+        onValueChange={(val) => onChange({ target: { value: val } })}
+      >
+        <SelectTrigger className={baseClassName}>
+          <SelectValue placeholder={`Selecciona ${column.name}`} />
+        </SelectTrigger>
+        <SelectContent>
+          {foreignOptions.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  }
+
+  // Resto de tipos
   switch (column.data_type) {
     case "text":
     case "varchar":
@@ -136,7 +172,6 @@ export default function FieldRenderer({ id, column, value, onChange, error }) {
 
     case "select":
     case "enum":
-      // For select/enum types, you might want to pass options as a prop
       const options = column.options || [];
       return (
         <Select
