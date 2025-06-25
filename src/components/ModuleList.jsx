@@ -43,7 +43,16 @@ export default function ModuleList({
   if (!modules.length) {
     return (
       <div className="text-center py-8 text-gray-500">
-        <p>No se encontraron módulos.</p>
+        {isEditingMode ? (
+          <div className="flex justify-center">
+            <div className="max-w-6xl w-full">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-8 gap-y-12">
+                <AddModuleCard onClick={onAdd} isEditingMode={isEditingMode} />
+              </div>
+            </div>
+          </div>
+        ) : null}
+        <p className="mt-8">No se encontraron módulos.</p>
       </div>
     );
   }
