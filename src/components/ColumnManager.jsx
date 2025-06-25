@@ -26,6 +26,7 @@ export default function ColumnManager({ tableId, tableName }) {
 
   const [columnToDelete, setColumnToDelete] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+   const [visibleError, setVisibleError] = useState(null);
 
   useEffect(() => {
     if (tableId) fetchColumns();
@@ -35,6 +36,17 @@ export default function ColumnManager({ tableId, tableName }) {
     setColumnToDelete(column);
     setShowDeleteDialog(true);
   };
+
+      useEffect(() => {
+      if (error) {
+        setVisibleError(error);
+        const timeout = setTimeout(() => {
+          setVisibleError(null);
+        }, 5000); // 5 segundos
+
+        return () => clearTimeout(timeout); // limpiar si cambia antes
+      }
+      }, [error]);
 
   const handleConfirmDelete = async () => {
     try {
@@ -98,14 +110,15 @@ export default function ColumnManager({ tableId, tableName }) {
             </div>
           </div>
         </CardHeader>
-
+        
         <CardContent className="flex-1 overflow-hidden space-y-6">
-          {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-700">{error}</p>
+
+          {visibleError && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg transition-all">
+              <p className="text-sm text-red-700">{visibleError}</p>
             </div>
           )}
-
+          
           <div className="flex-1 overflow-auto">
             <ColumnListTable
               columns={columns}

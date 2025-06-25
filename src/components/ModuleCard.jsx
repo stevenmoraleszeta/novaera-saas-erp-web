@@ -2,7 +2,29 @@
 
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { GripVertical } from "lucide-react";
+import {
+  GripVertical,
+  Users,
+  ShoppingCart,
+  Settings,
+  BarChart3,
+  CalendarDays,
+  ClipboardList,
+  FolderKanban,
+  Package,
+} from "lucide-react";
+
+// Mapeo de nombres a íconos
+const iconMap = {
+  Users,
+  ShoppingCart,
+  Settings,
+  BarChart3,
+  CalendarDays,
+  ClipboardList,
+  FolderKanban,
+  Package,
+};
 
 export default function ModuleCard({ module, onClick, isEditingMode = false }) {
   const [imageError, setImageError] = useState(false);
@@ -17,6 +39,8 @@ export default function ModuleCard({ module, onClick, isEditingMode = false }) {
     }
   };
 
+  const LucideIcon = module.iconUrl && iconMap[module.iconUrl];
+
   return (
     <Card
       onClick={handleCardClick}
@@ -24,15 +48,12 @@ export default function ModuleCard({ module, onClick, isEditingMode = false }) {
         isEditingMode ? "animate-shake" : ""
       }`}
     >
-      <CardContent className="p-0">
-        {module.iconUrl && !imageError ? (
-          <img
-            src={module.iconUrl}
-            alt={module.name}
-            className="w-24 h-24 object-contain"
-            onError={handleImageError}
-          />
-        ) : (
+      <CardContent className="p-0 flex items-center justify-center">
+        {/* 1. Si hay iconUrl válida, mostrarla */}
+        {LucideIcon && !imageError ? (
+          <LucideIcon className="w-24 h-24 text-gray-800 dark:text-gray-200" />
+            ) : (
+          // 3. Fallback por defecto
           <GripVertical className="w-24 h-24 text-gray-800 dark:text-gray-200" />
         )}
       </CardContent>

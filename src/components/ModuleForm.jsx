@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,18 +9,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { DialogHeader } from "@/components/ui/dialog-header";
 import { DialogActions } from "@/components/ui/dialog-actions";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+
 import {
   X,
-  Plus,
   Save,
-  Edit3,
   Trash2,
   Package,
   FileText,
   Link,
+  Users,
+  ShoppingCart,
+  Settings,
+  BarChart3,
+  CalendarDays,
+  ClipboardList,
+  FolderKanban,
 } from "lucide-react";
 
 export default function ModuleForm({
@@ -33,11 +39,22 @@ export default function ModuleForm({
   error = null,
 }) {
   const { user } = useUserStore();
-  console.log("🚀 ~ user in form:", user);
+
+  const iconOptions = [
+    { name: "Users", Icon: Users },
+    { name: "ShoppingCart", Icon: ShoppingCart },
+    { name: "Settings", Icon: Settings },
+    { name: "BarChart3", Icon: BarChart3 },
+    { name: "CalendarDays", Icon: CalendarDays },
+    { name: "ClipboardList", Icon: ClipboardList },
+    { name: "FolderKanban", Icon: FolderKanban },
+    { name: "Package", Icon: Package },
+  ];
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    iconUrl: "",
+    icon: "",
   });
 
   useEffect(() => {
@@ -45,13 +62,13 @@ export default function ModuleForm({
       setFormData({
         name: initialData.name || "",
         description: initialData.description || "",
-        iconUrl: initialData.iconUrl || "",
+        icon: initialData.icon || "",
       });
     } else {
       setFormData({
         name: "",
         description: "",
-        iconUrl: "",
+        icon: "",
       });
     }
   }, [initialData, open]);
@@ -150,26 +167,30 @@ export default function ModuleForm({
 
           <Separator className="my-6" />
 
-          {/* Icon URL Field */}
+          {/* Icon Selection Field */}
           <div className="space-y-2">
-            <Label
-              htmlFor="iconUrl"
-              className="text-sm font-medium text-gray-700 flex items-center gap-2"
-            >
+            <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
               <Link className="w-4 h-4" />
-              URL del Icono
+              Ícono del Módulo
             </Label>
-            <Input
-              id="iconUrl"
-              type="url"
-              value={formData.iconUrl}
-              onChange={(e) => handleChange("iconUrl", e.target.value)}
-              placeholder="https://ejemplo.com/icono.png"
-              disabled={loading}
-              className="h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-colors"
-            />
+            <div className="grid grid-cols-4 gap-4">
+              {iconOptions.map(({ name, Icon }) => (
+                <button
+                  type="button"
+                  key={name}
+                  onClick={() => handleChange("icon", name)}
+                  className={`p-3 border rounded-lg transition-colors ${
+                    formData.icon === name
+                      ? "border-blue-500 bg-blue-100"
+                      : "border-gray-200 hover:border-gray-400"
+                  }`}
+                >
+                  <Icon className="w-6 h-6 mx-auto text-gray-800" />
+                </button>
+              ))}
+            </div>
             <p className="text-xs text-gray-500">
-              URL de una imagen que represente visualmente el módulo (opcional)
+              Selecciona un ícono que represente visualmente el módulo
             </p>
           </div>
 

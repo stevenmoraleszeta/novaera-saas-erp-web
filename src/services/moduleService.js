@@ -18,7 +18,7 @@ const mapModuleToBackend = (frontendModule) => {
   return {
     name: frontendModule.name,
     description: frontendModule.description,
-    icon_url: frontendModule.iconUrl,
+    icon_url: frontendModule.icon,
     created_by: frontendModule.createdBy
   };
 };
