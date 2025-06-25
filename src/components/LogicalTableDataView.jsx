@@ -288,7 +288,7 @@ export default function LogicalTableDataView({
 
   if (!columns.length) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center p-6">
         <div className="text-center text-gray-500">
           <Database className="w-16 h-16 mx-auto mb-4 text-gray-300" />
           <h3 className="text-lg font-medium mb-2">

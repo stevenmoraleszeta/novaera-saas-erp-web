@@ -20,7 +20,7 @@ export default function LogicalTablesSidebar({
 
   // Filter tables based on search term
   const filteredTables = tables.filter((table) =>
-    table.name.toLowerCase().includes(searchTerm.toLowerCase())
+    (table.name || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
