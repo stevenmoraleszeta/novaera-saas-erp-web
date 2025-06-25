@@ -50,9 +50,11 @@ export default function LogicalTableDataView({ tableId, refresh }) {
   const [saveError, setSaveError] = useState(null);
   const [showAddRecordDialog, setShowAddRecordDialog] = useState(false);
   const [deleteConfirmRecord, setDeleteConfirmRecord] = useState(null);
+  const [localRefreshFlag, setLocalRefreshFlag] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
+      console.log("EXE: FETCHES");
       if (!tableId) {
         setColumns([]);
         setRecords([]);
@@ -62,6 +64,7 @@ export default function LogicalTableDataView({ tableId, refresh }) {
 
       setLoading(true);
       try {
+        console.log("EXE: TRIES");
         const cols = await getLogicalTableStructure(tableId);
         setColumns(cols);
 
@@ -75,6 +78,7 @@ export default function LogicalTableDataView({ tableId, refresh }) {
           data.total || (data.records ? data.records.length : data.length)
         );
       } catch (err) {
+        console.log("EXE: CATCHES");
         console.error("Error fetching table data:", err);
         setRecords([]);
         setTotal(0);
@@ -84,7 +88,7 @@ export default function LogicalTableDataView({ tableId, refresh }) {
     };
 
     fetchData();
-  }, [tableId, page, pageSize, refresh]);
+  }, [tableId, page, pageSize, refresh, localRefreshFlag]);
 
   useEffect(() => {
     if (editingRecordId) {
@@ -177,6 +181,7 @@ export default function LogicalTableDataView({ tableId, refresh }) {
     try {
       await deleteLogicalTableRecord(deleteConfirmRecord.id);
       setDeleteConfirmRecord(null);
+      setLocalRefreshFlag((prev) => !prev);
     } catch (err) {
       console.error("Error deleting record:", err);
       // You could add error handling here, like showing a toast notification
@@ -466,11 +471,15 @@ export default function LogicalTableDataView({ tableId, refresh }) {
           </div>
 
           {/* Add Record Dialog */}
-          <DynamicRecordFormDialog
-            open={showAddRecordDialog}
-            onOpenChange={setShowAddRecordDialog}
-            tableId={tableId}
-          />
+            <DynamicRecordFormDialog
+              open={showAddRecordDialog}
+              onOpenChange={setShowAddRecordDialog}
+              tableId={tableId}
+              onSubmitSuccess={() => {
+                setShowAddRecordDialog(false);
+                setLocalRefreshFlag((prev) => !prev);
+              }}
+            />
 
           {/* Delete Confirmation Dialog */}
           <DeleteConfirmationModal

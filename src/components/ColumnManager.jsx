@@ -74,7 +74,6 @@ export default function ColumnManager({ tableId, tableName, onRefresh }) {
     setFormOpen(false);
     setSelectedColumn(null);
     setFormMode("create");
-    fetchColumns();
     onRefresh();
   };
 
