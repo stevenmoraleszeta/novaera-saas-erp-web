@@ -24,6 +24,7 @@ export default function LogicalTableModal({
 
   // Form state
   const [formData, setFormData] = useState({
+    id: undefined,
     name: "",
     alias: "",
     description: "",
@@ -36,12 +37,14 @@ export default function LogicalTableModal({
   useEffect(() => {
     if (open && initialData) {
       setFormData({
+        id: initialData?.id,
         name: initialData?.name || "",
         alias: initialData?.alias || "",
         description: initialData?.description || "",
       });
     } else if (!open) {
       setFormData({
+        id: undefined,
         name: "",
         alias: "",
         description: "",
@@ -106,6 +109,7 @@ export default function LogicalTableModal({
       alias: formData.alias.trim() || null,
       description: formData.description.trim() || null,
     };
+    if (!submitData.id) delete submitData.id;
 
     onSubmit(submitData);
   };

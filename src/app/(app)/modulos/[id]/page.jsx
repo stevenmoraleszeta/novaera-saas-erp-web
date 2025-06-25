@@ -31,6 +31,7 @@ export default function ModuleDetailPage() {
   const [showTableModal, setShowTableModal] = useState(false);
   const [selectedTable, setSelectedTable] = useState(null);
   const [refreshData, setRefreshData] = useState(0);
+  const [shouldRefreshTables, setShouldRefreshTables] = useState(false);
 
   // Inline editing state
   const [editFields, setEditFields] = useState({});
@@ -181,24 +182,9 @@ export default function ModuleDetailPage() {
           description: values.description,
         });
       }
-      setTables((prev) => {
-        const idx = prev.findIndex((t) => t.id === data.id);
-        if (idx >= 0) {
-          const updated = [...prev];
-          updated[idx] = data;
-          return updated;
-        }
-        return [...prev, data];
-      });
       setShowTableModal(false);
       setSelectedTable(data);
-      // Refresh tables list
-      try {
-        const refreshed = await getAllTables();
-        setTables(refreshed);
-      } catch (refreshErr) {
-        // If refresh fails, at least the new table remains in the list
-      }
+      setShouldRefreshTables(true);
     } catch (err) {
       setFormError(err?.response?.data?.message || "Error al guardar");
     } finally {
@@ -255,10 +241,6 @@ export default function ModuleDetailPage() {
       setTables((prev) => prev.map((t) => (t.id === data.id ? data : t)));
       setSelectedTable(data);
       setIsDirty(false);
-      try {
-        const refreshed = await getAllTables();
-        setTables(refreshed);
-      } catch (refreshErr) {}
     } catch (err) {
       setSaveError("Error al guardar cambios");
     } finally {
@@ -282,6 +264,24 @@ export default function ModuleDetailPage() {
     // Refresh data after record is saved
     setRefreshData((prev) => prev + 1);
   };
+
+  // Refresh tables after modal closes and shouldRefreshTables is true
+  useEffect(() => {
+    if (!showTableModal && shouldRefreshTables) {
+      (async () => {
+        setTablesLoading(true);
+        try {
+          const refreshed = await getAllTables();
+          setTables(refreshed);
+        } catch (err) {
+          // handle error if needed
+        } finally {
+          setTablesLoading(false);
+          setShouldRefreshTables(false);
+        }
+      })();
+    }
+  }, [showTableModal, shouldRefreshTables, getAllTables]);
 
   if (loading) return <Loader text="Cargando módulo..." />;
   if (!module) return <p>No se encontró el módulo con ID {id}.</p>;

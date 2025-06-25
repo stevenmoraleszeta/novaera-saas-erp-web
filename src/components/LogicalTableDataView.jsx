@@ -263,7 +263,7 @@ export default function LogicalTableDataView({
 
   if (!tableId) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center p-6">
         <div className="text-center text-gray-500">
           <Database className="w-16 h-16 mx-auto mb-4 text-gray-300" />
           <h3 className="text-lg font-medium mb-2">Selecciona una tabla</h3>
@@ -277,7 +277,7 @@ export default function LogicalTableDataView({
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center p-6">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
           <p className="text-sm text-gray-500">Cargando datos...</p>
