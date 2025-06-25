@@ -52,6 +52,7 @@ export default function Table({
   customizable = true,
   resizable = true,
   className = "",
+  ...props
 }) {
   // State management
   const [searchTerm, setSearchTerm] = useState("");
@@ -247,7 +248,7 @@ export default function Table({
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Search and Filters */}
-      {(searchable || filterable) && (
+      {searchable && (
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div className="flex flex-col sm:flex-row gap-4 flex-1">
             {/* Search */}
@@ -261,82 +262,6 @@ export default function Table({
                   className="pl-10 w-full sm:w-64"
                 />
               </div>
-            )}
-
-            {/* Filters */}
-            {filterable && (
-              <div className="flex gap-2 flex-wrap">
-                {columns.map((column) => {
-                  const options = getFilterOptions(column.key);
-                  if (options.length <= 1) return null;
-
-                  return (
-                    <Select
-                      key={column.key}
-                      value={filters[column.key] || "all"}
-                      onValueChange={(value) => {
-                        setFilters((prev) => ({
-                          ...prev,
-                          [column.key]: value,
-                        }));
-                        setCurrentPage(1);
-                      }}
-                    >
-                      <SelectTrigger className="w-40">
-                        <SelectValue placeholder={`Filtrar ${column.header}`} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        {options.map((option) => (
-                          <SelectItem key={option} value={option}>
-                            {option}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-2">
-            {(searchTerm ||
-              Object.values(filters).some((f) => f && f !== "all")) && (
-              <Button variant="outline" onClick={resetFilters} size="sm">
-                Limpiar filtros
-              </Button>
-            )}
-
-            {customizable && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Columnas
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>
-                    Mostrar/Ocultar columnas
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {columns.map((column) => (
-                    <DropdownMenuItem
-                      key={column.key}
-                      onClick={() => toggleColumnVisibility(column.key)}
-                    >
-                      {visibleColumns[column.key] ? (
-                        <Eye className="w-4 h-4 mr-2" />
-                      ) : (
-                        <EyeOff className="w-4 h-4 mr-2" />
-                      )}
-                      {column.header}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
             )}
           </div>
         </div>
@@ -371,7 +296,7 @@ export default function Table({
 
       {/* Table */}
       <div className="border rounded-lg overflow-x-auto">
-        <TableUI ref={tableRef}>
+        <TableUI ref={tableRef} {...props}>
           <TableHeader>
             <TableRow>
               {visibleColumnsList.map((column, index) => (
@@ -386,44 +311,6 @@ export default function Table({
                 >
                   <div className="flex items-center justify-between pr-2">
                     <span className="truncate">{column.header}</span>
-                    <div className="flex items-center gap-1">
-                      {customizable && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                            >
-                              <Settings className="w-3 h-3" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <DropdownMenuLabel>
-                              Ancho de columna
-                            </DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            {[
-                              "auto",
-                              "100px",
-                              "150px",
-                              "200px",
-                              "250px",
-                              "300px",
-                            ].map((width) => (
-                              <DropdownMenuItem
-                                key={width}
-                                onClick={() =>
-                                  updateColumnWidth(column.key, width)
-                                }
-                              >
-                                {width === "auto" ? "Automático" : width}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </div>
                   </div>
 
                   {/* Resize handle */}

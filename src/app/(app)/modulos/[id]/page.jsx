@@ -30,6 +30,7 @@ export default function ModuleDetailPage() {
   const [tablesLoading, setTablesLoading] = useState(true);
   const [showTableModal, setShowTableModal] = useState(false);
   const [selectedTable, setSelectedTable] = useState(null);
+  const [refreshData, setRefreshData] = useState(0);
 
   // Inline editing state
   const [editFields, setEditFields] = useState({});
@@ -265,6 +266,23 @@ export default function ModuleDetailPage() {
     }
   };
 
+  // Handle record operations
+  const handleDeleteRecord = async (record) => {
+    try {
+      // Add delete record logic here
+      console.log("Deleting record:", record);
+      // Refresh data after deletion
+      setRefreshData((prev) => prev + 1);
+    } catch (err) {
+      console.error("Error deleting record:", err);
+    }
+  };
+
+  const handleRecordSaved = () => {
+    // Refresh data after record is saved
+    setRefreshData((prev) => prev + 1);
+  };
+
   if (loading) return <Loader text="Cargando módulo..." />;
   if (!module) return <p>No se encontró el módulo con ID {id}.</p>;
 
@@ -316,35 +334,10 @@ export default function ModuleDetailPage() {
           onFieldChange={handleFieldChange}
           onSaveChanges={handleSaveChanges}
           onDeleteTable={handleDeleteTable}
+          refresh={refreshData}
+          onDeleteRecord={handleDeleteRecord}
+          onRecordSaved={handleRecordSaved}
         />
-      </div>
-
-      {/* Module Data Table */}
-      <div className="mt-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="w-5 h-5" />
-              Datos del módulo
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {dataLoading ? (
-              <Loader text="Cargando datos del módulo..." />
-            ) : (
-              <Table
-                columns={columns}
-                data={moduleData}
-                searchable={true}
-                filterable={true}
-                pagination={true}
-                itemsPerPageOptions={[10, 25, 50]}
-                defaultItemsPerPage={10}
-                customizable={true}
-              />
-            )}
-          </CardContent>
-        </Card>
       </div>
 
       {/* Table Modal */}
