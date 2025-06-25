@@ -15,6 +15,8 @@ import LogicalTablesSidebar from "@/components/LogicalTablesSidebar";
 import LogicalTableDetails from "@/components/LogicalTableDetails";
 import LogicalTableModal from "@/components/LogicalTableModal";
 import { Package } from "lucide-react";
+import ColumnManager from '@/components/ColumnManager' 
+import useEditModeStore from "@/stores/editModeStore";
 
 export default function ModuleDetailPage() {
   const { modules, getById } = useModules();
@@ -44,6 +46,9 @@ export default function ModuleDetailPage() {
 
   const { getAllTables, getTableById, createOrUpdateTable, deleteTable } =
     useLogicalTables(id);
+
+  const { isEditingMode } = useEditModeStore();
+
 
   // Dynamic columns based on module type or data structure
   const getColumns = (data) => {
@@ -338,6 +343,11 @@ export default function ModuleDetailPage() {
           onDeleteRecord={handleDeleteRecord}
           onRecordSaved={handleRecordSaved}
         />
+
+        {selectedTable && isEditingMode && (
+          <ColumnManager tableId={id} tableName={"TABLA"} />
+        )} 
+
       </div>
 
       {/* Table Modal */}
