@@ -115,23 +115,11 @@ export default function ModulesPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4">
+    <div className="max-w-6xl mx-auto">
       {error && <Alert type="error" message={error} onClose={clearMessages} />}
 
       {success && (
         <Alert type="success" message={success} onClose={clearMessages} />
-      )}
-
-      {isEditingMode && (
-        <div className="mb-8">
-          <Badge
-            variant="default"
-            className="bg-green-600 hover:bg-green-700 text-white"
-          >
-            <Edit3 className="w-5 h-5" />
-            Modo edición
-          </Badge>
-        </div>
       )}
 
       <ModuleList

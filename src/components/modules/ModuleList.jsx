@@ -3,8 +3,8 @@ import { useRouter } from "next/navigation";
 import useTabStore from "@/stores/tabStore";
 import ModuleCard from "./ModuleCard";
 import AddModuleCard from "./AddModuleCard";
-import Loader from "../common/Loader";
-import Pagination from "../common/Pagination";
+import Loader from "@/components/common/Loader";
+import Pagination from "@/components/common/Pagination";
 
 export default function ModuleList({
   modules = [],
@@ -42,12 +42,17 @@ export default function ModuleList({
 
   if (!modules.length) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div className="text-center text-gray-500">
         {isEditingMode ? (
           <div className="flex justify-center">
             <div className="max-w-6xl w-full">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-8 gap-y-12">
-                <AddModuleCard onClick={onAdd} isEditingMode={isEditingMode} />
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(clamp(160px,20vw,240px),1fr))] gap-[clamp(20px,2.5vw,32px)]">
+                <div className="h-[40vh]">
+                  <AddModuleCard
+                    onClick={onAdd}
+                    isEditingMode={isEditingMode}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -60,22 +65,29 @@ export default function ModuleList({
   return (
     <div className="flex justify-center">
       <div className="max-w-6xl w-full">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-8 gap-y-12">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(clamp(160px,20vw,240px),1fr))] gap-[clamp(16px,1.5vw,32px)]">
           {modules.map((module) => (
-            <div key={module.id} className="flex flex-col items-center gap-3">
-              <ModuleCard
-                module={module}
-                onClick={handleModuleClick}
-                isEditingMode={isEditingMode}
-              />
-              <span className="font-bold text-2xl text-gray-700 dark:text-gray-300 text-center">
+            <div
+              key={module.id}
+              className="flex flex-col items-center justify-center gap-[clamp(12px,1.5vw,20px)] h-[40vh]"
+            >
+              <div className="w-full max-w-[clamp(100px,15vw,200px)]">
+                <ModuleCard
+                  module={module}
+                  onClick={handleModuleClick}
+                  isEditingMode={isEditingMode}
+                />
+              </div>
+              <span className="font-bold text-[clamp(16px,2.5vw,24px)] text-gray-700 dark:text-gray-300 text-center leading-tight break-words px-1">
                 {module.name}
               </span>
             </div>
           ))}
 
           {isEditingMode && (
-            <AddModuleCard onClick={onAdd} isEditingMode={isEditingMode} />
+            <div className="h-[40vh]">
+              <AddModuleCard onClick={onAdd} isEditingMode={isEditingMode} />
+            </div>
           )}
         </div>
 

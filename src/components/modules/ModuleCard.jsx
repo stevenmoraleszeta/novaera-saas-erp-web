@@ -44,15 +44,13 @@ export default function ModuleCard({ module, onClick, isEditingMode = false }) {
   return (
     <Card
       onClick={handleCardClick}
-      className={`aspect-square flex items-center justify-center p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-md hover:shadow-xl transition-all duration-200 ease-in-out cursor-pointer hover:-translate-y-1.5 w-full ${
-        isEditingMode ? "animate-shake" : ""
-      }`}
+      className="aspect-square flex items-center justify-center p-6 bg-white dark:bg-gray-800 rounded-2xl cursor-pointer w-full"
     >
       <CardContent className="p-0 flex items-center justify-center">
         {/* 1. Si hay iconUrl válida, mostrarla */}
         {LucideIcon && !imageError ? (
           <LucideIcon className="w-24 h-24 text-gray-800 dark:text-gray-200" />
-            ) : (
+        ) : (
           // 3. Fallback por defecto
           <GripVertical className="w-24 h-24 text-gray-800 dark:text-gray-200" />
         )}
