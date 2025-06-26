@@ -51,7 +51,10 @@ export default function LoginPage() {
         console.log("🚀 Setting user:", userToSet);
         setUser(userToSet);
         clearTabs();
-        router.replace("/");
+        // Espera breve para asegurar que el store se hidrate antes del redirect
+        setTimeout(() => {
+          router.replace("/");
+        }, 100);
       } else {
         console.log("❌ No user in response:", response);
         setLocalError("No se pudo iniciar sesión. Verifica tus credenciales.");
