@@ -10,6 +10,7 @@ import useEditModeStore from "@/stores/editModeStore";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import { Badge } from "@/components/ui/badge";
 import { Edit3 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function ModulesPage() {
   const {
@@ -45,6 +46,14 @@ export default function ModulesPage() {
     formLoading: false,
     formError: null,
   });
+
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!user) {
+      router.replace("/login");
+    }
+  }, [user, router]);
 
   const handleDeleteClick = (module) => {
     setModuleToDelete(module);
@@ -113,6 +122,10 @@ export default function ModulesPage() {
       }));
     }
   };
+
+  if (!user) {
+    return null; // O un loader/spinner si prefieres
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-4">
