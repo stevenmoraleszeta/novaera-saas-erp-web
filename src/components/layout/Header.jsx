@@ -156,9 +156,7 @@ export default function Header() {
                 variant={isEditingMode ? "default" : "outline"}
                 size="icon"
                 onClick={toggleEditMode}
-                className={
-                  isEditingMode ? "bg-green-600 hover:bg-green-700" : ""
-                }
+                className={isEditingMode ? "bg-black" : ""}
               >
                 {isEditingMode ? (
                   <Edit3 className="w-5 h-5" />
@@ -354,7 +352,7 @@ export default function Header() {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={handleLogout}
-                className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                className="focus:text-black"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 Cerrar Sesión

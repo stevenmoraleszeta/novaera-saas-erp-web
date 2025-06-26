@@ -102,7 +102,7 @@ export default function TabBar() {
             onClick={() => handleTabClick(tab.id)}
             className={`flex items-center px-4 py-2 cursor-pointer border-b-2 min-w-0 flex-shrink-0 ${
               activeTab === tab.id
-                ? "border-blue-500 bg-white dark:bg-gray-700"
+                ? "border-black bg-white dark:bg-gray-700"
                 : "border-transparent hover:bg-gray-200 dark:hover:bg-gray-700"
             } ${tab.isFixed ? "bg-gray-100 dark:bg-gray-700" : ""}`}
           >
