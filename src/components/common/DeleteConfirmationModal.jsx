@@ -1,5 +1,5 @@
 import React from "react";
-import ConfirmationModal from "./ConfirmationModal";
+import ConfirmationModal from "../common/ConfirmationModal";
 
 /**
  * Props:

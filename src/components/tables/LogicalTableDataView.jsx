@@ -5,7 +5,7 @@ import {
   updateLogicalTableRecord,
   deleteLogicalTableRecord,
 } from "@/services/logicalTableService";
-import Table from "@/components/Table";
+import Table from "@/components/tables/Table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,10 +20,10 @@ import {
   Minus,
 } from "lucide-react";
 import useEditModeStore from "@/stores/editModeStore";
-import DynamicRecordFormDialog from "./DynamicRecordFormDialog";
-import DeleteConfirmationModal from "./DeleteConfirmationModal";
+import DynamicRecordFormDialog from "../records/DynamicRecordFormDialog";
+import DeleteConfirmationModal from "../common/DeleteConfirmationModal";
 import FieldRenderer from "@/components/common/FieldRenderer";
-import { notifyAssignedUser } from "@/components/notifyAssignedUser";
+import { notifyAssignedUser } from "@/components/notifications/notifyAssignedUser";
 import { useLogicalTables } from "@/hooks/useLogicalTables";
 
 export default function LogicalTableDataView({ tableId, refresh }) {

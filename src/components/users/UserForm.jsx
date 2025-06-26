@@ -16,8 +16,8 @@ import { DialogHeader } from "@/components/ui/dialog-header";
 import { DialogActions } from "@/components/ui/dialog-actions";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
-import Alert from "./Alert";
-import { fetchRoles, checkEmailExists } from "../services/userService";
+import Alert from "../common/Alert";
+import { fetchRoles, checkEmailExists } from "../../services/userService";
 import {
   Eye,
   EyeOff,

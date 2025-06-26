@@ -3,8 +3,8 @@ import { useRouter } from "next/navigation";
 import useTabStore from "@/stores/tabStore";
 import ModuleCard from "./ModuleCard";
 import AddModuleCard from "./AddModuleCard";
-import Loader from "./Loader";
-import Pagination from "./Pagination";
+import Loader from "../common/Loader";
+import Pagination from "../common/Pagination";
 
 export default function ModuleList({
   modules = [],

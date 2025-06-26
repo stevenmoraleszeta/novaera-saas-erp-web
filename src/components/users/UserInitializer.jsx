@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import useUserStore from "../stores/userStore";
-import { getUser } from "../services/authService";
+import useUserStore from "../../stores/userStore";
+import { getUser } from "../../services/authService";
 
 export default function UserInitializer() {
   const { user, setUser } = useUserStore();

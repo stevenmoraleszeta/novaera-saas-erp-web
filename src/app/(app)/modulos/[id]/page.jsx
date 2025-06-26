@@ -4,19 +4,19 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import Loader from "@/components/Loader";
-import StatusBadge from "@/components/ModuleStatusBadge";
+import Loader from "@/components/common/Loader";
+import StatusBadge from "@/components/modules/ModuleStatusBadge";
 import { useModules } from "@/hooks/useModules";
-import Table from "@/components/Table";
+import Table from "@/components/tables/Table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLogicalTables } from "@/hooks/useLogicalTables";
-import LogicalTablesSidebar from "@/components/LogicalTablesSidebar";
-import LogicalTableDetails from "@/components/LogicalTableDetails";
-import LogicalTableModal from "@/components/LogicalTableModal";
+import LogicalTablesSidebar from "@/components/tables/LogicalTablesSidebar";
+import LogicalTableDetails from "@/components/tables/LogicalTableDetails";
+import LogicalTableModal from "@/components/tables/LogicalTableModal";
 import { Package } from "lucide-react";
 import useEditModeStore from "@/stores/editModeStore";
-import UserLinkDialog from "@/components/UserLinkDialog";
+import UserLinkDialog from "@/components/users/UserLinkDialog";
 import { useColumns } from "@/hooks/useColumns";
 import useUserStore from "@/stores/userStore";
       

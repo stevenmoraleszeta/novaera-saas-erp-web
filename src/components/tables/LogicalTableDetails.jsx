@@ -4,9 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Database, FileText, Hash, Trash2, Edit3 } from "lucide-react";
 import useEditModeStore from "@/stores/editModeStore";
-import DeleteLogicalTableButton from "./DeleteLogicalTableButton";
-import LogicalTableDataView from "./LogicalTableDataView";
-import ColumnManager from "./ColumnManager";
+import DeleteLogicalTableButton from "../tables/DeleteLogicalTableButton";
+import LogicalTableDataView from "../tables/LogicalTableDataView";
+import ColumnManager from "../columns/ColumnManager";
 
 export default function LogicalTableDetails({
   table,

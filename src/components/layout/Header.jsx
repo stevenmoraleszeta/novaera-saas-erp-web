@@ -33,10 +33,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import useUserStore from "../stores/userStore";
-import useEditModeStore from "../stores/editModeStore";
-import useTabStore from "../stores/tabStore";
-import { useNotifications } from "../hooks/useNotifications";
+import useUserStore from "../../stores/userStore";
+import useEditModeStore from "../../stores/editModeStore";
+import useTabStore from "../../stores/tabStore";
+import { useNotifications } from "../../hooks/useNotifications";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { logout as authServiceLogout } from "@/services/authService";

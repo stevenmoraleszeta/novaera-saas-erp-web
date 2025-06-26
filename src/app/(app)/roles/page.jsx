@@ -1,12 +1,12 @@
 "use client";
 
 import React from "react";
-import RolesTable from "@/components/RolesTable";
-import SearchBar from "@/components/SearchBar";
-import Pagination from "@/components/Pagination";
-import Button from "@/components/Button";
-import RoleForm from "@/components/RoleForm";
-import RolePermissionsModal from "@/components/RolePermissionsModal";
+import RolesTable from "@/components/roles/RolesTable";
+import SearchBar from "@/components/common/SearchBar";
+import Pagination from "@/components/common/Pagination";
+import Button from "@/components/common/Button";
+import RoleForm from "@/components/roles/RoleForm";
+import RolePermissionsModal from "@/components/roles/RolePermissionsModal";
 import { useRoles } from "@/hooks/useRoles";
 import MainContent from "@/components/MainContent";
 

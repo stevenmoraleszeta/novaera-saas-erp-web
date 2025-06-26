@@ -4,12 +4,12 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import useUserStore from "./userStore";
+import useUserStore from "../../stores/userStore";
 import { Edit3, Trash2, Eye, EyeOff } from "lucide-react";
 import UserStatusBadge from "./UserStatusBadge";
-import ConfirmationModal from "./ConfirmationModal";
-import Alert from "./Alert";
-import { useConfirmationModal } from "../hooks/useModal";
+import ConfirmationModal from "../common/ConfirmationModal";
+import Alert from "../common/Alert";
+import { useConfirmationModal } from "../../hooks/useModal";
 import {
   PiPencilBold,
   PiTrashBold,

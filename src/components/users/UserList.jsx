@@ -4,8 +4,8 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Search, Filter, RefreshCw } from "lucide-react";
 import UsersTable from "./UsersTable";
-import SearchBar from "./SearchBar";
-import Pagination from "./Pagination";
+import SearchBar from "../common/SearchBar";
+import Pagination from "../common/Pagination";
 import { Badge } from "@/components/ui/badge";
 
 export default function UserList({

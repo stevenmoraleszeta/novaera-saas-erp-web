@@ -23,7 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Bell, Search, Check, Trash2, Filter, RefreshCw } from "lucide-react";
-import Alert from "@/components/Alert";
+import Alert from "@/components/common/Alert";
 
 export default function NotificationCenterPage() {
   const { user } = useUserStore();

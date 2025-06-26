@@ -1,7 +1,7 @@
 import React from "react";
-import Header from "@/components/Header";
-import TabBar from "@/components/TabBar";
-import Footer from "@/components/Footer";
+import Header from "@/components/layout/Header";
+import TabBar from "@/components/tabs/TabBar";
+import Footer from "@/components/layout/Footer";
 import MainContent from "@/components/MainContent";
 
 export default function AppLayout({ children }) {

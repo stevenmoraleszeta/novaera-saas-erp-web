@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import useTabStore from "../stores/tabStore";
+import useTabStore from "../../stores/tabStore";
 
 export default function TabInitializer() {
   const pathname = usePathname();

@@ -3,7 +3,7 @@ import {
   getLogicalTableStructure,
   createLogicalTableRecord,
 } from "@/services/logicalTableService";
-import FieldRenderer from "./common/FieldRenderer";
+import FieldRenderer from "../common/FieldRenderer";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

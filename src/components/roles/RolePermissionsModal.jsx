@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Shield, X, Loader2 } from "lucide-react";
 import RolePermissionsView from "./RolePermissionsView";
-import { getTables } from "../services/tablesService";
+import { getTables } from "../../services/tablesService";
 
 export default function RolePermissionsModal({
   open = false,

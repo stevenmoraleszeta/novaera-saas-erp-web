@@ -8,7 +8,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { DialogHeader } from "@/components/ui/dialog-header";
 import { DialogActions } from "@/components/ui/dialog-actions";
 import { Separator } from "@/components/ui/separator";
-import PermissionSelector from "./PermissionSelector";
+import PermissionSelector from "../common/PermissionSelector";
 import { Shield, Save, X, Loader2 } from "lucide-react";
 
 export default function RoleForm({

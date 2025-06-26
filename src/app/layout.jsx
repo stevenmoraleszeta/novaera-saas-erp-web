@@ -1,8 +1,8 @@
 import React from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import TabInitializer from "@/components/TabInitializer";
-import UserInitializer from "@/components/UserInitializer";
+import TabInitializer from "@/components/tabs/TabInitializer";
+import UserInitializer from "@/components/users/UserInitializer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

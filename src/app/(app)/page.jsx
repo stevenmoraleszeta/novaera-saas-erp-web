@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import { useModules } from "@/hooks/useModules";
-import ModuleList from "@/components/ModuleList";
-import Alert from "@/components/Alert";
-import ModuleForm from "@/components/ModuleForm";
+import ModuleList from "@/components/modules/ModuleList";
+import Alert from "@/components/common/Alert";
+import ModuleForm from "@/components/modules/ModuleForm";
 import useUserStore from "@/stores/userStore";
 import useEditModeStore from "@/stores/editModeStore";
-import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
+import DeleteConfirmationModal from "@/components/common/DeleteConfirmationModal";
 import { Badge } from "@/components/ui/badge";
 import { Edit3 } from "lucide-react";
 
