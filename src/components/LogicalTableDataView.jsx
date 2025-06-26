@@ -8,7 +8,6 @@ import {
 import Table from "@/components/Table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Database,
@@ -23,13 +22,8 @@ import {
 import useEditModeStore from "@/stores/editModeStore";
 import DynamicRecordFormDialog from "./DynamicRecordFormDialog";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
-
-const CONDITIONS = [
-  { value: "equals", label: "Igual a" },
-  { value: "notEquals", label: "Distinto de" },
-  { value: "contains", label: "Contiene" },
-  { value: "isNull", label: "Es nulo" },
-];
+import FieldRenderer from "@/components/common/FieldRenderer";
+import { notifyAssignedUser } from "@/components/notifyAssignedUser";
 
 export default function LogicalTableDataView({ tableId, refresh }) {
   const { isEditingMode } = useEditModeStore();
@@ -40,10 +34,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
-  const [filters, setFilters] = useState([
-    { column: "", condition: "equals", value: "" },
-  ]);
-  const [appliedFilters, setAppliedFilters] = useState([]);
   const [editingRecordId, setEditingRecordId] = useState(null);
   const [editFields, setEditFields] = useState({});
   const [saving, setSaving] = useState(false);
@@ -54,7 +44,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
 
   useEffect(() => {
     const fetchData = async () => {
-      console.log("EXE: FETCHES");
       if (!tableId) {
         setColumns([]);
         setRecords([]);
@@ -64,7 +53,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
 
       setLoading(true);
       try {
-        console.log("EXE: TRIES");
         const cols = await getLogicalTableStructure(tableId);
         setColumns(cols);
 
@@ -78,7 +66,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
           data.total || (data.records ? data.records.length : data.length)
         );
       } catch (err) {
-        console.log("EXE: CATCHES");
         console.error("Error fetching table data:", err);
         setRecords([]);
         setTotal(0);
@@ -101,50 +88,9 @@ export default function LogicalTableDataView({ tableId, refresh }) {
     }
   }, [editingRecordId, records]);
 
-  // Multi-filter logic
-  const handleFilterChange = (idx, field, value) => {
-    setFilters((prev) =>
-      prev.map((f, i) => (i === idx ? { ...f, [field]: value } : f))
-    );
-  };
-  const handleAddFilter = () => {
-    setFilters((prev) => [
-      ...prev,
-      { column: "", condition: "equals", value: "" },
-    ]);
-  };
-  const handleRemoveFilter = (idx) => {
-    setFilters((prev) => prev.filter((_, i) => i !== idx));
-  };
-  const handleApplyFilters = () => {
-    setAppliedFilters(filters.filter((f) => f.column && f.value));
-  };
-  const handleClearFilters = () => {
-    setFilters([{ column: "", condition: "equals", value: "" }]);
-    setAppliedFilters([]);
-  };
-
-  // Filtering records client-side (could be server-side if needed)
-  const filteredRecords =
-    appliedFilters.length === 0
-      ? records
-      : records.filter((rec) => {
-          return appliedFilters.every((f) => {
-            const col = f.column;
-            const val =
-              (rec.record_data ? rec.record_data[col] : rec[col]) || "";
-            if (f.condition === "equals") return String(val) === f.value;
-            if (f.condition === "notEquals") return String(val) !== f.value;
-            if (f.condition === "contains")
-              return String(val).toLowerCase().includes(f.value.toLowerCase());
-            if (f.condition === "isNull")
-              return val === null || val === "" || typeof val === "undefined";
-            return true;
-          });
-        });
-
-  const handleFieldChange = (col, value) => {
-    setEditFields((prev) => ({ ...prev, [col]: value }));
+  const handleFieldChange = (col, e) => {
+    const val = e.target?.value ?? e.target?.checked ?? e;
+    setEditFields((prev) => ({ ...prev, [col]: val }));
   };
 
   const handleSave = async (record) => {
@@ -156,6 +102,7 @@ export default function LogicalTableDataView({ tableId, refresh }) {
         record_data: editFields,
       });
       setEditingRecordId(null);
+      setLocalRefreshFlag((prev) => !prev);
     } catch (err) {
       setSaveError("Error al guardar cambios");
     } finally {
@@ -184,7 +131,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
       setLocalRefreshFlag((prev) => !prev);
     } catch (err) {
       console.error("Error deleting record:", err);
-      // You could add error handling here, like showing a toast notification
     }
   };
 
@@ -192,7 +138,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
     setDeleteConfirmRecord(null);
   };
 
-  // Transform columns for the Table component
   const tableColumns = columns.map((col) => ({
     key: col.name,
     header: col.name,
@@ -202,10 +147,11 @@ export default function LogicalTableDataView({ tableId, refresh }) {
 
       if (isEditing) {
         return (
-          <Input
-            value={editFields[col.name] || ""}
-            onChange={(e) => handleFieldChange(col.name, e.target.value)}
-            className="h-8 text-sm"
+          <FieldRenderer
+            id={`edit-${row.id}-${col.name}`}
+            column={col}
+            value={editFields[col.name]}
+            onChange={(e) => handleFieldChange(col.name, e)}
           />
         );
       }
@@ -218,7 +164,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
     },
   }));
 
-  // Add actions column if in editing mode
   if (isEditingMode) {
     tableColumns.push({
       key: "actions",
@@ -344,92 +289,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
         </CardHeader>
 
         <CardContent className="flex-1 overflow-hidden">
-          {/* Multi-filter bar */}
-          <div className="mb-4">
-            {filters.map((f, idx) => {
-              const isNull = f.condition === "isNull";
-              return (
-                <div key={idx} className="flex items-center gap-2 mb-2">
-                  <select
-                    className="border border-gray-300 rounded px-2 py-1 text-sm bg-white text-gray-900 focus:ring-2 focus:ring-gray-300 focus:border-gray-400 transition"
-                    value={f.column}
-                    onChange={(e) =>
-                      handleFilterChange(idx, "column", e.target.value)
-                    }
-                  >
-                    <option value="">Columna</option>
-                    {columns.map((col) => (
-                      <option key={col.name} value={col.name}>
-                        {col.name}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className="border border-gray-300 rounded px-2 py-1 text-sm bg-white text-gray-900 focus:ring-2 focus:ring-gray-300 focus:border-gray-400 transition"
-                    value={f.condition}
-                    onChange={(e) =>
-                      handleFilterChange(idx, "condition", e.target.value)
-                    }
-                  >
-                    {CONDITIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                  <Input
-                    className="h-8 text-sm w-48 disabled:bg-gray-100 disabled:text-gray-400"
-                    value={isNull ? "" : f.value}
-                    onChange={(e) =>
-                      handleFilterChange(idx, "value", e.target.value)
-                    }
-                    placeholder="Valor"
-                    disabled={isNull}
-                  />
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8 p-0 text-red-500 hover:bg-gray-100"
-                    onClick={() => handleRemoveFilter(idx)}
-                    disabled={filters.length === 1}
-                    title="Eliminar filtro"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </Button>
-                </div>
-              );
-            })}
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={handleAddFilter}
-              >
-                <Plus className="w-4 h-4 mr-1" /> Añadir filtro
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                className="bg-black text-white hover:bg-gray-900"
-                onClick={handleApplyFilters}
-              >
-                <Search className="w-4 h-4" />
-              </Button>
-              {appliedFilters.length > 0 && (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleClearFilters}
-                >
-                  Limpiar filtros
-                </Button>
-              )}
-            </div>
-          </div>
-
           {saveError && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-600">{saveError}</p>
@@ -446,7 +305,7 @@ export default function LogicalTableDataView({ tableId, refresh }) {
             <div className="h-full overflow-auto">
               <Table
                 columns={tableColumns}
-                data={filteredRecords}
+                data={records}
                 searchable={false}
                 filterable={false}
                 pagination={true}
@@ -458,7 +317,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
             </div>
           )}
 
-          {/* Add Record Button */}
           <div className="mt-4 pt-4 border-t border-gray-200">
             <Button
               onClick={() => setShowAddRecordDialog(true)}
@@ -470,18 +328,27 @@ export default function LogicalTableDataView({ tableId, refresh }) {
             </Button>
           </div>
 
-          {/* Add Record Dialog */}
-            <DynamicRecordFormDialog
-              open={showAddRecordDialog}
-              onOpenChange={setShowAddRecordDialog}
-              tableId={tableId}
-              onSubmitSuccess={() => {
-                setShowAddRecordDialog(false);
-                setLocalRefreshFlag((prev) => !prev);
-              }}
-            />
+          <DynamicRecordFormDialog
+            open={showAddRecordDialog}
+            onOpenChange={setShowAddRecordDialog}
+            tableId={tableId}
+            onSubmitSuccess={async (createdRecord) => {
+              const userColumn = columns.find(col => col.data_type === "user");
+              const userId = userColumn ? createdRecord.message.record.record_data.Usuario : null;
+              if (userId) {
+                await notifyAssignedUser({
+                  userId,
+                  action: "created",
+                  tableName: tableId,
+                  recordId: createdRecord.id,
+                });
+              }
 
-          {/* Delete Confirmation Dialog */}
+              setShowAddRecordDialog(false);
+              setLocalRefreshFlag((prev) => !prev);
+            }}
+          />
+
           <DeleteConfirmationModal
             open={!!deleteConfirmRecord}
             onOpenChange={() => setDeleteConfirmRecord(null)}

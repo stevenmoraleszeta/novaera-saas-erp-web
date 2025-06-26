@@ -71,34 +71,35 @@ export default function DynamicRecordFormDialog({
     setErrors((prev) => ({ ...prev, [name]: undefined })); // Clear error when changing
   }, []);
 
-  const handleSubmit = useCallback(
-    async (e) => {
-      e.preventDefault();
-      setSubmitError(null);
-      if (!validate()) return;
+    const handleSubmit = useCallback(
+      async (e) => {
+        e.preventDefault();
+        setSubmitError(null);
+        if (!validate()) return;
 
-      setLoading(true);
-      try {
-        await createLogicalTableRecord(tableId, values);
-        if (onSubmitSuccess) onSubmitSuccess();
-        // Reset form after successful submission
-        const initialValues = {};
-        columns.forEach((col) => {
-          initialValues[col.name] = col.data_type === "boolean" ? false : "";
-        });
-        setValues(initialValues);
-        setErrors({});
-        onOpenChange?.(false);
-      } catch (err) {
-        setSubmitError(
-          err?.response?.data?.message || "Error al guardar el registro"
-        );
-      } finally {
-        setLoading(false);
-      }
-    },
-    [tableId, values, validate, onSubmitSuccess, columns, onOpenChange]
-  );
+        setLoading(true);
+        try {
+          const createdRecord = await createLogicalTableRecord(tableId, values);
+          if (onSubmitSuccess) onSubmitSuccess(createdRecord);
+
+          // Reset form after successful submission
+          const initialValues = {};
+          columns.forEach((col) => {
+            initialValues[col.name] = col.data_type === "boolean" ? false : "";
+          });
+          setValues(initialValues);
+          setErrors({});
+          onOpenChange?.(false);
+        } catch (err) {
+          setSubmitError(
+            err?.response?.data?.message || "Error al guardar el registro"
+          );
+        } finally {
+          setLoading(false);
+        }
+      },
+      [tableId, values, validate, onSubmitSuccess, columns, onOpenChange]
+    );
 
   const handleCancel = () => {
     if (!loading) {
