@@ -24,9 +24,11 @@ import DynamicRecordFormDialog from "./DynamicRecordFormDialog";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import FieldRenderer from "@/components/common/FieldRenderer";
 import { notifyAssignedUser } from "@/components/notifyAssignedUser";
+import { useLogicalTables } from "@/hooks/useLogicalTables";
 
 export default function LogicalTableDataView({ tableId, refresh }) {
   const { isEditingMode } = useEditModeStore();
+  const { getTableById } = useLogicalTables(null); 
 
   const [columns, setColumns] = useState([]);
   const [records, setRecords] = useState([]);
@@ -334,15 +336,22 @@ export default function LogicalTableDataView({ tableId, refresh }) {
             tableId={tableId}
             onSubmitSuccess={async (createdRecord) => {
               const userColumn = columns.find(col => col.data_type === "user");
-              const userId = userColumn ? createdRecord.message.record.record_data.Usuario : null;
-              if (userId) {
-                await notifyAssignedUser({
-                  userId,
-                  action: "created",
-                  tableName: tableId,
-                  recordId: createdRecord.id,
-                });
-              }
+              const userId = userColumn ? createdRecord.message.record.record_data?.[userColumn.name] : null;
+                if (userId) {
+                    try {
+                      const table = await getTableById(tableId); 
+                      const tableName = table.name;
+
+                      await notifyAssignedUser({
+                        userId,
+                        action: "created",
+                        tableName,
+                        recordId: createdRecord?.id,
+                      });
+                    } catch (err) {
+                      console.error("Error notificando usuario asignado:", err);
+                    }
+                  }
 
               setShowAddRecordDialog(false);
               setLocalRefreshFlag((prev) => !prev);
