@@ -47,13 +47,26 @@ export default function ModulesPage() {
     formError: null,
   });
 
+  const [hydrating, setHydrating] = useState(true);
+
   const router = useRouter();
 
   useEffect(() => {
-    if (!user) {
+    // Espera a que UserInitializer intente hidratar el usuario
+    if (user) {
+      setHydrating(false);
+    } else {
+      // Espera 1 segundo para permitir la hidratación desde el backend
+      const timeout = setTimeout(() => setHydrating(false), 1000);
+      return () => clearTimeout(timeout);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!hydrating && !user) {
       router.replace("/login");
     }
-  }, [user, router]);
+  }, [hydrating, user, router]);
 
   const handleDeleteClick = (module) => {
     setModuleToDelete(module);
@@ -123,6 +136,13 @@ export default function ModulesPage() {
     }
   };
 
+  if (hydrating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <span className="text-lg text-gray-500">Cargando usuario...</span>
+      </div>
+    );
+  }
   if (!user) {
     return null; // O un loader/spinner si prefieres
   }
