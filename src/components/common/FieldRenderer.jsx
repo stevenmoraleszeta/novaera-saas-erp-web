@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useUsers } from "@/hooks/useUsers";
 import {
   Select,
   SelectContent,
@@ -15,41 +16,81 @@ import { getLogicalTableRecords } from "@/services/logicalTableService";
 export default function FieldRenderer({ id, column, value, onChange, error }) {
   const baseClassName = `w-full ${error ? "border-red-500 focus:border-red-500" : ""}`;
   const [foreignOptions, setForeignOptions] = useState([]);
+  const { users, loadUsers } = useUsers();
 
   useEffect(() => {
-    if (column.is_foreign_key && column.foreign_table_id && column.foreign_column_name) {
-      getLogicalTableRecords(column.foreign_table_id).then((records) => {
-        const opts = records.map((record) => ({
-          value: record.record_data[column.foreign_column_name],
-          label: record.record_data[column.foreign_column_name],
-        }));
-        setForeignOptions(opts);
-      }).catch((err) => {
-        console.error("Error cargando opciones foráneas", err);
-      });
+    async function loadOptions() {
+      try {
+        if (column.is_foreign_key && column.foreign_table_id && column.foreign_column_name) {
+          const records = await getLogicalTableRecords(column.foreign_table_id);
+          const opts = records.map((record) => ({
+            value: record.record_data[column.foreign_column_name],
+            label: record.record_data[column.foreign_column_name],
+          }));
+          setForeignOptions(opts);
+        } else if (column.data_type === "user") {
+          await loadUsers();
+        }
+      } catch (err) {
+        console.error("Error cargando opciones:", err);
+      }
     }
+
+    loadOptions();
   }, [column]);
 
-  // Claves foráneas: desplegable con valores de tabla relacionada
-  if (column.is_foreign_key && column.foreign_table_id && column.foreign_column_name) {
-    return (
-      <Select
-        value={value || ""}
-        onValueChange={(val) => onChange({ target: { value: val } })}
-      >
-        <SelectTrigger className={baseClassName}>
-          <SelectValue placeholder={`Selecciona ${column.name}`} />
-        </SelectTrigger>
-        <SelectContent>
-          {foreignOptions.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    );
-  }
+
+    // Llave foránea: mostrar opciones desde tabla relacionada
+    if (column.is_foreign_key && column.foreign_table_id && column.foreign_column_name) {
+      return (
+        <Select
+          value={value?.toString() || ""}
+          onValueChange={(val) => onChange({ target: { value: val } })}
+        >
+          <SelectTrigger className={baseClassName}>
+            <SelectValue placeholder={`Selecciona ${column.name}`} />
+          </SelectTrigger>
+          <SelectContent>
+            {foreignOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+
+    // Tipo especial: "user"
+    if (column.data_type === "user") {
+      const options = users.map((u) => ({
+        value: u.id.toString(),
+        label: u.name || `Usuario #${u.id}`,
+      }));
+
+      const selectedLabel =
+        options.find((opt) => opt.value === (value?.toString() || ""))?.label || "";
+
+      return (
+        <Select
+          value={value?.toString() || ""}
+          onValueChange={(val) => onChange({ target: { value: parseInt(val, 10) } })}
+        >
+          <SelectTrigger className={baseClassName}>
+            <SelectValue placeholder={`Selecciona ${column.name}`}>
+              {selectedLabel}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
 
   // Resto de tipos
   switch (column.data_type) {

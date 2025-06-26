@@ -16,6 +16,10 @@ import LogicalTableDetails from "@/components/LogicalTableDetails";
 import LogicalTableModal from "@/components/LogicalTableModal";
 import { Package } from "lucide-react";
 import useEditModeStore from "@/stores/editModeStore";
+import UserLinkDialog from "@/components/UserLinkDialog";
+import { useColumns } from "@/hooks/useColumns";
+import useUserStore from "@/stores/userStore";
+      
 
 export default function ModuleDetailPage() {
   const { modules, getById } = useModules();
@@ -43,6 +47,13 @@ export default function ModuleDetailPage() {
     useLogicalTables(id);
 
   const { isEditingMode } = useEditModeStore();
+  const { user } = useUserStore();
+
+
+  const [showUserLinkDialog, setShowUserLinkDialog] = useState(false);
+  const [createdTableId, setCreatedTableId] = useState(null);
+
+    const { handleCreate } = useColumns(createdTableId);
 
   // Dynamic columns based on module type or data structure
   const getColumns = (data) => {
@@ -175,9 +186,11 @@ export default function ModuleDetailPage() {
       setShouldRefreshTables(true);
 
       // If it's a create operation and we got the new table data, select it
-      if (!values.id && data.id) {
+      if (!values.id && data) {
+        setCreatedTableId(data); // guardar el id para usar en la creación de la columna
+        setShowUserLinkDialog(true); // mostrar el diálogo
         setSelectedTable(data);
-      }
+      } 
       // For updates, keep the current selection but refresh the data
     } catch (err) {
       setFormError(err?.response?.data?.message || "Error al guardar");
@@ -253,6 +266,14 @@ export default function ModuleDetailPage() {
     setRefreshData((prev) => prev + 1);
   };
 
+  const handleUserLinkConfirm = async (newColumnData) => {
+    if (!createdTableId) return;
+    await handleCreate({ ...newColumnData, table_id: createdTableId });
+    setShowUserLinkDialog(false);
+    setCreatedTableId(null);
+    setRefreshData(prev => prev + 1); // para que refresque los datos
+  };
+
   if (loading) return <Loader text="Cargando módulo..." />;
   if (!module) return <p>No se encontró el módulo con ID {id}.</p>;
 
@@ -320,6 +341,13 @@ export default function ModuleDetailPage() {
         validate={validateTable}
         loading={formLoading}
         error={formError}
+      />
+
+      <UserLinkDialog
+        open={showUserLinkDialog}
+        onConfirm={handleUserLinkConfirm}
+        onCancel={() => setShowUserLinkDialog(false)}
+        createdBy={user?.id}
       />
     </div>
   );
