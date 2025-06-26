@@ -143,9 +143,13 @@ export default function ModulesPage() {
       </div>
     );
   }
-  if (!user) {
-    return null; // O un loader/spinner si prefieres
-  }
+
+  // FORZAR mostrar la vista principal aunque no haya usuario en el store
+  // Esto ignora la protección de ruta temporalmente para depuración
+  // Elimina este if para restaurar la protección
+  // if (!user) {
+  //   return null;
+  // }
 
   return (
     <div className="max-w-6xl mx-auto p-4">
