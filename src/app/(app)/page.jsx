@@ -64,7 +64,19 @@ export default function ModulesPage() {
 
   useEffect(() => {
     if (!hydrating && !user) {
+      console.log("[PROTECCION] No user en store, redirigiendo a /login");
+      // Prueba petición manual a /auth/me para ver si responde correctamente
+      fetch("/api/auth/me", { credentials: "include" })
+        .then(async (res) => {
+          const data = await res.json();
+          console.log("[PROTECCION] Respuesta /auth/me:", data);
+        })
+        .catch((err) => {
+          console.log("[PROTECCION] Error al consultar /auth/me:", err);
+        });
       router.replace("/login");
+    } else {
+      console.log("[PROTECCION] Usuario en store:", user);
     }
   }, [hydrating, user, router]);
 
