@@ -51,10 +51,19 @@ export default function LoginPage() {
         console.log("🚀 Setting user:", userToSet);
         setUser(userToSet);
         clearTabs();
-        // Espera breve para asegurar que el store se hidrate antes del redirect
-        setTimeout(() => {
-          router.replace("/");
-        }, 100);
+        // Forzar recarga del usuario desde el backend para hidratar el store correctamente
+        import("@/services/authService").then(({ getUser }) => {
+          getUser()
+            .then((userData) => {
+              if (userData && (userData.user || userData.id)) {
+                setUser(userData.user || userData);
+              }
+              router.replace("/");
+            })
+            .catch(() => {
+              router.replace("/");
+            });
+        });
       } else {
         console.log("❌ No user in response:", response);
         setLocalError("No se pudo iniciar sesión. Verifica tus credenciales.");
