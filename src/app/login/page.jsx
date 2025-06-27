@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { login as authServiceLogin } from "@/services/authService";
+import { Label } from "@/components/ui/label";
 
 export default function LoginPage() {
   const { setUser } = useUserStore();
@@ -65,34 +66,27 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-md mx-auto shadow-xl rounded-2xl">
-        <CardContent className="p-8">
+    <div className="min-h-screen w-[clamp(320px,90vw,clamp(500px,60vw,800px))] flex flex-col items-center justify-center px-4 py-[clamp(20px,10vh,100px)] mx-auto">
+      <h1 className="text-5xl font-black mb-8 self-start">ERPLOGO</h1>
+      <div className="bg-background w-full flex-1 rounded-lg gap-12 p-6 flex flex-col">
+        {/* Header */}
+        <h2 className="text-3xl leading-none font-black">Iniciar Sesión</h2>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto max-w-lg">
           <form
             className="flex flex-col gap-6"
             onSubmit={handleSubmit}
             autoComplete="off"
           >
-            <div className="text-center mb-2">
-              <h2 className="text-2xl font-bold text-gray-900 mb-1">
-                Iniciar Sesión
-              </h2>
-              <p className="text-gray-500 text-sm">
-                Accede a tu cuenta del sistema ERP
-              </p>
-            </div>
             {localError && (
               <div className="bg-red-100 text-red-700 rounded px-3 py-2 text-sm text-center">
                 {localError}
               </div>
             )}
+
             <div className="flex flex-col gap-2">
-              <label
-                htmlFor="email"
-                className="text-sm font-medium text-gray-700"
-              >
-                Usuario
-              </label>
+              <Label htmlFor="email">Usuario</Label>
               <Input
                 id="email"
                 name="email"
@@ -112,13 +106,9 @@ export default function LoginPage() {
                 </span>
               )}
             </div>
+
             <div className="relative flex flex-col gap-2">
-              <label
-                htmlFor="password"
-                className="text-sm font-medium text-gray-700"
-              >
-                Contraseña
-              </label>
+              <Label htmlFor="password">Contraseña</Label>
               <Input
                 id="password"
                 name="password"
@@ -137,7 +127,7 @@ export default function LoginPage() {
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="absolute right-1 top-8 h-7 w-7"
+                className="absolute right-1 top-7 h-7 w-7"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? (
@@ -152,21 +142,31 @@ export default function LoginPage() {
                 </span>
               )}
             </div>
-            <Button
-              type="submit"
-              className="w-full h-12 text-lg font-semibold"
-              disabled={submitting}
-            >
-              {submitting ? "Validando..." : "Ingresar"}
-            </Button>
-            <div className="text-center mt-2">
-              <Link href="/register" className="hover:underline font-medium">
-                ¿No tienes cuenta? Regístrate
+
+            <p className="text-sm text-black dark:text-black">
+              ¿No tienes cuenta?{" "}
+              <Link
+                href="/register"
+                className="text-black dark:text-black hover:underline font-medium"
+              >
+                Regístrate
               </Link>
-            </div>
+            </p>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Footer */}
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-start mt-auto pt-4">
+          <Button
+            type="submit"
+            className="w-full sm:w-auto h-12 text-lg font-semibold"
+            disabled={submitting}
+            onClick={handleSubmit}
+          >
+            {submitting ? "Validando..." : "Iniciar Sesión"}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -13,20 +13,14 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-
 import {
-  X,
-  Save,
-  Trash2,
-  Users,
-  ShoppingCart,
-  Settings,
-  BarChart3,
-  CalendarDays,
-  ClipboardList,
-  FolderKanban,
-  Package,
-} from "lucide-react";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import EmojiPicker from "emoji-picker-react";
+
+import { X, Save, Trash2, Smile, ChevronDown } from "lucide-react";
 
 export default function ModuleForm({
   open = false,
@@ -41,22 +35,13 @@ export default function ModuleForm({
 }) {
   const { user } = useUserStore();
 
-  const iconOptions = [
-    { name: "Users", Icon: Users },
-    { name: "ShoppingCart", Icon: ShoppingCart },
-    { name: "Settings", Icon: Settings },
-    { name: "BarChart3", Icon: BarChart3 },
-    { name: "CalendarDays", Icon: CalendarDays },
-    { name: "ClipboardList", Icon: ClipboardList },
-    { name: "FolderKanban", Icon: FolderKanban },
-    { name: "Package", Icon: Package },
-  ];
-
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     icon: "",
   });
+
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -88,6 +73,11 @@ export default function ModuleForm({
     }));
   };
 
+  const handleEmojiSelect = (emojiObject) => {
+    handleChange("icon", emojiObject.emoji);
+    setEmojiPickerOpen(false);
+  };
+
   const handleDelete = () => {
     if (onDelete && initialData) {
       onDelete(initialData);
@@ -111,10 +101,10 @@ export default function ModuleForm({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-8">
             {/* Module Name Field */}
             <div className="space-y-2">
-              <Label htmlFor="name">Nombre del Módulo</Label>
+              <Label htmlFor="name">Nombre</Label>
               <Input
                 id="name"
                 type="text"
@@ -124,9 +114,6 @@ export default function ModuleForm({
                 required
                 disabled={loading}
               />
-              <p className="text-xs text-gray-500">
-                El nombre que aparecerá en el menú principal
-              </p>
             </div>
 
             {/* Description Field */}
@@ -140,34 +127,56 @@ export default function ModuleForm({
                 rows={4}
                 disabled={loading}
               />
-              <p className="text-xs text-gray-500">
-                Una descripción clara ayuda a otros usuarios a entender el
-                propósito del módulo
-              </p>
             </div>
 
-            {/* Icon Selection Field */}
+            {/* Emoji Selection Field */}
             <div className="space-y-2">
-              <Label>Ícono del Módulo</Label>
-              <div className="grid grid-cols-4 gap-4">
-                {iconOptions.map(({ name, Icon }) => (
-                  <button
+              <Label>Ícono</Label>
+              <div className="flex items-center gap-3">
+                {formData.icon && (
+                  <div className="text-2xl w-10 h-10 flex items-center justify-center border border-gray-200 rounded-lg bg-gray-50">
+                    {formData.icon}
+                  </div>
+                )}
+                <Popover
+                  open={emojiPickerOpen}
+                  onOpenChange={setEmojiPickerOpen}
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="flex bg-gray-200 items-center gap-2"
+                      disabled={loading}
+                    >
+                      {formData.icon ? "Cambiar ícono" : "Seleccionar ícono"}
+                      <ChevronDown className="w-4 h-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <EmojiPicker
+                      onEmojiClick={handleEmojiSelect}
+                      searchPlaceholder="Buscar emoji..."
+                      width={350}
+                      height={400}
+                      lazyLoadEmojis={true}
+                      searchDisabled={false}
+                    />
+                  </PopoverContent>
+                </Popover>
+                {formData.icon && (
+                  <Button
                     type="button"
-                    key={name}
-                    onClick={() => handleChange("icon", name)}
-                    className={`p-3 border rounded-lg transition-colors ${
-                      formData.icon === name
-                        ? "border-blue-500 bg-blue-100"
-                        : "border-gray-200 hover:border-gray-400"
-                    }`}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleChange("icon", "")}
+                    disabled={loading}
+                    className="text-gray-500 hover:text-gray-700"
                   >
-                    <Icon className="w-6 h-6 mx-auto text-gray-800" />
-                  </button>
-                ))}
+                    Limpiar
+                  </Button>
+                )}
               </div>
-              <p className="text-xs text-gray-500">
-                Selecciona un ícono que represente visualmente el módulo
-              </p>
             </div>
 
             {/* Error Display */}

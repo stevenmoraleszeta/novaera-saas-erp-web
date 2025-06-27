@@ -96,9 +96,6 @@ export default function RoleForm({
                 required
                 disabled={loading}
               />
-              <p className="text-xs text-gray-500">
-                El nombre que identificará este rol en el sistema
-              </p>
             </div>
 
             {/* Description Field */}
@@ -112,10 +109,6 @@ export default function RoleForm({
                 rows={4}
                 disabled={loading}
               />
-              <p className="text-xs text-gray-500">
-                Una descripción clara ayuda a entender el propósito y alcance
-                del rol
-              </p>
             </div>
 
             {/* Permissions Field */}
@@ -129,9 +122,6 @@ export default function RoleForm({
                 rows={4}
                 disabled={loading}
               />
-              <p className="text-xs text-gray-500">
-                Define los permisos específicos que tendrá este rol
-              </p>
             </div>
 
             {/* Error Display */}

@@ -223,9 +223,6 @@ export default function ColumnForm({
                 rows={3}
                 disabled={loading}
               />
-              <p className="text-xs text-gray-500">
-                Reglas de validación separadas por comas
-              </p>
             </div>
 
             {/* Error Display */}

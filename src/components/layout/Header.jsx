@@ -153,16 +153,12 @@ export default function Header() {
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={isEditingMode ? "default" : "outline"}
+                variant={isEditingMode ? "default" : "ghost"}
                 size="icon"
                 onClick={toggleEditMode}
                 className={isEditingMode ? "bg-black" : ""}
               >
-                {isEditingMode ? (
-                  <Edit3 className="w-5 h-5" />
-                ) : (
-                  <Eye className="w-5 h-5" />
-                )}
+                <Edit3 className="w-5 h-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>

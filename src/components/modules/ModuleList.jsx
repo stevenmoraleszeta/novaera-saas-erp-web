@@ -40,75 +40,69 @@ export default function ModuleList({
     );
   }
 
-  if (!modules.length) {
+  if (!loading && !modules.length) {
     return (
       <div className="text-center text-gray-500">
         {isEditingMode ? (
-          <div className="flex justify-center">
-            <div className="max-w-6xl w-full">
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(clamp(160px,20vw,240px),1fr))] gap-[clamp(16px,1.5vw,32px)]">
-                <div className="flex flex-col items-center justify-center gap-[clamp(12px,1.5vw,20px)] h-[40vh]">
-                  <div className="w-full max-w-[clamp(100px,15vw,200px)]">
-                    <AddModuleCard
-                      onClick={onAdd}
-                      isEditingMode={isEditingMode}
-                    />
-                  </div>
-                  <span className="font-bold text-[clamp(16px,2.5vw,24px)] text-gray-700 dark:text-gray-300 text-center leading-tight break-words px-1">
-                    Agregar Módulo
-                  </span>
+          <div className="max-w-6xl w-full">
+            <div className="flex flex-wrap gap-[clamp(16px,2.5vw,32px)] justify-start">
+              <div className="flex flex-col items-center gap-[clamp(12px,1.5vw,20px)] w-[clamp(160px,20vw,240px)]">
+                <div className="w-full">
+                  <AddModuleCard
+                    onClick={onAdd}
+                    isEditingMode={isEditingMode}
+                  />
                 </div>
               </div>
             </div>
           </div>
-        ) : null}
-        <p className="mt-8">No se encontraron módulos.</p>
+        ) : (
+          <p className="mt-8">No se encontraron módulos.</p>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="flex justify-center">
-      <div className="max-w-6xl w-full">
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(clamp(160px,20vw,240px),1fr))] gap-[clamp(16px,1.5vw,32px)]">
-          {modules.map((module) => (
-            <div
-              key={module.id}
-              className="flex flex-col items-center justify-center gap-[clamp(12px,1.5vw,20px)] h-[40vh]"
-            >
-              <div className="w-full max-w-[clamp(100px,15vw,200px)]">
-                <ModuleCard
-                  module={module}
-                  onClick={handleModuleClick}
-                  isEditingMode={isEditingMode}
-                />
-              </div>
-              <span className="font-bold text-[clamp(16px,2.5vw,24px)] text-gray-700 dark:text-gray-300 text-center leading-tight break-words px-1">
-                {module.name}
-              </span>
+    <div className="max-w-6xl w-full p-8">
+      <div className="flex flex-wrap gap-[clamp(16px,2.5vw,32px)] justify-start">
+        {modules.map((module) => (
+          <div
+            key={module.id}
+            className="flex flex-col items-center gap-[clamp(12px,1.5vw,20px)] w-[clamp(160px,20vw,240px)]"
+          >
+            <div className="w-full">
+              <ModuleCard
+                module={module}
+                onClick={handleModuleClick}
+                isEditingMode={isEditingMode}
+              />
             </div>
-          ))}
+            <span className="font-bold text-[clamp(16px,2.5vw,24px)] text-gray-700 dark:text-gray-300 text-center leading-tight px-1 w-full truncate">
+              {module.name}
+            </span>
+          </div>
+        ))}
 
-          {isEditingMode && (
-            <div className="flex flex-col items-center justify-center gap-[clamp(12px,1.5vw,20px)] h-[40vh]">
-              <div className="w-full max-w-[clamp(100px,15vw,200px)]">
-                <AddModuleCard onClick={onAdd} isEditingMode={isEditingMode} />
-              </div>
-              <span className="font-bold text-[clamp(16px,2.5vw,24px)] text-gray-700 dark:text-gray-300 text-center leading-tight break-words px-1">
-                Agregar Módulo
-              </span>
+        {isEditingMode && (
+          <div className="flex flex-col items-center gap-[clamp(12px,1.5vw,20px)] w-[clamp(160px,20vw,240px)]">
+            <div className="w-full">
+              <AddModuleCard onClick={onAdd} isEditingMode={isEditingMode} />
             </div>
-          )}
-        </div>
-
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          itemsPerPage={itemsPerPage}
-          onPageChange={onPageChange}
-        />
+            <span className="text-transparent invisible *:font-bold text-[clamp(16px,2.5vw,24px)] dark:text-gray-300 text-center leading-tight px-1 w-full truncate">
+              Agregar Módulo
+            </span>
+          </div>
+        )}
       </div>
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        itemsPerPage={itemsPerPage}
+        onPageChange={onPageChange}
+      />
     </div>
   );
 }

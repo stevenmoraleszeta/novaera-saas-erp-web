@@ -99,9 +99,6 @@ export default function LogicalTableModal({
                 required
                 disabled={loading}
               />
-              <p className="text-xs text-gray-500">
-                El nombre que identificará esta tabla en el sistema
-              </p>
             </div>
 
             {/* Description Field */}
@@ -115,9 +112,6 @@ export default function LogicalTableModal({
                 rows={4}
                 disabled={loading}
               />
-              <p className="text-xs text-gray-500">
-                Una descripción clara ayuda a entender el propósito de la tabla
-              </p>
             </div>
 
             {/* Table Type Field */}
@@ -134,9 +128,6 @@ export default function LogicalTableModal({
                 <option value="physical">Tabla Física</option>
                 <option value="view">Vista</option>
               </select>
-              <p className="text-xs text-gray-500">
-                Define el tipo de tabla que estás creando
-              </p>
             </div>
 
             {/* Error Display */}
