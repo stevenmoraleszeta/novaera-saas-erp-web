@@ -39,8 +39,6 @@ export async function getModules(params = {}) {
       );
     }
 
-    throw error;
-
     return {
       modules,
       total: modules.length,
