@@ -40,6 +40,12 @@ export default function ModuleCard({ module, onClick, isEditingMode = false }) {
   };
 
   const LucideIcon = module.iconUrl && iconMap[module.iconUrl];
+  const isEmoji =
+    module.iconUrl &&
+    typeof module.iconUrl === "string" &&
+    !iconMap[module.iconUrl] &&
+    // Simple emoji regex (covers most single codepoint emojis)
+    /^\p{Emoji}$/u.test(module.iconUrl.trim());
 
   return (
     <Card
@@ -50,6 +56,8 @@ export default function ModuleCard({ module, onClick, isEditingMode = false }) {
         {/* 1. Si hay iconUrl válida, mostrarla */}
         {LucideIcon && !imageError ? (
           <LucideIcon className="w-24 h-24 text-gray-800 dark:text-gray-200" />
+        ) : isEmoji ? (
+          <span className="text-[6rem] leading-none">{module.iconUrl}</span>
         ) : (
           // 3. Fallback por defecto
           <GripVertical className="w-24 h-24 text-gray-800 dark:text-gray-200" />

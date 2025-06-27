@@ -6,18 +6,11 @@ import {
   deleteLogicalTableRecord,
 } from "@/services/logicalTableService";
 import Table from "@/components/tables/Table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Database,
   Edit3,
-  Save,
-  X,
-  Trash2,
-  Search,
   Plus,
-  Minus,
   Filter,
   ArrowUpDown,
   ArrowUp,
@@ -30,6 +23,7 @@ import DeleteConfirmationModal from "../common/DeleteConfirmationModal";
 import FieldRenderer from "@/components/common/FieldRenderer";
 import { notifyAssignedUser } from "@/components/notifications/notifyAssignedUser";
 import { useLogicalTables } from "@/hooks/useLogicalTables";
+import { useViews } from "@/hooks/useViews";
 import SearchBar from "@/components/common/SearchBar";
 import FilterDialog from "./dialogs/FilterDialog";
 import SortDialog from "./dialogs/SortDialog";
@@ -41,10 +35,33 @@ import {
   deleteColumn,
 } from "@/services/columnsService";
 import ConfirmationDialog from "../common/ConfirmationDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "../ui/label";
+import { Input } from "../ui/input";
 
 export default function LogicalTableDataView({ tableId, refresh }) {
   const { isEditingMode } = useEditModeStore();
   const { getTableById } = useLogicalTables(null);
+  const {
+    views,
+    columns: viewColumns,
+    loadingViews,
+    error: viewsError,
+    loadViews,
+    loadColumns,
+    getColumnsForView,
+    handleCreateView,
+    handleUpdateView,
+    handleDeleteView,
+    handleAddColumnToView,
+    handleUpdateViewColumn,
+    handleDeleteViewColumn,
+  } = useViews(tableId);
 
   const [columns, setColumns] = useState([]);
   const [records, setRecords] = useState([]);
@@ -75,6 +92,13 @@ export default function LogicalTableDataView({ tableId, refresh }) {
   const [activeSort, setActiveSort] = useState(null);
   const [activeFilters, setActiveFilters] = useState([]);
   const [columnVisibility, setColumnVisibility] = useState({});
+
+  // View management state
+  const [selectedView, setSelectedView] = useState(null);
+  const [showViewDialog, setShowViewDialog] = useState(false);
+  const [viewFormMode, setViewFormMode] = useState("create");
+  const [viewToDelete, setViewToDelete] = useState(null);
+  const [showViewDeleteDialog, setShowViewDeleteDialog] = useState(false);
 
   // Column management state
   const [selectedColumn, setSelectedColumn] = useState(null);
@@ -359,6 +383,7 @@ export default function LogicalTableDataView({ tableId, refresh }) {
       setShowColumnFormDialog(false);
       setColumnFormMode("create");
       setSelectedColumn(null);
+      setLocalRefreshFlag((prev) => !prev);
     } catch (err) {
       console.error("Error creating column:", err);
       throw err;
@@ -440,6 +465,173 @@ export default function LogicalTableDataView({ tableId, refresh }) {
     }
   };
 
+  // View management functions
+  const handleSelectView = async (view) => {
+    if (!view) {
+      // Clear view - reset to default state
+      setSelectedView(null);
+      setActiveSort(null);
+      setActiveFilters([]);
+      setColumnVisibility({});
+      return;
+    }
+
+    setSelectedView(view);
+
+    // Apply view sort configuration
+    if (view.sortBy && view.sortDirection) {
+      setActiveSort({
+        column: view.sortBy,
+        direction: view.sortDirection,
+      });
+    }
+
+    // Load and apply view columns configuration
+    try {
+      await loadColumns(view.id);
+      const viewCols = getColumnsForView(view.id);
+
+      // Apply column visibility and filters from view columns
+      // Filters are stored as properties of each column in the view
+      const newColumnVisibility = {};
+      const newFilters = [];
+
+      viewCols.forEach((viewCol) => {
+        // Find the column by ID to get the name
+        const column = columns.find(
+          (col) => col.column_id === viewCol.column_id
+        );
+        if (column) {
+          // Set column visibility
+          newColumnVisibility[column.name] = viewCol.visible !== false;
+
+          // If this column has filter settings, add them to active filters
+          if (viewCol.filter_condition && viewCol.filter_value) {
+            newFilters.push({
+              column: column.name,
+              condition: viewCol.filter_condition,
+              value: viewCol.filter_value,
+            });
+          }
+        }
+      });
+
+      setColumnVisibility(newColumnVisibility);
+      setActiveFilters(newFilters);
+    } catch (err) {
+      console.error("Error loading view configuration:", err);
+    }
+  };
+
+  const handleCreateViewLocal = async (viewData) => {
+    try {
+      // First, create the view with basic info (name, sort settings)
+      const newView = await handleCreateView({
+        ...viewData,
+        tableId,
+        sortBy: activeSort?.column || null,
+        sortDirection: activeSort?.direction || null,
+      });
+
+      // Then, add each column to the view with its configuration
+      // This includes visibility and filter settings for each column
+      const viewColumns = columns.map((col) => {
+        // Find if this column has an active filter
+        const activeFilter = activeFilters.find((f) => f.column === col.name);
+
+        return {
+          view_id: newView.id,
+          column_id: col.column_id,
+          visible: columnVisibility[col.name] !== false,
+          filter_condition: activeFilter?.condition || null,
+          filter_value: activeFilter?.value || null,
+        };
+      });
+
+      // Add each column configuration to the view
+      // This is where filters are actually stored - as column properties
+      for (const viewCol of viewColumns) {
+        await handleAddColumnToView(viewCol);
+      }
+
+      setShowViewDialog(false);
+      setViewFormMode("create");
+      setSelectedView(null);
+    } catch (err) {
+      console.error("Error creating view:", err);
+      throw err;
+    }
+  };
+
+  const handleUpdateViewLocal = async (viewId, viewData) => {
+    try {
+      // First, update the view with basic info (name, sort settings)
+      await handleUpdateView(viewId, {
+        ...viewData,
+        sortBy: activeSort?.column || null,
+        sortDirection: activeSort?.direction || null,
+      });
+
+      // Get current view columns to delete them
+      const currentViewColumns = getColumnsForView(viewId);
+
+      // Remove all existing column configurations from the view
+      for (const viewCol of currentViewColumns) {
+        await handleDeleteViewColumn(viewCol.id, viewId);
+      }
+
+      // Create new column configurations with current settings
+      // This includes visibility and filter settings for each column
+      const viewColumns = columns.map((col) => {
+        // Find if this column has an active filter
+        const activeFilter = activeFilters.find((f) => f.column === col.name);
+
+        return {
+          view_id: viewId,
+          column_id: col.column_id,
+          visible: columnVisibility[col.name] !== false,
+          filter_condition: activeFilter?.condition || null,
+          filter_value: activeFilter?.value || null,
+        };
+      });
+
+      // Add each column configuration to the view
+      // This is where filters are actually stored - as column properties
+      for (const viewCol of viewColumns) {
+        await handleAddColumnToView(viewCol);
+      }
+
+      setShowViewDialog(false);
+      setViewFormMode("create");
+      setSelectedView(null);
+    } catch (err) {
+      console.error("Error updating view:", err);
+      throw err;
+    }
+  };
+
+  const handleDeleteViewClick = (view) => {
+    setViewToDelete(view);
+    setShowViewDeleteDialog(true);
+  };
+
+  const handleDeleteViewLocal = async (view) => {
+    try {
+      await handleDeleteView(view.id);
+      if (selectedView?.id === view.id) {
+        setSelectedView(null);
+        setActiveSort(null);
+        setActiveFilters([]);
+        setColumnVisibility({});
+      }
+      setShowViewDeleteDialog(false);
+      setViewToDelete(null);
+    } catch (err) {
+      console.error("Error deleting view:", err);
+      throw err;
+    }
+  };
+
   if (!tableId) {
     return (
       <div className="flex-1 flex items-center justify-center p-6">
@@ -487,11 +679,43 @@ export default function LogicalTableDataView({ tableId, refresh }) {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-6">
           <div className="flex gap-2">
-            <button className="px-4 py-1 bg-black text-white font-semibold text-sm shadow border border-black">
-              Vista 1
+            {/* Default view (no filters/sort) */}
+            <button
+              className={`px-4 py-1 font-semibold text-sm border ${
+                !selectedView
+                  ? "bg-black text-white shadow border-black"
+                  : "bg-gray-200 text-gray-800 border-gray-300"
+              }`}
+              onClick={() => handleSelectView(null)}
+            >
+              Vista General
             </button>
-            <button className="px-4 py-1 bg-gray-200 text-gray-800 font-semibold text-sm border border-gray-300">
-              Vista 2
+
+            {/* Dynamic view tabs */}
+            {views.map((view) => (
+              <button
+                key={view.id}
+                className={`px-4 py-1 font-semibold text-sm border ${
+                  selectedView?.id === view.id
+                    ? "bg-black text-white shadow border-black"
+                    : "bg-gray-200 text-gray-800 border-gray-300"
+                }`}
+                onClick={() => handleSelectView(view)}
+              >
+                {view.name}
+              </button>
+            ))}
+
+            {/* Add new view button */}
+            <button
+              className="px-4 py-1 bg-gray-200 text-gray-800 font-semibold text-sm border border-gray-300 hover:bg-gray-300"
+              onClick={() => {
+                setViewFormMode("create");
+                setSelectedView(null);
+                setShowViewDialog(true);
+              }}
+            >
+              <Plus className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -594,18 +818,9 @@ export default function LogicalTableDataView({ tableId, refresh }) {
               size="sm"
               className="ml-2 bg-black text-white hover:bg-gray-900"
               onClick={() => {
-                const saveObject = {
-                  tableId,
-                  sortBy: activeSort?.column || null,
-                  sortOrder: activeSort?.direction || null,
-                  filters: activeFilters.map((filter) => ({
-                    columnId: filter.column,
-                    visibility: columnVisibility[filter.column] !== false,
-                    filterCondition: filter.condition,
-                    filterValue: filter.value,
-                  })),
-                };
-                console.log("Guardar object:", saveObject);
+                setViewFormMode("create");
+                setSelectedView(null);
+                setShowViewDialog(true);
               }}
             >
               Guardar
@@ -740,6 +955,97 @@ export default function LogicalTableDataView({ tableId, refresh }) {
           {
             label: "Eliminar",
             onClick: () => handleDeleteColumn(columnToDelete),
+            variant: "outline",
+          },
+        ]}
+      />
+
+      {/* View Form Dialog */}
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {viewFormMode === "create" ? "Nueva Vista" : "Editar Vista"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Label>Nombre de la Vista</Label>
+            <Input
+              type="text"
+              placeholder="Ingrese el nombre de la vista"
+              defaultValue={selectedView?.name || ""}
+              id="view-name-input"
+            />
+            <div className="text-sm text-gray-600">
+              <p>Esta vista guardará:</p>
+              <ul className="list-disc list-inside mt-1 space-y-1">
+                {activeSort?.column && (
+                  <li>
+                    Ordenamiento: {activeSort.column} ({activeSort.direction})
+                  </li>
+                )}
+                {activeFilters.length > 0 && (
+                  <li>{activeFilters.length} filtro(s) aplicado(s)</li>
+                )}
+                <li>Configuración de columnas visibles</li>
+              </ul>
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowViewDialog(false);
+                  setSelectedView(null);
+                  setViewFormMode("create");
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => {
+                  const nameInput = document.getElementById("view-name-input");
+                  const viewName = nameInput?.value?.trim();
+
+                  if (!viewName) {
+                    alert("Por favor ingrese un nombre para la vista");
+                    return;
+                  }
+
+                  if (viewFormMode === "create") {
+                    handleCreateViewLocal({ name: viewName });
+                  } else {
+                    handleUpdateViewLocal(selectedView.id, { name: viewName });
+                  }
+                }}
+              >
+                {viewFormMode === "create" ? "Crear" : "Actualizar"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showViewDeleteDialog}
+        onClose={() => {
+          setShowViewDeleteDialog(false);
+          setViewToDelete(null);
+        }}
+        title={`¿Desea eliminar la vista "${viewToDelete?.name || ""}"?`}
+        message="Esta acción no se puede deshacer. Se eliminará permanentemente la vista y su configuración."
+        actions={[
+          {
+            label: "Cancelar",
+            onClick: () => {
+              setShowViewDeleteDialog(false);
+              setViewToDelete(null);
+            },
+            variant: "default",
+          },
+          {
+            label: "Eliminar",
+            onClick: () => handleDeleteViewLocal(viewToDelete),
             variant: "outline",
           },
         ]}

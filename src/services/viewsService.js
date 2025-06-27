@@ -65,3 +65,9 @@ export async function updateViewColumn(id, updatedData) {
   const response = await axios.put(`/views/columns/${id}`, updatedData);
   return response.data;
 }
+
+// Eliminar columna de vista
+export async function deleteViewColumn(id) {
+  const response = await axios.delete(`/views/columns/${id}`);
+  return response.data;
+}
