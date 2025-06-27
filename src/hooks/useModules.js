@@ -6,6 +6,11 @@ import {
   deleteModule,
   getModuleById,
 } from "@/services/moduleService";
+import { useLogicalTables } from "@/hooks/useLogicalTables";
+import { useColumns } from "@/hooks/useColumns";
+import useUserStore from "@/stores/userStore";
+
+
 
 export function useModules(initialParams = {}) {
   const [modules, setModules] = useState([]);
@@ -17,6 +22,16 @@ export function useModules(initialParams = {}) {
   const [search, setSearch] = useState("");
   const [error, setError] = useState(null);
   const [succes, setSucces] = useState(null);
+
+    const { user } = useUserStore();
+
+    
+  const {
+      createOrUpdateTable
+    } = useLogicalTables();
+  const {
+      handleCreate
+    } = useColumns();
 
   const loadModules = useCallback(
     async (params = {}) => {
@@ -58,11 +73,40 @@ export function useModules(initialParams = {}) {
     loadModules({ page });
   };
 
-  const handleCreateModule = async (data) => {
-    const newModule = await createModule(data);
-    loadModules();
-    return newModule;
-  };
+    const handleCreateModule = async (data) => {
+      try {
+        const newModule = await createModule(data);
+        console.log("panic: ", newModule.message.module_id, "data", data);
+
+        const datatable = await createOrUpdateTable({
+          name: data.name,
+          description: data.description,
+          module_id: newModule.message.module_id,
+        });
+
+        const datacolumn = await handleCreate({
+            name: "Nombre",
+            data_type: "string",
+            is_required: false,
+            is_foreign_key: false,
+            relation_type: "",
+            foreign_table_id: 0,
+            foreign_column_name: "",
+            foreign_column_id: "",
+            validations: "",
+            table_id: datatable,
+            created_by: user?.id || null,
+            column_position: 0,
+        })
+
+
+        await loadModules();
+        return newModule;
+
+      } catch (error) {
+        console.error(" Error en handleCreateModule:", error);
+      }
+    };
 
   const handleUpdateModule = async (id, data) => {
     const updatedModule = await updateModule(id, data);
