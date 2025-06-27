@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import {
   getLogicalTableStructure,
   createLogicalTableRecord,
@@ -14,8 +20,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Save, AlertCircle } from "lucide-react";
+import { Plus, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Label } from "@/components/ui/label";
 
 export default function DynamicRecordFormDialog({
   open = false,
@@ -71,35 +78,35 @@ export default function DynamicRecordFormDialog({
     setErrors((prev) => ({ ...prev, [name]: undefined })); // Clear error when changing
   }, []);
 
-    const handleSubmit = useCallback(
-      async (e) => {
-        e.preventDefault();
-        setSubmitError(null);
-        if (!validate()) return;
+  const handleSubmit = useCallback(
+    async (e) => {
+      e.preventDefault();
+      setSubmitError(null);
+      if (!validate()) return;
 
-        setLoading(true);
-        try {
-          const createdRecord = await createLogicalTableRecord(tableId, values);
-          if (onSubmitSuccess) onSubmitSuccess(createdRecord);
+      setLoading(true);
+      try {
+        const createdRecord = await createLogicalTableRecord(tableId, values);
+        if (onSubmitSuccess) onSubmitSuccess(createdRecord);
 
-          // Reset form after successful submission
-          const initialValues = {};
-          columns.forEach((col) => {
-            initialValues[col.name] = col.data_type === "boolean" ? false : "";
-          });
-          setValues(initialValues);
-          setErrors({});
-          onOpenChange?.(false);
-        } catch (err) {
-          setSubmitError(
-            err?.response?.data?.message || "Error al guardar el registro"
-          );
-        } finally {
-          setLoading(false);
-        }
-      },
-      [tableId, values, validate, onSubmitSuccess, columns, onOpenChange]
-    );
+        // Reset form after successful submission
+        const initialValues = {};
+        columns.forEach((col) => {
+          initialValues[col.name] = col.data_type === "boolean" ? false : "";
+        });
+        setValues(initialValues);
+        setErrors({});
+        onOpenChange?.(false);
+      } catch (err) {
+        setSubmitError(
+          err?.response?.data?.message || "Error al guardar el registro"
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [tableId, values, validate, onSubmitSuccess, columns, onOpenChange]
+  );
 
   const handleCancel = () => {
     if (!loading) {
@@ -109,21 +116,9 @@ export default function DynamicRecordFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent>
         <DialogHeader>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-black rounded-lg">
-              <Plus className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <DialogTitle className="text-xl font-semibold text-gray-900">
-                Nuevo Registro
-              </DialogTitle>
-              <DialogDescription className="text-sm text-gray-500 mt-1">
-                Completa los campos para crear un nuevo registro
-              </DialogDescription>
-            </div>
-          </div>
+          <DialogTitle>Nuevo Registro</DialogTitle>
         </DialogHeader>
 
         {!tableId ? (
@@ -139,20 +134,21 @@ export default function DynamicRecordFormDialog({
             <p className="text-sm">Esta tabla no tiene columnas configuradas</p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} noValidate className="space-y-6">
+          <form
+            onSubmit={handleSubmit}
+            noValidate
+            className="space-y-6 h-full flex flex-col"
+          >
             {columns.map((col) => (
               <div key={col.id} className="space-y-2">
-                <label
-                  htmlFor={`field-${col.name}`}
-                  className="text-sm font-medium text-gray-700 flex items-center gap-2"
-                >
+                <Label htmlFor={`field-${col.name}`}>
                   {col.name}
                   {col.is_required && (
                     <Badge className="ml-auto text-xs text-destructive bg-transparent">
                       *Requerido
                     </Badge>
                   )}
-                </label>
+                </Label>
                 <FieldRenderer
                   id={`field-${col.name}`}
                   column={col}
@@ -182,33 +178,25 @@ export default function DynamicRecordFormDialog({
                 <AlertDescription>{submitError}</AlertDescription>
               </Alert>
             )}
-
-            <DialogFooter className="flex gap-2 pt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleCancel}
-                disabled={loading}
-                className="flex-1"
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={loading} className="flex-1">
-                {loading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Guardando...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Guardar Registro
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
           </form>
         )}
+        <div className="flex gap-2 pt-6">
+          <Button
+            type="submit"
+            onClick={handleSubmit}
+            disabled={loading}
+            className="flex-1 max-w-40"
+          >
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                Guardando...
+              </>
+            ) : (
+              <>Guardar</>
+            )}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

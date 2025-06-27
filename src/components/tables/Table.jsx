@@ -44,8 +44,6 @@ export default function Table({
   columns = [],
   data = [],
   onRowClick,
-  searchable = true,
-  filterable = true,
   pagination = true,
   itemsPerPageOptions = [10, 25, 50, 100],
   defaultItemsPerPage = 10,
@@ -55,8 +53,6 @@ export default function Table({
   ...props
 }) {
   // State management
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filters, setFilters] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(defaultItemsPerPage);
   const [visibleColumns, setVisibleColumns] = useState(
@@ -76,48 +72,25 @@ export default function Table({
     startWidth: 0,
   });
 
-  // Filter data based on search term and filters
-  const filteredData = useMemo(() => {
-    let filtered = data;
-
-    // Apply search
-    if (searchTerm) {
-      filtered = filtered.filter((row) =>
-        Object.values(row).some((value) =>
-          String(value).toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      );
-    }
-
-    // Apply filters
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value && value !== "all") {
-        filtered = filtered.filter((row) => {
-          const cellValue = row[key];
-          if (typeof cellValue === "string") {
-            return cellValue.toLowerCase().includes(value.toLowerCase());
-          }
-          return String(cellValue) === String(value);
-        });
-      }
-    });
-
-    return filtered;
-  }, [data, searchTerm, filters]);
-
   // Paginate data
   const paginatedData = useMemo(() => {
-    if (!pagination) return filteredData;
-
+    if (!pagination) return data;
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    return filteredData.slice(startIndex, endIndex);
-  }, [filteredData, currentPage, itemsPerPage, pagination]);
+    return data.slice(startIndex, endIndex);
+  }, [data, currentPage, itemsPerPage, pagination]);
 
-  // Get unique values for filter options
-  const getFilterOptions = (columnKey) => {
-    const values = [...new Set(data.map((row) => row[columnKey]))];
-    return values.filter((value) => value !== null && value !== undefined);
+  // Get visible columns
+  const visibleColumnsList = columns.filter((col) => visibleColumns[col.key]);
+
+  // Calculate pagination info
+  const totalPages = Math.ceil(data.length / itemsPerPage);
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, data.length);
+
+  // Handle page change
+  const handlePageChange = (page) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
 
   // Handle column visibility toggle
@@ -217,60 +190,12 @@ export default function Table({
     document.body.style.cursor = "";
   }, []);
 
-  // Get visible columns
-  const visibleColumnsList = columns.filter((col) => visibleColumns[col.key]);
-
-  // Calculate pagination info
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const startItem = (currentPage - 1) * itemsPerPage + 1;
-  const endItem = Math.min(currentPage * itemsPerPage, filteredData.length);
-
-  // Handle page change
-  const handlePageChange = (page) => {
-    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
-  };
-
-  // Reset filters
-  const resetFilters = () => {
-    setSearchTerm("");
-    setFilters({});
-    setCurrentPage(1);
-  };
-
-  if (!data.length) {
-    return (
-      <div className="text-center py-8 text-gray-500">
-        <p>No hay datos disponibles.</p>
-      </div>
-    );
-  }
-
   return (
     <div className={`space-y-4 ${className}`}>
-      {/* Search and Filters */}
-      {searchable && (
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <div className="flex flex-col sm:flex-row gap-4 flex-1">
-            {/* Search */}
-            {searchable && (
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Buscar..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-full sm:w-64"
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Results info */}
-      <div className="flex items-center justify-between text-sm text-gray-600">
+      {/* <div className="flex items-center justify-between text-sm text-gray-600">
         <span>
-          Mostrando {startItem}-{endItem} de {filteredData.length} resultados
+          Mostrando {startItem}-{endItem} de {data.length} resultados
         </span>
         {pagination && (
           <Select
@@ -292,10 +217,10 @@ export default function Table({
             </SelectContent>
           </Select>
         )}
-      </div>
+      </div> */}
 
       {/* Table */}
-      <div className="border rounded-lg overflow-x-auto">
+      <div className="overflow-x-auto">
         <TableUI ref={tableRef} {...props}>
           <TableHeader>
             <TableRow>
@@ -316,9 +241,9 @@ export default function Table({
                   {/* Resize handle */}
                   {resizable && (
                     <div
-                      className={`absolute right-0 top-0 bottom-0 w-4 cursor-col-resize hover:bg-blue-500 transition-colors ${
+                      className={`absolute right-0 top-0 bottom-0 w-2 cursor-col-resize bg-gray-200 hover:bg-black transition-colors ${
                         resizingColumn === column.key
-                          ? "bg-blue-500"
+                          ? "bg-black"
                           : "bg-transparent"
                       }`}
                       onMouseDown={(e) => handleResizeStart(e, column.key)}
@@ -332,28 +257,43 @@ export default function Table({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedData.map((row, rowIndex) => (
-              <TableRow
-                key={row.id || rowIndex}
-                onClick={() => onRowClick?.(row)}
-                className={onRowClick ? "cursor-pointer hover:bg-gray-50" : ""}
-              >
-                {visibleColumnsList.map((column) => (
+            {paginatedData.length > 0 ? (
+              paginatedData.map((row, rowIndex) => (
+                <TableRow
+                  key={row.id || rowIndex}
+                  onClick={() => onRowClick?.(row)}
+                  className={
+                    onRowClick ? "cursor-pointer hover:bg-gray-50" : ""
+                  }
+                >
+                  {visibleColumnsList.map((column) => (
+                    <TableCell
+                      key={column.key}
+                      style={{
+                        width: columnWidths[column.key],
+                        minWidth: "100px",
+                      }}
+                      className="truncate"
+                    >
+                      {column.render
+                        ? column.render(row[column.key], row)
+                        : row[column.key]}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                {visibleColumnsList.length > 0 ? (
                   <TableCell
-                    key={column.key}
-                    style={{
-                      width: columnWidths[column.key],
-                      minWidth: "100px",
-                    }}
-                    className="truncate"
+                    colSpan={visibleColumnsList.length}
+                    className="text-center text-gray-400"
                   >
-                    {column.render
-                      ? column.render(row[column.key], row)
-                      : row[column.key]}
+                    Sin datos
                   </TableCell>
-                ))}
+                ) : null}
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </TableUI>
       </div>

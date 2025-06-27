@@ -19,7 +19,7 @@ import useEditModeStore from "@/stores/editModeStore";
 import UserLinkDialog from "@/components/users/UserLinkDialog";
 import { useColumns } from "@/hooks/useColumns";
 import useUserStore from "@/stores/userStore";
-      
+import LogicalTableDataView from "@/components/tables/LogicalTableDataView";
 
 export default function ModuleDetailPage() {
   const { modules, getById } = useModules();
@@ -49,11 +49,10 @@ export default function ModuleDetailPage() {
   const { isEditingMode } = useEditModeStore();
   const { user } = useUserStore();
 
-
   const [showUserLinkDialog, setShowUserLinkDialog] = useState(false);
   const [createdTableId, setCreatedTableId] = useState(null);
 
-    const { handleCreate } = useColumns(createdTableId);
+  const { handleCreate } = useColumns(createdTableId);
 
   // Dynamic columns based on module type or data structure
   const getColumns = (data) => {
@@ -190,7 +189,7 @@ export default function ModuleDetailPage() {
         setCreatedTableId(data); // guardar el id para usar en la creación de la columna
         setShowUserLinkDialog(true); // mostrar el diálogo
         setSelectedTable(data);
-      } 
+      }
       // For updates, keep the current selection but refresh the data
     } catch (err) {
       setFormError(err?.response?.data?.message || "Error al guardar");
@@ -271,7 +270,7 @@ export default function ModuleDetailPage() {
     await handleCreate({ ...newColumnData, table_id: createdTableId });
     setShowUserLinkDialog(false);
     setCreatedTableId(null);
-    setRefreshData(prev => prev + 1); // para que refresque los datos
+    setRefreshData((prev) => prev + 1); // para que refresque los datos
   };
 
   if (loading) return <Loader text="Cargando módulo..." />;
@@ -281,53 +280,17 @@ export default function ModuleDetailPage() {
 
   return (
     <div>
-      {/* Header Section */}
-      <div>
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center">
-            <Package className="w-5 h-5 text-white" />
+      {/* Main Content: Only first logical table's data view */}
+      <div className="flex-1 overflow-hidden">
+        {tablesLoading ? (
+          <Loader text="Cargando tablas..." />
+        ) : tables.length === 0 ? (
+          <div className="flex items-center justify-center h-full p-8 text-gray-500">
+            No hay tablas lógicas para este módulo.
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{module.name}</h1>
-            <p className="text-gray-600 text-sm">
-              {module.description || "Sin descripción"}
-            </p>
-          </div>
-          <div className="ml-auto flex items-center gap-2">
-            <Badge variant="secondary" className="text-sm">
-              {module.category || "Sin categoría"}
-            </Badge>
-            <StatusBadge status={module.status} />
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Split */}
-      <div className="flex flex-col min-h-[calc(100vh-200px)] bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-        {/* Logical Tables Sidebar and Details Row */}
-        <div className="flex flex-1 overflow-hidden">
-          {/* Logical Tables Sidebar */}
-          <LogicalTablesSidebar
-            tables={tables}
-            selectedTable={selectedTable}
-            onTableSelect={handleViewTable}
-            onTableEdit={handleEditTable}
-            onTableDelete={handleDeleteTable}
-            onAddTable={handleAddTable}
-            loading={tablesLoading}
-            collapsed={sidebarCollapsed}
-            onCollapse={(collapsed) => setSidebarCollapsed(collapsed)}
-          />
-
-          {/* Table Details */}
-          <LogicalTableDetails
-            table={selectedTable}
-            refresh={refreshData}
-            onTableEdit={handleEditTable}
-            onTableDelete={handleDeleteTable}
-            onRefresh={handleTableRefresh}
-          />
-        </div>
+        ) : (
+          <LogicalTableDataView tableId={tables[0].id} refresh={refreshData} />
+        )}
       </div>
 
       {/* Table Modal */}

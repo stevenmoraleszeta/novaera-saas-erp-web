@@ -5,6 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -108,8 +116,14 @@ export default function ColumnForm({
   };
 
   const handleDelete = () => {
-    if (onDelete && initialData?.id) {
-      onDelete(initialData.id);
+    console.log("ColumnForm handleDelete called");
+    console.log("onDelete function:", onDelete);
+    console.log("initialData:", initialData);
+    if (onDelete && initialData?.column_id) {
+      console.log("Calling onDelete with ID:", initialData.column_id);
+      onDelete(initialData.column_id);
+    } else {
+      console.log("onDelete not available or no initialData.column_id");
     }
   };
 
@@ -157,22 +171,22 @@ export default function ColumnForm({
             {/* Checkboxes */}
             <div className="flex gap-6">
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={formData.is_required}
-                  onChange={(e) =>
-                    handleChange("is_required", e.target.checked)
+                  onCheckedChange={(checked) =>
+                    handleChange("is_required", checked)
                   }
+                  className="data-[state=checked]:bg-black data-[state=checked]:border-black"
                 />
                 ¿Requerida?
               </label>
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={formData.is_foreign_key}
-                  onChange={(e) =>
-                    handleChange("is_foreign_key", e.target.checked)
+                  onCheckedChange={(checked) =>
+                    handleChange("is_foreign_key", checked)
                   }
+                  className="data-[state=checked]:bg-black data-[state=checked]:border-black"
                 />
                 ¿Llave Foránea?
               </label>
@@ -181,19 +195,21 @@ export default function ColumnForm({
             {/* Tipo de Relación */}
             <div className="space-y-2">
               <Label htmlFor="relation_type">Tipo de Relación</Label>
-              <select
-                id="relation_type"
+              <Select
                 value={formData.relation_type}
-                onChange={(e) => handleChange("relation_type", e.target.value)}
+                onValueChange={(value) => handleChange("relation_type", value)}
                 disabled={!formData.is_foreign_key || loading}
-                className="w-full p-2 border border-gray-300 rounded-md bg-white"
               >
-                <option value="">Selecciona el tipo de relación</option>
-                <option value="one_to_one">Uno a Uno</option>
-                <option value="one_to_many">Uno a Muchos</option>
-                <option value="many_to_one">Muchos a Uno</option>
-                <option value="many_to_many">Muchos a Muchos</option>
-              </select>
+                <SelectTrigger className="w-full p-2 bg-gray-200 rounded-none">
+                  <SelectValue placeholder="Selecciona el tipo de relación" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="one_to_one">Uno a Uno</SelectItem>
+                  <SelectItem value="one_to_many">Uno a Muchos</SelectItem>
+                  <SelectItem value="many_to_one">Muchos a Uno</SelectItem>
+                  <SelectItem value="many_to_many">Muchos a Muchos</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Foreign Key Selector */}
@@ -240,16 +256,6 @@ export default function ColumnForm({
         </div>
 
         <DialogFooter>
-          {mode === "edit" && onDelete && (
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={loading}
-            >
-              Eliminar
-            </Button>
-          )}
           <Button
             type="submit"
             onClick={handleSubmit}
@@ -264,6 +270,16 @@ export default function ColumnForm({
               <>{mode === "edit" ? "Actualizar" : "Crear"}</>
             )}
           </Button>
+          {mode === "edit" && onDelete && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleDelete}
+              disabled={loading}
+            >
+              Eliminar
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

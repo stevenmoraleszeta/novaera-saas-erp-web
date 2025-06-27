@@ -36,7 +36,7 @@ export default function ColumnTypeSelector({
       </Label>
 
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="w-full h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-colors">
+        <SelectTrigger className="w-full h-11 focus:border-black focus:ring-blue-500/20 transition-colors">
           <SelectValue placeholder="Seleccione un tipo de dato" />
         </SelectTrigger>
         <SelectContent>
@@ -48,9 +48,7 @@ export default function ColumnTypeSelector({
         </SelectContent>
       </Select>
 
-      {error && (
-        <p className="text-sm text-red-500 font-medium">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
     </div>
   );
 }
