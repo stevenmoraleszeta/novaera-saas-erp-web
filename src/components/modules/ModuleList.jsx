@@ -46,12 +46,17 @@ export default function ModuleList({
         {isEditingMode ? (
           <div className="flex justify-center">
             <div className="max-w-6xl w-full">
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(clamp(160px,20vw,240px),1fr))] gap-[clamp(20px,2.5vw,32px)]">
-                <div className="h-[40vh]">
-                  <AddModuleCard
-                    onClick={onAdd}
-                    isEditingMode={isEditingMode}
-                  />
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(clamp(160px,20vw,240px),1fr))] gap-[clamp(16px,1.5vw,32px)]">
+                <div className="flex flex-col items-center justify-center gap-[clamp(12px,1.5vw,20px)] h-[40vh]">
+                  <div className="w-full max-w-[clamp(100px,15vw,200px)]">
+                    <AddModuleCard
+                      onClick={onAdd}
+                      isEditingMode={isEditingMode}
+                    />
+                  </div>
+                  <span className="font-bold text-[clamp(16px,2.5vw,24px)] text-gray-700 dark:text-gray-300 text-center leading-tight break-words px-1">
+                    Agregar Módulo
+                  </span>
                 </div>
               </div>
             </div>
@@ -85,8 +90,13 @@ export default function ModuleList({
           ))}
 
           {isEditingMode && (
-            <div className="h-[40vh]">
-              <AddModuleCard onClick={onAdd} isEditingMode={isEditingMode} />
+            <div className="flex flex-col items-center justify-center gap-[clamp(12px,1.5vw,20px)] h-[40vh]">
+              <div className="w-full max-w-[clamp(100px,15vw,200px)]">
+                <AddModuleCard onClick={onAdd} isEditingMode={isEditingMode} />
+              </div>
+              <span className="font-bold text-[clamp(16px,2.5vw,24px)] text-gray-700 dark:text-gray-300 text-center leading-tight break-words px-1">
+                Agregar Módulo
+              </span>
             </div>
           )}
         </div>

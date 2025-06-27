@@ -1,3 +1,5 @@
+"use client";
+
 // UserForm.jsx - Reusable form for creating and editing users
 import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,9 +13,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { DialogHeader } from "@/components/ui/dialog-header";
-import { DialogActions } from "@/components/ui/dialog-actions";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import Alert from "../common/Alert";
@@ -31,6 +37,8 @@ import {
   X as XIcon,
 } from "lucide-react";
 
+import useUserStore from "@/stores/userStore";
+
 /**
  * Props:
  *  - open: boolean
@@ -39,6 +47,7 @@ import {
  *  - initialData: object (for edit mode)
  *  - onSubmit: function
  *  - onCancel: function
+ *  - onDelete: function
  *  - loading: boolean
  *  - error: string
  */
@@ -46,22 +55,30 @@ export default function UserForm({
   open = false,
   onOpenChange,
   mode = "create",
-  initialData = {},
+  initialData = null,
   onSubmit,
   onCancel,
+  onDelete,
   loading = false,
   error = null,
 }) {
+  const { user } = useUserStore();
+
   const isEditMode = mode === "edit";
 
   // Form state
   const [formData, setFormData] = useState({
-    name: initialData?.name || "",
-    email: initialData?.email || "",
+    name: "",
+    email: "",
     password: "",
     confirmPassword: "",
-    role: initialData?.role || "",
-    isActive: initialData?.isActive !== undefined ? initialData.isActive : true,
+    role: "",
+    department: "",
+    position: "",
+    phone: "",
+    address: "",
+    created_by: user?.id || null,
+    isActive: true,
   });
 
   // Validation and UI state
@@ -84,13 +101,18 @@ export default function UserForm({
   useEffect(() => {
     if (open && initialData) {
       setFormData({
-        name: initialData?.name || "",
-        email: initialData?.email || "",
+        name: initialData.name || "",
+        email: initialData.email || "",
         password: "",
         confirmPassword: "",
-        role: initialData?.role || "",
+        role: initialData.role || "",
+        department: initialData.department || "",
+        position: initialData.position || "",
+        phone: initialData.phone || "",
+        address: initialData.address || "",
+        created_by: user?.id || null,
         isActive:
-          initialData?.isActive !== undefined ? initialData.isActive : true,
+          initialData.isActive !== undefined ? initialData.isActive : true,
       });
     } else if (!open) {
       setFormData({
@@ -99,12 +121,17 @@ export default function UserForm({
         password: "",
         confirmPassword: "",
         role: "",
+        department: "",
+        position: "",
+        phone: "",
+        address: "",
+        created_by: user?.id || null,
         isActive: true,
       });
       setFormErrors({});
       setEmailValid(null);
     }
-  }, [open, initialData]);
+  }, [open, initialData, user?.id]);
 
   // Load available roles
   const loadRoles = async () => {
@@ -211,15 +238,20 @@ export default function UserForm({
 
     // Email validation
     if (!formData.email.trim()) {
-      errors.email = "El email es obligatorio";
+      errors.email = "El correo electrónico es obligatorio";
     } else if (!isValidEmail(formData.email)) {
-      errors.email = "El formato del email no es válido";
+      errors.email = "El correo electrónico no es válido";
     } else if (emailValid === false && !emailChecking) {
-      errors.email = "Este email ya está registrado";
+      errors.email = "Este correo electrónico ya está registrado";
+    }
+
+    // Role validation
+    if (!formData.role) {
+      errors.role = "Debes seleccionar un rol";
     }
 
     // Password validation (only for create mode or if password is provided in edit mode)
-    if (!isEditMode) {
+    if (!isEditMode || formData.password) {
       if (!formData.password) {
         errors.password = "La contraseña es obligatoria";
       } else if (!isValidPassword(formData.password)) {
@@ -227,20 +259,10 @@ export default function UserForm({
       }
 
       if (!formData.confirmPassword) {
-        errors.confirmPassword = "Confirma tu contraseña";
+        errors.confirmPassword = "Debes confirmar la contraseña";
       } else if (formData.password !== formData.confirmPassword) {
         errors.confirmPassword = "Las contraseñas no coinciden";
       }
-    } else if (
-      formData.password &&
-      formData.password !== formData.confirmPassword
-    ) {
-      errors.confirmPassword = "Las contraseñas no coinciden";
-    }
-
-    // Role validation
-    if (!formData.role || formData.role.trim() === "") {
-      errors.role = "Selecciona un rol";
     }
 
     setFormErrors(errors);
@@ -255,32 +277,22 @@ export default function UserForm({
       return;
     }
 
-    if (emailChecking) {
-      console.log("Esperando validación de email...");
-      return; // Wait for email validation
-    }
-
-    // Si el email no se pudo validar pero el formato es correcto, permitir continuar
-    if (emailValid === null && isValidEmail(formData.email)) {
-      console.log(
-        "Email validation failed, but format is valid. Proceeding..."
-      );
-    }
-
     // Prepare data for submission
-    const submitData = { ...formData };
+    const submitData = {
+      name: formData.name.trim(),
+      email: formData.email.trim(),
+      role: formData.role,
+      department: formData.department,
+      position: formData.position,
+      phone: formData.phone,
+      address: formData.address,
+      isActive: formData.isActive,
+    };
 
-    // Remove confirmPassword from submission
-    delete submitData.confirmPassword;
-
-    // Remove empty password in edit mode
-    if (isEditMode && !submitData.password) {
-      delete submitData.password;
+    // Only include password if provided (for edit mode) or always (for create mode)
+    if (!isEditMode || formData.password) {
+      submitData.password = formData.password;
     }
-
-    console.log("🚀 UserForm submitting data:", submitData);
-    console.log("📋 Selected role:", submitData.role);
-    console.log("📊 Available role options:", roles);
 
     onSubmit(submitData);
   };
@@ -292,281 +304,189 @@ export default function UserForm({
     onOpenChange?.(false);
   };
 
+  const handleDelete = () => {
+    if (onDelete && initialData) {
+      onDelete(initialData);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader
-          icon={User}
-          title={isEditMode ? "Editar Usuario" : "Crear Nuevo Usuario"}
-          description={
-            isEditMode
-              ? "Modifica la información del usuario"
-              : "Completa los datos del nuevo usuario"
-          }
-          iconBgColor="from-blue-500 to-purple-600"
-        />
+      <DialogContent className="sm:max-w-[600px] h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>
+            {mode === "edit" ? "Editar Usuario" : "Crear Nuevo Usuario"}
+          </DialogTitle>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                <p className="text-red-700 text-sm font-medium">{error}</p>
-              </div>
-            </div>
-          )}
+        <div className="flex-1 overflow-y-auto">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900">
+                Información Básica
+              </h3>
 
-          {/* Basic Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
-              <User className="w-5 h-5" />
-              Información Básica
-            </h3>
-
-            {/* Name Field */}
-            <div className="space-y-2">
-              <Label
-                htmlFor="name"
-                className="text-sm font-medium text-gray-700"
-              >
-                Nombre completo *
-              </Label>
-              <Input
-                id="name"
-                name="name"
-                type="text"
-                value={formData.name}
-                onChange={(e) => handleChange("name", e.target.value)}
-                placeholder="Ingresa el nombre completo"
-                className={formErrors.name ? "border-red-500" : ""}
-                disabled={loading}
-              />
-              {formErrors.name && (
-                <p className="text-xs text-red-600">{formErrors.name}</p>
-              )}
-            </div>
-
-            {/* Email Field */}
-            <div className="space-y-2">
-              <Label
-                htmlFor="email"
-                className="text-sm font-medium text-gray-700 flex items-center gap-2"
-              >
-                <Mail className="w-4 h-4" />
-                Correo electrónico *
-              </Label>
-              <div className="relative">
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleChange("email", e.target.value)}
-                  placeholder="usuario@empresa.com"
-                  className={formErrors.email ? "border-red-500" : ""}
-                  disabled={loading}
-                />
-                {emailChecking && (
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2 text-gray-500">
-                    <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
-                    <span className="text-xs">Verificando...</span>
-                  </div>
-                )}
-                {emailValid === true && (
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1 text-green-600">
-                    <Check className="w-4 h-4" />
-                    <span className="text-xs">Disponible</span>
-                  </div>
-                )}
-                {emailValid === false && (
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1 text-red-600">
-                    <X className="w-4 h-4" />
-                    <span className="text-xs">Ya registrado</span>
-                  </div>
-                )}
-              </div>
-              {formErrors.email && (
-                <p className="text-xs text-red-600">{formErrors.email}</p>
-              )}
-            </div>
-
-            {/* Role Field */}
-            <div className="space-y-2">
-              <Label
-                htmlFor="role"
-                className="text-sm font-medium text-gray-700 flex items-center gap-2"
-              >
-                <Shield className="w-4 h-4" />
-                Rol *
-              </Label>
-              <Select
-                value={formData.role}
-                onValueChange={(value) => handleChange("role", value)}
-                disabled={loading || rolesLoading}
-              >
-                <SelectTrigger
-                  className={formErrors.role ? "border-red-500" : ""}
-                >
-                  <SelectValue
-                    placeholder={
-                      rolesLoading ? "Cargando roles..." : "Selecciona un rol"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {roles.map((role) => (
-                    <SelectItem key={role.value} value={role.value}>
-                      {role.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {formErrors.role && (
-                <p className="text-xs text-red-600">{formErrors.role}</p>
-              )}
-            </div>
-
-            {/* Status Field (only in edit mode) */}
-            {isEditMode && (
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="isActive"
-                    checked={formData.isActive}
-                    onCheckedChange={(checked) =>
-                      handleChange("isActive", checked)
-                    }
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nombre Completo</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => handleChange("name", e.target.value)}
+                    placeholder="Nombre y apellidos"
+                    required
                     disabled={loading}
                   />
-                  <Label
-                    htmlFor="isActive"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Usuario activo
-                  </Label>
                 </div>
-                <p className="text-xs text-gray-500">
-                  Los usuarios inactivos no pueden acceder al sistema
-                </p>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Correo Electrónico</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleChange("email", e.target.value)}
+                    placeholder="usuario@empresa.com"
+                    required
+                    disabled={loading}
+                  />
+                </div>
               </div>
-            )}
-          </div>
 
-          <Separator />
-
-          {/* Password Section */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
-              <Lock className="w-5 h-5" />
-              {isEditMode ? "Cambiar Contraseña (Opcional)" : "Contraseña *"}
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Password Field */}
-              <div className="space-y-2">
-                <Label
-                  htmlFor="password"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  {isEditMode ? "Nueva contraseña" : "Contraseña *"}
-                </Label>
-                <div className="relative">
+              {mode === "create" && (
+                <div className="space-y-2">
+                  <Label htmlFor="password">Contraseña</Label>
                   <Input
                     id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
+                    type="password"
                     value={formData.password}
                     onChange={(e) => handleChange("password", e.target.value)}
-                    placeholder="Mínimo 6 caracteres"
-                    className={formErrors.password ? "border-red-500" : ""}
+                    placeholder="Contraseña segura"
+                    required={mode === "create"}
                     disabled={loading}
                   />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
                 </div>
-                {formErrors.password && (
-                  <p className="text-xs text-red-600">{formErrors.password}</p>
-                )}
-              </div>
+              )}
+            </div>
 
-              {/* Confirm Password Field */}
-              <div className="space-y-2">
-                <Label
-                  htmlFor="confirmPassword"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  {isEditMode
-                    ? "Confirmar nueva contraseña"
-                    : "Confirmar contraseña *"}
-                </Label>
-                <div className="relative">
+            {/* Work Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900">
+                Información Laboral
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="role">Rol</Label>
                   <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    value={formData.confirmPassword}
-                    onChange={(e) =>
-                      handleChange("confirmPassword", e.target.value)
-                    }
-                    placeholder="Repite la contraseña"
-                    className={
-                      formErrors.confirmPassword ? "border-red-500" : ""
-                    }
+                    id="role"
+                    type="text"
+                    value={formData.role}
+                    onChange={(e) => handleChange("role", e.target.value)}
+                    placeholder="Ej: Administrador, Usuario, Editor"
                     disabled={loading}
                   />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
                 </div>
-                {formErrors.confirmPassword && (
-                  <p className="text-xs text-red-600">
-                    {formErrors.confirmPassword}
-                  </p>
-                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="department">Departamento</Label>
+                  <Input
+                    id="department"
+                    type="text"
+                    value={formData.department}
+                    onChange={(e) => handleChange("department", e.target.value)}
+                    placeholder="Ej: IT, Ventas, Recursos Humanos"
+                    disabled={loading}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="position">Cargo</Label>
+                  <Input
+                    id="position"
+                    type="text"
+                    value={formData.position}
+                    onChange={(e) => handleChange("position", e.target.value)}
+                    placeholder="Ej: Desarrollador, Gerente, Analista"
+                    disabled={loading}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Teléfono</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => handleChange("phone", e.target.value)}
+                    placeholder="+1 234 567 8900"
+                    disabled={loading}
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Action Buttons */}
-          <DialogActions
-            cancelAction={{
-              onClick: handleCancel,
-              label: "Cancelar",
-              icon: XIcon,
-            }}
-            primaryAction={{
-              onClick: handleSubmit,
-              label: isEditMode ? "Actualizar Usuario" : "Crear Usuario",
-              icon: Save,
-              variant: "default",
-              className:
-                "bg-black hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200",
-            }}
-            loading={loading}
-            disabled={emailValid === false && !emailChecking}
-          />
-        </form>
+            {/* Additional Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900">
+                Información Adicional
+              </h3>
+
+              <div className="space-y-2">
+                <Label htmlFor="address">Dirección</Label>
+                <Textarea
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) => handleChange("address", e.target.value)}
+                  placeholder="Dirección completa"
+                  rows={3}
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
+            {/* Error Display */}
+            {error && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <X className="w-4 h-4 text-red-600" />
+                  <span className="text-sm text-red-800">{error}</span>
+                </div>
+              </div>
+            )}
+          </form>
+        </div>
+
+        <DialogFooter>
+          {mode === "edit" && onDelete && (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={loading}
+            >
+              Eliminar
+            </Button>
+          )}
+          <Button
+            type="submit"
+            onClick={handleSubmit}
+            disabled={
+              loading || !formData.name.trim() || !formData.email.trim()
+            }
+          >
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Guardando...
+              </>
+            ) : (
+              <>{mode === "edit" ? "Actualizar" : "Crear"}</>
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

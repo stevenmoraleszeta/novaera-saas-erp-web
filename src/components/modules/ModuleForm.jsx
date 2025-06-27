@@ -6,18 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import useUserStore from "@/stores/userStore";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { DialogHeader } from "@/components/ui/dialog-header";
-import { DialogActions } from "@/components/ui/dialog-actions";
-import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 import {
   X,
   Save,
   Trash2,
-  Package,
-  FileText,
-  Link,
   Users,
   ShoppingCart,
   Settings,
@@ -25,6 +25,7 @@ import {
   CalendarDays,
   ClipboardList,
   FolderKanban,
+  Package,
 } from "lucide-react";
 
 export default function ModuleForm({
@@ -102,138 +103,111 @@ export default function ModuleForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader
-          icon={Package}
-          title={mode === "edit" ? "Editar Módulo" : "Crear Nuevo Módulo"}
-          description={
-            mode === "edit"
-              ? "Actualiza la información del módulo existente"
-              : "Define un nuevo módulo para tu sistema ERP"
-          }
-          iconBgColor="from-gray-800 to-black"
-        />
+      <DialogContent className="sm:max-w-[600px] h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>
+            {mode === "edit" ? "Editar Módulo" : "Crear Nuevo Módulo"}
+          </DialogTitle>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Module Name Field */}
-          <div className="space-y-2">
-            <Label
-              htmlFor="name"
-              className="text-sm font-medium text-gray-700 flex items-center gap-2"
-            >
-              <Package className="w-4 h-4" />
-              Nombre del Módulo
-            </Label>
-            <Input
-              id="name"
-              type="text"
-              value={formData.name}
-              onChange={(e) => handleChange("name", e.target.value)}
-              placeholder="Ej: Gestión de Usuarios, Inventario, Facturación..."
-              required
-              disabled={loading}
-              className="h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-colors"
-            />
-            <p className="text-xs text-gray-500">
-              El nombre que aparecerá en el menú principal
-            </p>
-          </div>
-
-          <Separator className="my-6" />
-
-          {/* Description Field */}
-          <div className="space-y-2">
-            <Label
-              htmlFor="description"
-              className="text-sm font-medium text-gray-700 flex items-center gap-2"
-            >
-              <FileText className="w-4 h-4" />
-              Descripción
-            </Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => handleChange("description", e.target.value)}
-              placeholder="Describe las funcionalidades y propósito de este módulo..."
-              rows={4}
-              disabled={loading}
-              className="border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-colors resize-none"
-            />
-            <p className="text-xs text-gray-500">
-              Una descripción clara ayuda a otros usuarios a entender el
-              propósito del módulo
-            </p>
-          </div>
-
-          <Separator className="my-6" />
-
-          {/* Icon Selection Field */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-              <Link className="w-4 h-4" />
-              Ícono del Módulo
-            </Label>
-            <div className="grid grid-cols-4 gap-4">
-              {iconOptions.map(({ name, Icon }) => (
-                <button
-                  type="button"
-                  key={name}
-                  onClick={() => handleChange("icon", name)}
-                  className={`p-3 border rounded-lg transition-colors ${
-                    formData.icon === name
-                      ? "border-blue-500 bg-blue-100"
-                      : "border-gray-200 hover:border-gray-400"
-                  }`}
-                >
-                  <Icon className="w-6 h-6 mx-auto text-gray-800" />
-                </button>
-              ))}
+        <div className="flex-1 overflow-y-auto">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Module Name Field */}
+            <div className="space-y-2">
+              <Label htmlFor="name">Nombre del Módulo</Label>
+              <Input
+                id="name"
+                type="text"
+                value={formData.name}
+                onChange={(e) => handleChange("name", e.target.value)}
+                placeholder="Ej: Gestión de Usuarios, Inventario, Facturación..."
+                required
+                disabled={loading}
+              />
+              <p className="text-xs text-gray-500">
+                El nombre que aparecerá en el menú principal
+              </p>
             </div>
-            <p className="text-xs text-gray-500">
-              Selecciona un ícono que represente visualmente el módulo
-            </p>
-          </div>
 
-          {/* Error Display */}
-          {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                <p className="text-red-700 text-sm font-medium">{error}</p>
+            {/* Description Field */}
+            <div className="space-y-2">
+              <Label htmlFor="description">Descripción</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => handleChange("description", e.target.value)}
+                placeholder="Describe las funcionalidades y propósito de este módulo..."
+                rows={4}
+                disabled={loading}
+              />
+              <p className="text-xs text-gray-500">
+                Una descripción clara ayuda a otros usuarios a entender el
+                propósito del módulo
+              </p>
+            </div>
+
+            {/* Icon Selection Field */}
+            <div className="space-y-2">
+              <Label>Ícono del Módulo</Label>
+              <div className="grid grid-cols-4 gap-4">
+                {iconOptions.map(({ name, Icon }) => (
+                  <button
+                    type="button"
+                    key={name}
+                    onClick={() => handleChange("icon", name)}
+                    className={`p-3 border rounded-lg transition-colors ${
+                      formData.icon === name
+                        ? "border-blue-500 bg-blue-100"
+                        : "border-gray-200 hover:border-gray-400"
+                    }`}
+                  >
+                    <Icon className="w-6 h-6 mx-auto text-gray-800" />
+                  </button>
+                ))}
               </div>
+              <p className="text-xs text-gray-500">
+                Selecciona un ícono que represente visualmente el módulo
+              </p>
             </div>
-          )}
 
-          {/* Action Buttons */}
-          <DialogActions
-            cancelAction={{
-              onClick: handleCancel,
-              label: "Cancelar",
-              icon: X,
-            }}
-            primaryAction={{
-              onClick: handleSubmit,
-              label: mode === "edit" ? "Actualizar Módulo" : "Crear Módulo",
-              icon: Save,
-              variant: "default",
-              className:
-                "bg-black hover:bg-gray-800 text-white shadow-lg hover:shadow-xl transition-all duration-200",
-            }}
-            secondaryAction={
-              mode === "edit" && onDelete
-                ? {
-                    onClick: handleDelete,
-                    label: "Eliminar",
-                    icon: Trash2,
-                    variant: "destructive",
-                    className:
-                      "bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-xl transition-all duration-200",
-                  }
-                : undefined
-            }
-            loading={loading}
-          />
-        </form>
+            {/* Error Display */}
+            {error && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <X className="w-4 h-4 text-red-600" />
+                  <span className="text-sm text-red-800">{error}</span>
+                </div>
+              </div>
+            )}
+          </form>
+        </div>
+
+        <DialogFooter>
+          <Button
+            type="submit"
+            onClick={handleSubmit}
+            disabled={loading || !formData.name.trim()}
+          >
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Guardando...
+              </>
+            ) : (
+              <>{mode === "edit" ? "Actualizar" : "Crear"}</>
+            )}
+          </Button>
+          {mode === "edit" && onDelete && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleDelete}
+              disabled={loading}
+            >
+              Eliminar
+            </Button>
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
