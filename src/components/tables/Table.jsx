@@ -50,6 +50,7 @@ export default function Table({
   customizable = true,
   resizable = true,
   className = "",
+  getRowKey,
   ...props
 }) {
   // State management

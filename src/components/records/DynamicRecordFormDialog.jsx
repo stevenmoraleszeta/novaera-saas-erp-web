@@ -2,20 +2,17 @@ import React, {
   useState,
   useEffect,
   useCallback,
-  forwardRef,
-  useImperativeHandle,
 } from "react";
 import {
   getLogicalTableStructure,
   createLogicalTableRecord,
+  updateLogicalTableRecord, // <--- debe existir en tu service
 } from "@/services/logicalTableService";
 import FieldRenderer from "../common/FieldRenderer";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -28,6 +25,8 @@ export default function DynamicRecordFormDialog({
   open = false,
   onOpenChange,
   tableId,
+  mode = "create", // "create" | "edit"
+  record = null, // objeto con datos a editar en modo edit
   onSubmitSuccess,
 }) {
   const [columns, setColumns] = useState([]);
@@ -36,7 +35,7 @@ export default function DynamicRecordFormDialog({
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState(null);
 
-  // Load columns and initial values
+  // Carga columnas y valores iniciales según modo y record
   useEffect(() => {
     if (!tableId || !open) return;
 
@@ -44,9 +43,15 @@ export default function DynamicRecordFormDialog({
       try {
         const cols = await getLogicalTableStructure(tableId);
         setColumns(cols);
+
         const initialValues = {};
         cols.forEach((col) => {
-          initialValues[col.name] = col.data_type === "boolean" ? false : "";
+          console.log("col", col);
+          if (mode === "edit" && record?.record_data?.[col.name] !== undefined) {
+            initialValues[col.name] = record.record_data[col.name];
+          } else {
+            initialValues[col.name] = col.data_type === "boolean" ? false : "";
+          }
         });
         setValues(initialValues);
         setErrors({});
@@ -56,9 +61,9 @@ export default function DynamicRecordFormDialog({
         setValues({});
       }
     })();
-  }, [tableId, open]);
+  }, [tableId, open, mode, record]);
 
-  // Simple validation
+  // Validación simple
   const validate = useCallback(() => {
     const errs = {};
     columns.forEach((col) => {
@@ -86,16 +91,24 @@ export default function DynamicRecordFormDialog({
 
       setLoading(true);
       try {
-        const createdRecord = await createLogicalTableRecord(tableId, values);
-        if (onSubmitSuccess) onSubmitSuccess(createdRecord);
+        let result;
+        if (mode === "create") {
+          result = await createLogicalTableRecord(tableId, values);
+        } else if (mode === "edit" && record) {
+          result = await updateLogicalTableRecord(tableId, record.id, values);
+        }
 
-        // Reset form after successful submission
-        const initialValues = {};
-        columns.forEach((col) => {
-          initialValues[col.name] = col.data_type === "boolean" ? false : "";
-        });
-        setValues(initialValues);
-        setErrors({});
+        if (onSubmitSuccess) onSubmitSuccess(result);
+
+        // Reset form solo en creación (o cerrar)
+        if (mode === "create") {
+          const initialValues = {};
+          columns.forEach((col) => {
+            initialValues[col.name] = col.data_type === "boolean" ? false : "";
+          });
+          setValues(initialValues);
+          setErrors({});
+        }
         onOpenChange?.(false);
       } catch (err) {
         setSubmitError(
@@ -105,7 +118,7 @@ export default function DynamicRecordFormDialog({
         setLoading(false);
       }
     },
-    [tableId, values, validate, onSubmitSuccess, columns, onOpenChange]
+    [tableId, values, validate, onSubmitSuccess, columns, onOpenChange, mode, record]
   );
 
   const handleCancel = () => {
@@ -118,7 +131,9 @@ export default function DynamicRecordFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Nuevo Registro</DialogTitle>
+          <DialogTitle>
+            {mode === "create" ? "Nuevo Registro" : "Editar Registro"}
+          </DialogTitle>
         </DialogHeader>
 
         {!tableId ? (
@@ -178,25 +193,28 @@ export default function DynamicRecordFormDialog({
                 <AlertDescription>{submitError}</AlertDescription>
               </Alert>
             )}
+
+            <div className="flex gap-2 pt-6">
+              <Button
+                type="submit"
+                disabled={loading}
+                className="flex-1 max-w-40"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Guardando...
+                  </>
+                ) : (
+                  <>Guardar</>
+                )}
+              </Button>
+              <Button variant="outline" onClick={handleCancel} disabled={loading}>
+                Cancelar
+              </Button>
+            </div>
           </form>
         )}
-        <div className="flex gap-2 pt-6">
-          <Button
-            type="submit"
-            onClick={handleSubmit}
-            disabled={loading}
-            className="flex-1 max-w-40"
-          >
-            {loading ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                Guardando...
-              </>
-            ) : (
-              <>Guardar</>
-            )}
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );

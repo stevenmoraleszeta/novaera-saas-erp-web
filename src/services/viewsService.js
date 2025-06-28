@@ -14,15 +14,15 @@ const mapViewFromBackend = (backendView) => ({
 const mapViewToBackend = (frontendView) => ({
   table_id: frontendView.tableId,
   name: frontendView.name,
-  sort_by: frontendView.sortBy,
-  sort_direction: frontendView.sortDirection,
+  sort_by: frontendView.sort_by,
+  sort_direction: frontendView.sort_direction,
 });
 
 // Crear una vista
 export async function createView(viewData) {
   const payload = mapViewToBackend(viewData);
   const response = await axios.post("/views", payload);
-  return mapViewFromBackend(response.data);
+  return response.data;
 }
 
 // Obtener vistas de una tabla (usando query param)

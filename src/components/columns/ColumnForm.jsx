@@ -218,14 +218,15 @@ export default function ColumnForm({
                 tables={tables}
                 columnsByTable={columnsByTable}
                 selectedTableId={formData.foreign_table_id}
-                selectedColumnId={formData.foreign_column_id}
-                onTableChange={(tableId) =>
+                selectedColumnId={formData.foreign_column_name}
+                onChangeTable={(tableId) =>
                   handleChange("foreign_table_id", tableId)
                 }
-                onColumnChange={(columnId) =>
-                  handleChange("foreign_column_id", columnId)
+                onChangeColumn={(columnId) =>
+                  handleChange("foreign_column_name", columnId)
                 }
               />
+
             )}
 
             {/* Validaciones */}
