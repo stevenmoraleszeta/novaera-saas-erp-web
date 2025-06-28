@@ -5,10 +5,10 @@ import useUserStore from "@/stores/userStore";
 import useEditModeStore from "@/stores/editModeStore";
 import { Badge } from "@/components/ui/badge";
 import { Edit3 } from "lucide-react";
-import Alert from "@/components/Alert";
-import UserForm from "@/components/UserForm";
-import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
-import UserList from "@/components/UserList";
+import Alert from "@/components/common/Alert";
+import UserForm from "@/components/users/UserForm";
+import DeleteConfirmationModal from "@/components/common/DeleteConfirmationModal";
+import UserList from "@/components/users/UserList";
 
 export default function UsuariosPage() {
   const { user } = useUserStore();

@@ -1,16 +1,15 @@
 import React from "react";
-import Header from "@/components/Header";
-import TabBar from "@/components/TabBar";
-import Footer from "@/components/Footer";
-import MainContent from "@/components/MainContent";
+import Header from "@/components/layout/Header";
+import TabBar from "@/components/tabs/TabBar";
+import Footer from "@/components/layout/Footer";
 
 export default function AppLayout({ children }) {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-[100dvh] flex flex-col">
       <Header />
       <div className="flex-grow flex flex-col">
         <TabBar />
-        <MainContent>{children}</MainContent>
+        <main className="flex-grow p-4 text-gray-900">{children}</main>
       </div>
       <Footer />
     </div>
