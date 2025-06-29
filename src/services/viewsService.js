@@ -68,6 +68,7 @@ export async function updateViewColumn(id, updatedData) {
 
 // Eliminar columna de vista
 export async function deleteViewColumn(id) {
+  console.log("HAY AL MENOS LLEGA CON,", id)
   const response = await axios.delete(`/views/columns/${id}`);
   return response.data;
 }

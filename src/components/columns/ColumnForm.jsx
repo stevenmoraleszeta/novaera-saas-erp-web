@@ -135,7 +135,7 @@ export default function ColumnForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] h-[80vh] flex flex-col">
+      <DialogContent className="sm:max-w-[700px] h-[80vh] flex flex-col max-h-[90vh] overflow-y-auto">
         <div ref={topRef} />
         <DialogHeader>
           <DialogTitle>

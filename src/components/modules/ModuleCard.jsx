@@ -43,9 +43,7 @@ export default function ModuleCard({ module, onClick, isEditingMode = false }) {
   const isEmoji =
     module.iconUrl &&
     typeof module.iconUrl === "string" &&
-    !iconMap[module.iconUrl] &&
-    // Simple emoji regex (covers most single codepoint emojis)
-    /^\p{Emoji}$/u.test(module.iconUrl.trim());
+    !iconMap[module.iconUrl];
 
   return (
     <Card

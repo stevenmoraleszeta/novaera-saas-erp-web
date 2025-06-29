@@ -68,8 +68,6 @@ export function useColumns(tableId) {
 
         const intermediateTableName = `rel_${sourceTableId}_${targetTableId}`;
 
-        
-        console.log('ANTES QUE NADA: ',columnData.id, columnData.foreign_column_name)
 
         // 2.1 Crear tabla intermedia
         const intermediateTableId = await createOrUpdateTable({

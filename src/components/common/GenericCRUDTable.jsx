@@ -10,6 +10,7 @@ export default function GenericCRUDTable({
   data = [],
   columns = [],
   getRowKey = (row) => row.id,
+  rowIdKey = "id",
   onCreate,
   onUpdate,
   onDelete,
@@ -55,7 +56,7 @@ export default function GenericCRUDTable({
     },
   ];
 
-  return (
+   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold">{title}</h2>
@@ -69,21 +70,22 @@ export default function GenericCRUDTable({
         pagination={true}
       />
 
-      {/* Render del formulario externo (modal, etc) */}
-      {renderForm && renderForm({
-        mode: formMode,
-        item: selectedItem,
-        open: formOpen,
-        onClose: () => setFormOpen(false),
-        onSubmit: (formData) => {
-          if (formMode === "create") {
-            onCreate?.(formData);
-          } else {
-            onUpdate?.(selectedItem?.id, formData);
-          }
-          setFormOpen(false);
-        },
-      })}
+      {renderForm &&
+        renderForm({
+          mode: formMode,
+          item: selectedItem,
+          open: formOpen,
+          onClose: () => setFormOpen(false),
+          onSubmit: (formData) => {
+            if (formMode === "create") {
+              onCreate?.(formData);
+            } else {
+              const itemId = selectedItem?.[rowIdKey];
+              onUpdate?.(itemId, formData);
+            }
+            setFormOpen(false);
+          },
+        })}
     </div>
   );
 }

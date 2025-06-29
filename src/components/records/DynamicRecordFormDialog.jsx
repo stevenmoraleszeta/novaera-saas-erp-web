@@ -28,6 +28,7 @@ export default function DynamicRecordFormDialog({
   mode = "create", // "create" | "edit"
   record = null, // objeto con datos a editar en modo edit
   onSubmitSuccess,
+  onDelete,
 }) {
   const [columns, setColumns] = useState([]);
   const [values, setValues] = useState({});
@@ -45,14 +46,20 @@ export default function DynamicRecordFormDialog({
         setColumns(cols);
 
         const initialValues = {};
-        cols.forEach((col) => {
-          console.log("col", col);
-          if (mode === "edit" && record?.record_data?.[col.name] !== undefined) {
-            initialValues[col.name] = record.record_data[col.name];
-          } else {
-            initialValues[col.name] = col.data_type === "boolean" ? false : "";
-          }
-        });
+          cols.forEach((col) => {
+            
+            if (mode === "edit" && record?.record_data?.[col.name] !== undefined) {
+              const rawValue = record.record_data[col.name];
+              initialValues[col.name] = castValueByDataType(col.data_type, rawValue);
+            } else {
+              initialValues[col.name] =
+                col.data_type === "boolean"
+                  ? false
+                  : col.data_type === "int" || col.data_type === "number"
+                  ? 0
+                  : "";
+            }
+          });
         setValues(initialValues);
         setErrors({});
         setSubmitError(null);
@@ -62,6 +69,36 @@ export default function DynamicRecordFormDialog({
       }
     })();
   }, [tableId, open, mode, record]);
+
+    function castValueByDataType(type, value) {
+    if (value === null || value === undefined) return value;
+
+    switch (type) {
+      case "int":
+      case "integer":
+      case "number":
+        return parseInt(value, 10);
+
+      case "float":
+      case "decimal":
+      case "double":
+        return parseFloat(value);
+
+      case "boolean":
+        return Boolean(value);
+
+      case "user":
+        return typeof value === "string" ? value : value?.id ?? "";
+
+      case "date":
+      case "datetime":
+      case "timestamp":
+        return typeof value === "string" ? value : new Date(value).toISOString().slice(0, 16);
+
+      default:
+        return value;
+    }
+  }
 
   // Validación simple
   const validate = useCallback(() => {
@@ -83,6 +120,14 @@ export default function DynamicRecordFormDialog({
     setErrors((prev) => ({ ...prev, [name]: undefined })); // Clear error when changing
   }, []);
 
+  const handleDelete = () => {
+    if (onDelete && record && !loading) {
+      onDelete(record);
+      onOpenChange?.(false);
+    }
+  };
+
+
   const handleSubmit = useCallback(
     async (e) => {
       e.preventDefault();
@@ -95,7 +140,7 @@ export default function DynamicRecordFormDialog({
         if (mode === "create") {
           result = await createLogicalTableRecord(tableId, values);
         } else if (mode === "edit" && record) {
-          result = await updateLogicalTableRecord(tableId, record.id, values);
+          result = await updateLogicalTableRecord( record.id, values);
         }
 
         if (onSubmitSuccess) onSubmitSuccess(result);
@@ -128,8 +173,8 @@ export default function DynamicRecordFormDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+     <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {mode === "create" ? "Nuevo Registro" : "Editar Registro"}
@@ -152,49 +197,52 @@ export default function DynamicRecordFormDialog({
           <form
             onSubmit={handleSubmit}
             noValidate
-            className="space-y-6 h-full flex flex-col"
+            className="flex flex-col h-full"
           >
-            {columns.map((col) => (
-              <div key={col.id} className="space-y-2">
-                <Label htmlFor={`field-${col.name}`}>
-                  {col.name}
-                  {col.is_required && (
-                    <Badge className="ml-auto text-xs text-destructive bg-transparent">
-                      *Requerido
-                    </Badge>
+            <div className="flex-1 space-y-6 overflow-y-auto pr-1">
+              {columns.map((col) => (
+                <div key={col.id} className="space-y-2">
+                  <Label htmlFor={`field-${col.name}`}>
+                    {col.name}
+                    {col.is_required && (
+                      <Badge className="ml-auto text-xs text-destructive bg-transparent">
+                        *Requerido
+                      </Badge>
+                    )}
+                  </Label>
+                  <FieldRenderer
+                    id={`field-${col.name}`}
+                    column={col}
+                    value={values[col.name]}
+                    onChange={(e) =>
+                      handleChange(
+                        col.name,
+                        e.target.type === "checkbox"
+                          ? e.target.checked
+                          : e.target.value
+                      )
+                    }
+                    error={errors[col.name]}
+                  />
+                  {errors[col.name] && (
+                    <div className="text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      {errors[col.name]}
+                    </div>
                   )}
-                </Label>
-                <FieldRenderer
-                  id={`field-${col.name}`}
-                  column={col}
-                  value={values[col.name]}
-                  onChange={(e) =>
-                    handleChange(
-                      col.name,
-                      e.target.type === "checkbox"
-                        ? e.target.checked
-                        : e.target.value
-                    )
-                  }
-                  error={errors[col.name]}
-                />
-                {errors[col.name] && (
-                  <div className="text-sm text-red-600 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
-                    {errors[col.name]}
-                  </div>
-                )}
-              </div>
-            ))}
+                </div>
+              ))}
 
-            {submitError && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{submitError}</AlertDescription>
-              </Alert>
-            )}
+              {submitError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{submitError}</AlertDescription>
+                </Alert>
+              )}
+            </div>
 
-            <div className="flex gap-2 pt-6">
+            {/* Botones fuera del scroll */}
+            <div className="flex gap-2 pt-4 border-t mt-4 pt-4">
               <Button
                 type="submit"
                 disabled={loading}
@@ -209,13 +257,23 @@ export default function DynamicRecordFormDialog({
                   <>Guardar</>
                 )}
               </Button>
-              <Button variant="outline" onClick={handleCancel} disabled={loading}>
-                Cancelar
-              </Button>
+
+              {mode === "edit" && onDelete && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleDelete}
+                  disabled={loading}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  Eliminar
+                </Button>
+              )}
             </div>
           </form>
         )}
       </DialogContent>
+
     </Dialog>
   );
 }

@@ -45,6 +45,8 @@ import {
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Trash } from "lucide-react";
+import ColumnListTable from "../columns/ColumnListTable";
+import ColumnManager from "../columns/ColumnManager";
 
 
 import ViewForm from "@/components/ViewForm";
@@ -111,8 +113,10 @@ export default function LogicalTableDataView({ tableId, refresh }) {
   const [showManageViewsDialog, setShowManageViewsDialog] = useState(false);
   const [showEditRecordDialog, setShowEditRecordDialog] = useState(false);
   const [recordToEdit, setRecordToEdit] = useState(null);
+
+  const [showManageColumnsDialog, setShowManageColumnsDialog] = useState(false);
   
-  const { handleCreate } = useColumns(null);
+  const { handleCreate, handleUpdatePosition, handleDelete } = useColumns(null);
 
 
   const filterConditions = [
@@ -184,6 +188,13 @@ export default function LogicalTableDataView({ tableId, refresh }) {
     fetchMeta();
   }, [tableId, getTableById]);
 
+  useEffect(() => {
+  if (!selectedView && views.length > 0 && columns.length > 0) {
+    handleSelectView(views[0]);
+  }
+  }, [views, columns, selectedView]);
+  
+
   const handleFieldChange = (col, e) => {
     const val = e.target?.value ?? e.target?.checked ?? e;
     setEditFields((prev) => ({ ...prev, [col]: val }));
@@ -232,19 +243,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
           header: (
             <div className="flex items-center justify-between group">
               <span>{col.header}</span>
-              <div className="flex gap-1 ml-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() =>
-                    handleEditColumn(columns.find((c) => c.name === col.key))
-                  }
-                  className="h-6 w-6 p-0"
-                  title="Editar columna"
-                >
-                  <Edit3 className="w-3 h-3" />
-                </Button>
-              </div>
             </div>
           ),
         };
@@ -359,6 +357,7 @@ export default function LogicalTableDataView({ tableId, refresh }) {
       setShowColumnFormDialog(false);
       setColumnFormMode("create");
       setSelectedColumn(null);
+      setLocalRefreshFlag((prev) => !prev);
     } catch (err) {
       console.error("Error updating column:", err);
       throw err;
@@ -369,7 +368,7 @@ export default function LogicalTableDataView({ tableId, refresh }) {
     if (columnFormMode === "create") {
       await handleCreateColumn(formData);
     } else if (columnFormMode === "edit" && selectedColumn) {
-      await handleUpdateColumn(selectedColumn.id, formData);
+      await handleUpdateColumn(selectedColumn.column_id, formData);
     }
   };
 
@@ -405,14 +404,16 @@ export default function LogicalTableDataView({ tableId, refresh }) {
   };
 
   const handleDeleteColumn = async (column) => {
+    console.log("mana: intenta borrar");
     try {
-      await deleteColumn(column.column_id);
+      await handleDelete(column.column_id);
       // Refresh columns by refetching table structure
       const cols = await getLogicalTableStructure(tableId);
       setColumns(cols);
       setShowColumnDeleteDialog(false);
       setColumnToDelete(null);
     } catch (err) {
+      console.log("mana: falla borrar");
       console.error("Error deleting column:", err);
       throw err;
     }
@@ -429,6 +430,7 @@ export default function LogicalTableDataView({ tableId, refresh }) {
   // View management functions
   const handleSelectView = async (view) => {
     if (!view) {
+      console.log("mana: no hay view")
       // Clear view - reset to default state
       setSelectedView(null);
       setActiveSort(null);
@@ -436,11 +438,12 @@ export default function LogicalTableDataView({ tableId, refresh }) {
       setColumnVisibility({});
       return;
     }
-
+    console.log("mana: si hay view")
     setSelectedView(view);
 
     // Apply view sort configuration
     if (view.sortBy && view.sortDirection) {
+      console.log("mana: si tiene reglas")
       const sortCol = columns.find(col => col.column_id === view.sortBy);
       setActiveSort({
         column: sortCol?.name || null,
@@ -450,46 +453,42 @@ export default function LogicalTableDataView({ tableId, refresh }) {
 
     // Load and apply view columns configuration
     try {
-      await loadColumns(view.id);
-      const viewCols = getColumnsForView(view.id);
+        const viewCols = await loadColumns(view.id); // <-- usamos el resultado directamente
 
-      // Apply column visibility and filters from view columns
-      // Filters are stored as properties of each column in the view
-      const newColumnVisibility = {};
-      const newFilters = [];
+        const newColumnVisibility = {};
+        const newFilters = [];
 
-      viewCols.forEach((viewCol) => {
-        // Find the column by ID to get the name
-        const column = columns.find(
-          (col) => col.column_id === viewCol.column_id
-        );
-        if (column) {
-          // Set column visibility
-          newColumnVisibility[column.name] = viewCol.visible !== false;
+        viewCols.forEach((viewCol) => {
+          const column = columns.find(
+            (col) => col.column_id === viewCol.column_id
+          );
+          if (column) {
+            newColumnVisibility[column.name] = viewCol.visible !== false;
 
-          // If this column has filter settings, add them to active filters
-          if (
-            viewCol.filter_condition &&
-            (
-              viewCol.filter_condition === "is_null" ||
-              viewCol.filter_condition === "is_not_null" ||
-              viewCol.filter_value !== null && viewCol.filter_value !== undefined && viewCol.filter_value !== ""
-            )
-          ) {
-            newFilters.push({
-              column: column.name,
-              condition: viewCol.filter_condition,
-              value: viewCol.filter_value,
-            });
+            if (
+              viewCol.filter_condition &&
+              (
+                viewCol.filter_condition === "is_null" ||
+                viewCol.filter_condition === "is_not_null" ||
+                (viewCol.filter_value !== null &&
+                  viewCol.filter_value !== undefined &&
+                  viewCol.filter_value !== "")
+              )
+            ) {
+              newFilters.push({
+                column: column.name,
+                condition: viewCol.filter_condition,
+                value: viewCol.filter_value,
+              });
+            }
           }
-        }
-      });
+        });
 
-      setColumnVisibility(newColumnVisibility);
-      setActiveFilters(newFilters);
-    } catch (err) {
-      console.error("Error loading view configuration:", err);
-    }
+        setColumnVisibility(newColumnVisibility);
+        setActiveFilters(newFilters);
+      } catch (err) {
+        console.error("Error loading view configuration:", err);
+      }
   };
 
   const handleCreateViewLocal = async (viewData) => {
@@ -653,7 +652,9 @@ export default function LogicalTableDataView({ tableId, refresh }) {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-6">
           <div className="flex gap-2">
-            {/* Default view (no filters/sort) */}
+
+          {/* Default view (no filters/sort) */}
+            {views.length === 0 && (
             <button
               className={`px-4 py-1 font-semibold text-sm border ${
                 !selectedView
@@ -665,6 +666,31 @@ export default function LogicalTableDataView({ tableId, refresh }) {
               Vista General
             </button>
 
+            )}
+
+            {/* Dynamic view tabs */}
+            {views.map((view) => (
+              <div key={view.id} className="relative">
+                <button
+                  className={`text-sm font-bold rounded transition-colors border-[3px]
+                    ${
+                      selectedView?.id === view.id
+                        ? "bg-black/30 text-black border-black"
+                        : "bg-transparent text-black border-black"
+                    }`}
+                  style={{
+                    paddingTop: "5px",
+                    paddingBottom: "5px",
+                    paddingLeft: "24px",
+                    paddingRight: "24px",
+                  }}
+                  onClick={() => handleSelectView(view)}
+                >
+                  {view.name}
+                </button>
+              </div>
+            ))}
+
             {isEditingMode && (
               <Button
                 size="icon"
@@ -675,34 +701,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
                 <Edit3 className="w-4 h-4" />
               </Button>
             )}
-
-            {/* Dynamic view tabs */}
-              {views.map((view) => (
-                <div key={view.id} className="relative">
-                  <button
-                    className={`px-4 py-1 font-semibold text-sm border ${
-                      selectedView?.id === view.id
-                        ? "bg-black text-white shadow border-black"
-                        : "bg-gray-200 text-gray-800 border-gray-300"
-                    }`}
-                    onClick={() => handleSelectView(view)}
-                  >
-                    {view.name}
-                  </button>
-                </div>
-              ))}
-
-            {/* Add new view button */}
-            <button
-              className="px-4 py-1 bg-gray-200 text-gray-800 font-semibold text-sm border border-gray-300 hover:bg-gray-300"
-              onClick={() => {
-                setViewFormMode("create");
-                setSelectedView(null);
-                setShowViewDialog(true);
-              }}
-            >
-              <Plus className="w-4 h-4" />
-            </button>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -730,28 +728,24 @@ export default function LogicalTableDataView({ tableId, refresh }) {
           >
             <Settings className="w-5 h-5" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="w-9 h-9"
-            onClick={handleCreateCol}
-            title="Agregar columna"
-          >
-            <Edit3 className="w-5 h-5" />
-          </Button>
-          <div className="mx-2" style={{ minWidth: 200, maxWidth: 320 }}>
+          <div className="flex items-center gap-2">
             <SearchBar
               onSearch={setSearchTerm}
-              placeholder="Buscar en la tabla..."
               debounceDelay={200}
+              placeholder="Buscar..."
             />
           </div>
           <Button
             onClick={() => setShowAddRecordDialog(true)}
-            className="ml-2"
             size="lg"
+            className="w-[150px] h-[36px] rounded-[5px] flex items-center justify-center"
           >
-            Nuevo
+            <span
+              className="w-[82px] h-[31px] flex items-center justify-center"
+              style={{ fontSize: "20px" }}
+            >
+              Nuevo
+            </span>
           </Button>
         </div>
       </div>
@@ -800,17 +794,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
             >
               Limpiar
             </Button>
-            <Button
-              size="sm"
-              className="ml-2 bg-black text-white hover:bg-gray-900"
-              onClick={() => {
-                setViewFormMode("create");
-                setSelectedView(null);
-                setShowViewDialog(true);
-              }}
-            >
-              Guardar
-            </Button>
           </>
         )}
       </div>
@@ -818,6 +801,18 @@ export default function LogicalTableDataView({ tableId, refresh }) {
         className="flex-1 overflow-hidden bg-white relative"
         style={{ borderRadius: 0 }}
       >
+          {isEditingMode && (
+          <div className="absolute top-0 right-0 mt-1 mr-2 z-10">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setShowManageColumnsDialog(true)}
+              title="Gestionar columnas"
+            >
+              <Edit3 className="w-4 h-4" />
+            </Button>
+          </div>
+           )}
 
         {columns.length > 0 && (
           <div className="h-full overflow-auto">
@@ -901,6 +896,7 @@ export default function LogicalTableDataView({ tableId, refresh }) {
           onCancel={handleCancelEdit}
           tableId={tableId}
           record={recordToEdit}
+          onDelete={handleDeleteRecord}
           mode="edit"
           onSubmitSuccess={() => {
             setShowEditRecordDialog(false);
@@ -959,7 +955,7 @@ export default function LogicalTableDataView({ tableId, refresh }) {
 
       {/* View Form Dialog */}
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {viewFormMode === "create" ? "Nueva Vista" : "Editar Vista"}
@@ -1022,9 +1018,60 @@ export default function LogicalTableDataView({ tableId, refresh }) {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={showManageColumnsDialog} onOpenChange={setShowManageColumnsDialog}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto"> 
+          <DialogHeader>
+            <DialogTitle>Columnas</DialogTitle>
+          </DialogHeader>
+
+            <GenericCRUDTable
+              title="Columnas"
+              data={columns}
+              columns={[
+                { key: "name", header: "Nombre" },
+                { key: "data_type", header: "Tipo" },
+                {
+                  key: "required",
+                  header: "Requerido",
+                  render: (val) => (val ? "Sí" : "No"),
+                },
+              ]}
+              getRowKey={(col) => col.column_id}
+              onCreate={handleCreateColumn}
+              onUpdate={handleUpdateColumn}
+              rowIdKey={"column_id"}
+              onDelete={handleDeleteColumn}
+              renderForm={({ mode, item, open, onClose, onSubmit }) => (
+                <ColumnForm
+                  open={open}
+                  onOpenChange={(val) => {
+                    if (!val) onClose();
+                  }}
+                  mode={mode}
+                  initialData={item}
+                  onSubmit={onSubmit}
+                  onCancel={onClose}
+                  onDelete={(colId) => {
+                    handleDeleteColumnClick(colId);
+                    onClose();
+                  }}
+                  loading={false}
+                  error={null}
+                  tableId={tableId}
+                  lastPosition={columns.length}
+                />
+              )}
+            />
+
+          {/*           <div className="overflow-x-auto border-t border-gray-200 mt-4 pt-4">
+            <ColumnManager tableId={tableId} tableName="x" />
+          </div>*/}
+
+        </DialogContent>
+      </Dialog>
       {/* View Delete Confirmation Dialog */}
       <Dialog open={showManageViewsDialog} onOpenChange={setShowManageViewsDialog}>
-          <DialogContent className="max-w-3xl">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Vistas</DialogTitle>
               </DialogHeader>
