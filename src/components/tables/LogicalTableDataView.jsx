@@ -41,6 +41,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
@@ -84,7 +85,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [showSortDialog, setShowSortDialog] = useState(false);
   const [showFilterDialog, setShowFilterDialog] = useState(false);
-  const [showColumnSettingsDialog, setShowColumnSettingsDialog] =
     useState(false);
   const [showColumnFormDialog, setShowColumnFormDialog] = useState(false);
   const [sortConfig, setSortConfig] = useState(null);
@@ -720,14 +720,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
           >
             <ArrowUpDown className="w-5 h-5" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="w-9 h-9"
-            onClick={() => setShowColumnSettingsDialog(true)}
-          >
-            <Settings className="w-5 h-5" />
-          </Button>
           <div className="flex items-center gap-2">
             <SearchBar
               onSearch={setSearchTerm}
@@ -779,23 +771,7 @@ export default function LogicalTableDataView({ tableId, refresh }) {
               : ""}
           </span>
         ))}
-        <div className="flex-1" />
-        {((activeSort && activeSort.column) ||
-          (activeFilters && activeFilters.length > 0)) && (
-          <>
-            <Button
-              size="sm"
-              variant="outline"
-              className="ml-2"
-              onClick={() => {
-                setActiveFilters([]);
-                setActiveSort(null);
-              }}
-            >
-              Limpiar
-            </Button>
-          </>
-        )}
+        
       </div>
       <div
         className="flex-1 overflow-hidden bg-white relative"
@@ -835,6 +811,8 @@ export default function LogicalTableDataView({ tableId, refresh }) {
         open={showFilterDialog}
         onOpenChange={setShowFilterDialog}
         columns={columns}
+        columnVisibility={columnVisibility}
+        setColumnVisibility={setColumnVisibility}
         filterConditions={filterConditions}
         filterDraft={filterDraft}
         setFilterDraft={setFilterDraft}
@@ -848,14 +826,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
         sortConfig={sortConfig}
         setSortConfig={setSortConfig}
         onSetSort={handleSetSort}
-      />
-
-      <ColumnSettingsDialog
-        open={showColumnSettingsDialog}
-        onOpenChange={setShowColumnSettingsDialog}
-        columns={columns}
-        columnVisibility={columnVisibility}
-        setColumnVisibility={setColumnVisibility}
       />
 
       <DynamicRecordFormDialog
@@ -1028,9 +998,11 @@ export default function LogicalTableDataView({ tableId, refresh }) {
               title="Columnas"
               data={columns}
               columns={[
-                { key: "name", header: "Nombre" },
-                { key: "data_type", header: "Tipo" },
+                { column_id: "name", name: "Nombre",  key: "name", header: "Nombre"},
+                { column_id: "data_type", name: "Tipo",  key: "data_type", header: "Tipo"},
                 {
+                  column_id: "required",
+                  name: "Requerido",
                   key: "required",
                   header: "Requerido",
                   render: (val) => (val ? "Sí" : "No"),
@@ -1098,6 +1070,27 @@ export default function LogicalTableDataView({ tableId, refresh }) {
                 />
               )}
             />
+
+        <DialogFooter className="flex justify-end gap-2 pt-4">
+            {((activeSort && activeSort.column) ||
+              (activeFilters && activeFilters.length > 0)) && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="ml-2"
+                  onClick={() => {
+                    setActiveFilters([]);
+                    setActiveSort(null);
+                  }}
+                >
+                  Limpiar
+                </Button>
+              </>
+            )}
+
+        </DialogFooter>
+
           </DialogContent>
         </Dialog>
     </div>

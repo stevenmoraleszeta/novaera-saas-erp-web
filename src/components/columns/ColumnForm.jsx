@@ -268,7 +268,7 @@ export default function ColumnForm({
                 Guardando...
               </>
             ) : (
-              <>{mode === "edit" ? "Actualizar" : "Crear"}</>
+              <>{mode === "edit" ? "Guardar" : "Crear"}</>
             )}
           </Button>
           {mode === "edit" && onDelete && (

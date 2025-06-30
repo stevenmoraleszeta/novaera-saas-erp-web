@@ -1,6 +1,12 @@
 // components/forms/ViewForm.js
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -27,6 +33,14 @@ export default function ViewForm({
     }
 
     onSubmit({ name: name.trim() });
+  };
+
+  const handleDelete = () => {
+    if (
+      confirm("¿Estás seguro de que deseas eliminar esta vista?")
+    ) {
+      onSubmit({ ...initialData, _delete: true });
+    }
   };
 
   return (
@@ -59,15 +73,21 @@ export default function ViewForm({
               <li>Configuración de columnas visibles</li>
             </ul>
           </div>
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSubmit}>
-              {mode === "create" ? "Crear" : "Actualizar"}
-            </Button>
-          </div>
         </div>
+        <DialogFooter className="flex justify-end gap-2 pt-4">
+          <Button onClick={handleSubmit}>
+            {mode === "create" ? "Crear" : "Guardar"}
+          </Button>
+          {mode === "edit" && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleDelete}
+            >
+              Eliminar
+            </Button>
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -41,7 +41,7 @@ export default function SortDialog({
             </SelectTrigger>
             <SelectContent>
               {columns.map((col) => (
-                <SelectItem key={col.name} value={col.name}>
+                <SelectItem key={col.key} value={col.name}>
                   {col.name}
                 </SelectItem>
               ))}

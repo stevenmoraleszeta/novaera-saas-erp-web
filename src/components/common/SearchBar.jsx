@@ -39,7 +39,7 @@ export default function SearchBar({
       style={{ width: 60 }}
     >
       <div
-        className="flex items-center bg-gray-100 rounded transition-transform duration-300"
+        className="flex items-center rounded transition-transform duration-300"
         style={{ transform: `translateX(-${translateX}px)` }}
       >
         <button

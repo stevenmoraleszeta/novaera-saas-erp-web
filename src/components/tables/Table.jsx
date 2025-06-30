@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useRef, useCallback } from "react";
+import React, { useState, useMemo, useRef, useCallback,  useEffect} from "react";
 import {
   Table as TableUI,
   TableBody,
@@ -53,6 +53,8 @@ export default function Table({
   getRowKey,
   ...props
 }) {
+
+
   // State management
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(defaultItemsPerPage);
@@ -221,7 +223,7 @@ export default function Table({
       </div> */}
 
       {/* Table */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto bg-gray-50">
         <TableUI ref={tableRef} {...props}>
           <TableHeader>
             <TableRow>
@@ -263,9 +265,9 @@ export default function Table({
                 <TableRow
                   key={row.id || rowIndex}
                   onClick={() => onRowClick?.(row)}
-                  className={
+                  className={`${
                     onRowClick ? "cursor-pointer hover:bg-gray-50" : ""
-                  }
+                  } ${rowIndex % 2 === 0 ? "bg-white" : "bg-[#F6F3F3]"}`}
                 >
                   {visibleColumnsList.map((column) => (
                     <TableCell

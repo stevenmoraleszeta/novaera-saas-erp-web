@@ -201,7 +201,7 @@ export default function DynamicRecordFormDialog({
           >
             <div className="flex-1 space-y-6 overflow-y-auto pr-1">
               {columns.map((col) => (
-                <div key={col.id} className="space-y-2">
+                <div key={col.column_id} className="space-y-2">
                   <Label htmlFor={`field-${col.name}`}>
                     {col.name}
                     {col.is_required && (
@@ -264,7 +264,7 @@ export default function DynamicRecordFormDialog({
                   variant="outline"
                   onClick={handleDelete}
                   disabled={loading}
-                  className="text-red-600 hover:text-red-700"
+                  className="flex-1 max-w-40"
                 >
                   Eliminar
                 </Button>
