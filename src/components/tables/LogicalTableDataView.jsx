@@ -2,7 +2,6 @@ import React, { useEffect, useState, useMemo } from "react";
 import {
   getLogicalTableStructure,
   getLogicalTableRecords,
-  updateLogicalTableRecord,
   deleteLogicalTableRecord,
 } from "@/services/logicalTableService";
 import Table from "@/components/tables/Table";
@@ -15,24 +14,18 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Settings,
 } from "lucide-react";
 import useEditModeStore from "@/stores/editModeStore";
 import DynamicRecordFormDialog from "../records/DynamicRecordFormDialog";
-import DeleteConfirmationModal from "../common/DeleteConfirmationModal";
-import FieldRenderer from "@/components/common/FieldRenderer";
 import { notifyAssignedUser } from "@/components/notifications/notifyAssignedUser";
 import { useLogicalTables } from "@/hooks/useLogicalTables";
 import { useViews } from "@/hooks/useViews";
 import SearchBar from "@/components/common/SearchBar";
 import FilterDialog from "./dialogs/FilterDialog";
 import SortDialog from "./dialogs/SortDialog";
-import ColumnSettingsDialog from "./dialogs/ColumnSettingsDialog";
 import ColumnForm from "../columns/ColumnForm";
 import {
-  createColumn,
   updateColumn,
-  deleteColumn,
 } from "@/services/columnsService";
 import { useColumns } from "@/hooks/useColumns";
 import ConfirmationDialog from "../common/ConfirmationDialog";
@@ -45,10 +38,6 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
-import { Trash } from "lucide-react";
-import ColumnListTable from "../columns/ColumnListTable";
-import ColumnManager from "../columns/ColumnManager";
-
 
 import ViewForm from "@/components/ViewForm";
 import GenericCRUDTable from "../common/GenericCRUDTable";
@@ -59,7 +48,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
   const {
     views,
     columns: viewColumns,
-    loadingViews,
     error: viewsError,
     loadViews,
     loadColumns,
@@ -68,7 +56,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
     handleUpdateView,
     handleDeleteView,
     handleAddColumnToView,
-    handleUpdateViewColumn,
     handleDeleteViewColumn,
   } = useViews(tableId);
 
@@ -193,13 +180,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
     handleSelectView(views[0]);
   }
   }, [views, columns, selectedView]);
-  
-
-  const handleFieldChange = (col, e) => {
-    const val = e.target?.value ?? e.target?.checked ?? e;
-    setEditFields((prev) => ({ ...prev, [col]: val }));
-  };
-
 
   const handleDeleteRecord = async (record) => {
     setDeleteConfirmRecord(record);
@@ -325,10 +305,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
     setActiveSort(sortConfig);
     setShowSortDialog(false);
   };
-  const handleRemoveFilter = (idx) => {
-    setActiveFilters((prev) => prev.filter((_, i) => i !== idx));
-  };
-  const handleClearSort = () => setActiveSort(null);
 
   // Column management functions
   const handleCreateColumn = async (columnData) => {
@@ -378,17 +354,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
     setColumnFormMode("create");
   };
 
-  const handleCreateCol = () => {
-    setSelectedColumn(null);
-    setColumnFormMode("create");
-    setShowColumnFormDialog(true);
-  };
-
-  const handleEditColumn = (column) => {
-    setSelectedColumn(column);
-    setColumnFormMode("edit");
-    setShowColumnFormDialog(true);
-  };
 
   const handleDeleteColumnClick = (columnId) => {
     console.log("handleDeleteColumnClick called with columnId:", columnId);
@@ -419,14 +384,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
     }
   };
 
-  // Row click handler for edit mode
-    const handleRowClick = (row) => {
-      if (isEditingMode) {
-        setRecordToEdit(row);
-        setShowEditRecordDialog(true);
-      }
-    };
-
   // View management functions
   const handleSelectView = async (view) => {
     if (!view) {
@@ -448,8 +405,8 @@ export default function LogicalTableDataView({ tableId, refresh }) {
       setActiveSort({
         column: sortCol?.name || null,
         direction: view.sortDirection,
-    });
-}
+      });
+    }
 
     // Load and apply view columns configuration
     try {
@@ -579,12 +536,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
       console.error("Error updating view:", err);
       throw err;
     }
-  };
-
-
-  const handleCancelEdit = () => {
-  setShowEditRecordDialog(false);
-  setRecordToEdit(null);
   };
 
 
@@ -791,17 +742,60 @@ export default function LogicalTableDataView({ tableId, refresh }) {
            )}
 
         {columns.length > 0 && (
-          <div className="h-full overflow-auto">
-            <Table
-              columns={tableColumnsWithActions}
-              data={filteredRecords}
-              pagination={true}
-              itemsPerPageOptions={[10, 25, 50]}
-              defaultItemsPerPage={10}
-              customizable={true}
-              resizable={true}
-              onRowClick={handleRowClick}
-            />
+        <div className="h-full overflow-auto">
+          <GenericCRUDTable
+            title={tableMeta?.name || "Tabla"}
+            data={filteredRecords}
+            useFilter = {false}
+            columns={tableColumnsWithActions}
+            getRowKey={(row) => row.id}
+            onCreate={() => setShowAddRecordDialog(true)}
+            onUpdate={(id, updatedData) => {
+              setRecordToEdit({ ...updatedData, id });
+              setShowEditRecordDialog(true);
+            }}
+            rowIdKey="id"
+              renderForm={({ mode, item, open, onClose, onSubmit }) => (
+                  <DynamicRecordFormDialog
+                    open={open}
+                    onOpenChange={(val) => {
+                      if (!val) onClose();
+                    }}
+                    onCancel={onClose}
+                    tableId={tableId}
+                    record={item}
+                    mode={mode}
+                    onDelete={handleDeleteRecord}
+                    onSubmitSuccess={async (createdOrUpdatedRecord) => {
+                      if (mode === "create") {
+                        const userColumn = columns.find((col) => col.data_type === "user");
+                        const userId = userColumn
+                          ? createdOrUpdatedRecord.message.record.record_data?.[userColumn.name]
+                          : null;
+
+                        if (userId) {
+                          try {
+                            const table = await getTableById(tableId);
+                            const tableName = table.name;
+
+                            await notifyAssignedUser({
+                              userId,
+                              action: "created",
+                              tableName,
+                              recordId: createdOrUpdatedRecord?.id,
+                            });
+                          } catch (err) {
+                            console.error("Error notificando usuario asignado:", err);
+                          }
+                        }
+                      }
+
+                      onSubmit(createdOrUpdatedRecord);
+                      setLocalRefreshFlag((prev) => !prev);
+                    }}
+                  />
+                )}
+          />
           </div>
         )}
       </div>
@@ -828,52 +822,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
         onSetSort={handleSetSort}
       />
 
-      <DynamicRecordFormDialog
-        open={showAddRecordDialog}
-        onOpenChange={setShowAddRecordDialog}
-        tableId={tableId}
-        onSubmitSuccess={async (createdRecord) => {
-          const userColumn = columns.find((col) => col.data_type === "user");
-          const userId = userColumn
-            ? createdRecord.message.record.record_data?.[userColumn.name]
-            : null;
-          if (userId) {
-            try {
-              const table = await getTableById(tableId);
-              const tableName = table.name;
-
-              await notifyAssignedUser({
-                userId,
-                action: "created",
-                tableName,
-                recordId: createdRecord?.id,
-              });
-            } catch (err) {
-              console.error("Error notificando usuario asignado:", err);
-            }
-          }
-
-          setShowAddRecordDialog(false);
-          setLocalRefreshFlag((prev) => !prev);
-        }}
-      />
-
-      <DynamicRecordFormDialog
-          open={showEditRecordDialog}
-          onOpenChange={(open) => {
-            if (!open) handleCancelEdit();
-          }}
-          onCancel={handleCancelEdit}
-          tableId={tableId}
-          record={recordToEdit}
-          onDelete={handleDeleteRecord}
-          mode="edit"
-          onSubmitSuccess={() => {
-            setShowEditRecordDialog(false);
-            setRecordToEdit(null);
-            setLocalRefreshFlag(prev => !prev);
-          }}
-        />
 
       <ConfirmationDialog
         open={!!deleteConfirmRecord}

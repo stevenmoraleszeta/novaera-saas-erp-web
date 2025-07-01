@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Table from "@/components/tables/Table";
 import { Button } from "@/components/ui/button";
-import { Filter, ArrowUpDown } from "lucide-react";
+import { Filter, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import SearchBar from "@/components/common/SearchBar";
 import FilterDialog from "@/components/tables/dialogs/FilterDialog";
 import SortDialog from "@/components/tables/dialogs/SortDialog";
@@ -18,6 +18,7 @@ export default function GenericCRUDTable({
   onUpdate,
   onDelete,
   renderForm,
+  useFilter = true,
 }) {
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState("create");
@@ -81,7 +82,6 @@ export default function GenericCRUDTable({
   const filteredData = useMemo(() => {
     let result = [...data];
 
-    // Apply filters
     for (const filter of activeFilters) {
       result = result.filter((row) => {
         const value = row[filter.column];
@@ -112,7 +112,6 @@ export default function GenericCRUDTable({
       });
     }
 
-    // Apply search
     if (searchTerm) {
       result = result.filter((row) =>
         Object.values(row)
@@ -122,7 +121,6 @@ export default function GenericCRUDTable({
       );
     }
 
-    // Apply sorting
     if (activeSort && activeSort.column) {
       result.sort((a, b) => {
         const aVal = a[activeSort.column];
@@ -145,49 +143,83 @@ export default function GenericCRUDTable({
   }, [data, activeFilters, searchTerm, activeSort]);
 
   return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between mb-2">
-    <div className="flex items-center gap-6">
-      <div className="flex gap-2">
-        {/* Aquí podrías meter vistas o tabs si lo necesitas */}
+    <div className="space-y-4">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-6" />
+        {useFilter && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-9 h-9"
+              onClick={() => setShowFilterDialog(true)}
+            >
+              <Filter className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-9 h-9"
+              onClick={() => setShowSortDialog(true)}
+            >
+              <ArrowUpDown className="w-5 h-5" />
+            </Button>
+            <SearchBar
+              onSearch={setSearchTerm}
+              debounceDelay={200}
+              placeholder="Buscar..."
+            />
+            <Button
+              onClick={handleNew}
+              size="lg"
+              className="w-[150px] h-[36px] rounded-[5px] flex items-center justify-center"
+            >
+              <span
+                className="w-[82px] h-[31px] flex items-center justify-center"
+                style={{ fontSize: "20px" }}
+              >
+                Nuevo
+              </span>
+            </Button>
+          </div>
+           )}
       </div>
-    </div>
-    <div className="flex items-center gap-2">
-      <Button
-        variant="ghost"
-        size="icon"
-        className="w-9 h-9"
-        onClick={() => setShowFilterDialog(true)}
-      >
-        <Filter className="w-5 h-5" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="w-9 h-9"
-        onClick={() => setShowSortDialog(true)}
-      >
-        <ArrowUpDown className="w-5 h-5" />
-      </Button>
-      <SearchBar
-        onSearch={setSearchTerm}
-        debounceDelay={200}
-        placeholder="Buscar..."
-      />
-      <Button
-        onClick={handleNew}
-        size="lg"
-        className="w-[150px] h-[36px] rounded-[5px] flex items-center justify-center"
-      >
-        <span
-          className="w-[82px] h-[31px] flex items-center justify-center"
-          style={{ fontSize: "20px" }}
-        >
-          Nuevo
-        </span>
-      </Button>
-    </div>
-  </div>
+
+  {useFilter && (
+      <div className="flex flex-wrap mb-2 items-center">
+        {activeSort?.column && (
+          <span className="inline-flex items-center text-sm font-medium mr-4">
+            {columns.find((c) => c.name === activeSort.column)?.header ||
+              activeSort.column}
+            {activeSort.direction === "asc" ? (
+              <ArrowUp className="ml-1 w-4 h-4 inline" />
+            ) : (
+              <ArrowDown className="ml-1 w-4 h-4 inline" />
+            )}
+          </span>
+        )}
+        {activeSort?.column && activeFilters.length > 0 && (
+          <div className="w-px h-4 bg-black mx-2" />
+        )}
+        {activeFilters.map((f, idx) => (
+          <span
+            key={idx}
+            className="inline-flex items-center text-sm font-medium mr-4"
+          >
+            {columns.find((c) => c.name === f.column)?.header || f.column}{" "}
+            {
+              filterConditions.find((cond) => cond.value === f.condition)
+                ?.label
+            }{" "}
+            {f.value &&
+            f.condition !== "is_null" &&
+            f.condition !== "is_not_null"
+              ? `"${f.value}"`
+              : ""}
+          </span>
+        ))}
+      </div>
+  )}
       <Table
         columns={columns}
         data={filteredData}
