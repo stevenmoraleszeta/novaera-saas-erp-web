@@ -822,6 +822,36 @@ export default function LogicalTableDataView({ tableId, refresh }) {
         onSetSort={handleSetSort}
       />
 
+      <DynamicRecordFormDialog
+        open={showAddRecordDialog}
+        onOpenChange={setShowAddRecordDialog}
+        tableId={tableId}
+        onSubmitSuccess={async (createdRecord) => {
+          const userColumn = columns.find((col) => col.data_type === "user");
+          const userId = userColumn
+            ? createdRecord.message.record.record_data?.[userColumn.name]
+            : null;
+          if (userId) {
+            try {
+              const table = await getTableById(tableId);
+              const tableName = table.name;
+
+              await notifyAssignedUser({
+                userId,
+                action: "created",
+                tableName,
+                recordId: createdRecord?.id,
+              });
+            } catch (err) {
+              console.error("Error notificando usuario asignado:", err);
+            }
+          }
+
+          setShowAddRecordDialog(false);
+          setLocalRefreshFlag((prev) => !prev);
+        }}
+      />
+
 
       <ConfirmationDialog
         open={!!deleteConfirmRecord}

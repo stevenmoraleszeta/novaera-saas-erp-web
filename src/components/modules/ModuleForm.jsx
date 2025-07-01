@@ -203,7 +203,7 @@ export default function ModuleForm({
                 Guardando...
               </>
             ) : (
-              <>{mode === "edit" ? "Actualizar" : "Crear"}</>
+              <>{mode === "edit" ? "Guardar" : "Crear"}</>
             )}
           </Button>
           {mode === "edit" && onDelete && (

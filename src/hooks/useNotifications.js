@@ -42,7 +42,6 @@ export function useNotifications(userId) {
   }, [userId, search]);
 
   const fetchUnreadCount = useCallback(async () => {
-    console.log("TRY FETCH");
     if (!userId) return;
     try {
       const count = await countUnread(userId);

@@ -116,9 +116,6 @@ export default function ColumnForm({
   };
 
   const handleDelete = () => {
-    console.log("ColumnForm handleDelete called");
-    console.log("onDelete function:", onDelete);
-    console.log("initialData:", initialData);
     if (onDelete && initialData?.column_id) {
       console.log("Calling onDelete with ID:", initialData.column_id);
       onDelete(initialData.column_id);
@@ -143,7 +140,7 @@ export default function ColumnForm({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 ">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Nombre */}
             <div className="space-y-2">
