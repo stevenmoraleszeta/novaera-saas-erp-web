@@ -51,7 +51,7 @@ export default function FilterDialog({
             <SelectContent>
               {columns.map((col) => (
                 <SelectItem key={col.column_id} value={col.name}>
-                  {col.name}
+                  {col.header || col.name || col.column_id}
                 </SelectItem>
               ))}
             </SelectContent>

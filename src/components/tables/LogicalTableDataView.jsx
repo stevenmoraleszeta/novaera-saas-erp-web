@@ -875,13 +875,23 @@ export default function LogicalTableDataView({ tableId, refresh }) {
           }}
         />
 
-      <DeleteConfirmationModal
+      <ConfirmationDialog
         open={!!deleteConfirmRecord}
-        onOpenChange={() => setDeleteConfirmRecord(null)}
+        onClose={() => setDeleteConfirmRecord(null)}
         title="¿Eliminar registro?"
         message="Esta acción no se puede deshacer. Se eliminará permanentemente el registro."
-        onConfirm={confirmDeleteRecord}
-        onCancel={cancelDeleteRecord}
+        actions={[
+          {
+            label: "Cancelar",
+            onClick: cancelDeleteRecord,
+            variant: "default",
+          },
+          {
+            label: "Eliminar",
+            onClick: confirmDeleteRecord,
+            variant: "outline",
+          },
+        ]}
       />
 
       <ColumnForm
@@ -896,6 +906,30 @@ export default function LogicalTableDataView({ tableId, refresh }) {
         error={null}
         tableId={tableId}
         lastPosition={columns.length}
+      />
+      <ConfirmationDialog
+        open={showViewDeleteDialog}
+        onClose={() => {
+          setShowViewDeleteDialog(false);
+          setViewToDelete(null);
+        }}
+        title={`¿Desea eliminar la vista "${viewToDelete?.name || ""}"?`}
+        message={"Esta acción no se puede deshacer."}
+        actions={[
+          {
+            label: "Cancelar",
+            onClick: () => {
+              setShowViewDeleteDialog(false);
+              setViewToDelete(null);
+            },
+            variant: "default",
+          },
+          {
+            label: "Eliminar",
+            onClick: () => handleDeleteViewLocal(viewToDelete),
+            variant: "outline",
+          },
+        ]}
       />
 
       <ConfirmationDialog
@@ -998,11 +1032,11 @@ export default function LogicalTableDataView({ tableId, refresh }) {
               title="Columnas"
               data={columns}
               columns={[
-                { column_id: "name", name: "Nombre",  key: "name", header: "Nombre"},
-                { column_id: "data_type", name: "Tipo",  key: "data_type", header: "Tipo"},
+                { column_id: "name", name: "name",  key: "name", header: "Nombre"},
+                { column_id: "data_type", name: "data_type",  key: "data_type", header: "Tipo"},
                 {
                   column_id: "required",
-                  name: "Requerido",
+                  name: "required",
                   key: "required",
                   header: "Requerido",
                   render: (val) => (val ? "Sí" : "No"),
@@ -1051,15 +1085,29 @@ export default function LogicalTableDataView({ tableId, refresh }) {
               title="Vistas Personalizadas"
               data={views}
               columns={[
-                { key: "name", header: "Nombre", render: (val) => <span>{val}</span> },
-                { key: "sort_by", header: "Orden", render: (val) => columns.find(c => c.column_id === val)?.name || "-" },
+                {
+                  key: "name",
+                  column_id: "name",
+                  header: "Nombre",
+                  name: "name",
+                  render: (val) => <span>{val}</span>,
+                },
+                {
+                  key: "sort_by",
+                  column_id: "sort_by",
+                  header: "Orden",
+                  name: "sort_by",
+                  render: (val) =>
+                    columns.find((c) => c.column_id === val)?.name || "-",
+                },
               ]}
+
               getRowKey={(view) => view.id}
               onCreate={handleCreateViewLocal}
               onUpdate={handleUpdateViewLocal}
               onDelete={handleDeleteViewLocal}
               renderForm={({ mode, item, open, onClose, onSubmit }) => (
-                <ViewForm
+              <ViewForm
                   open={open}
                   mode={mode}
                   initialData={item}
@@ -1067,6 +1115,11 @@ export default function LogicalTableDataView({ tableId, refresh }) {
                   activeFilters={activeFilters}
                   onClose={onClose}
                   onSubmit={onSubmit}
+                  onDelete={(viewId) => {
+                    setViewToDelete(views.find((v) => v.id === viewId));
+                    setShowViewDeleteDialog(true);
+                    onClose();
+                  }}
                 />
               )}
             />

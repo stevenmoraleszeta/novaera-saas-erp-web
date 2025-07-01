@@ -19,6 +19,7 @@ export default function ViewForm({
   activeFilters = [],
   onSubmit,
   onClose,
+  onDelete,
 }) {
   const [name, setName] = useState(initialData?.name || "");
 
@@ -35,11 +36,10 @@ export default function ViewForm({
     onSubmit({ name: name.trim() });
   };
 
-  const handleDelete = () => {
-    if (
-      confirm("¿Estás seguro de que deseas eliminar esta vista?")
-    ) {
-      onSubmit({ ...initialData, _delete: true });
+  const handleDeleteClick = () => {
+    if (onDelete && initialData?.id) {
+      onDelete(initialData.id);
+      onClose?.();
     }
   };
 
@@ -82,7 +82,7 @@ export default function ViewForm({
             <Button
               type="button"
               variant="outline"
-              onClick={handleDelete}
+              onClick={handleDeleteClick}
             >
               Eliminar
             </Button>

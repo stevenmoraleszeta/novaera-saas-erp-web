@@ -47,6 +47,17 @@ export default function GenericCRUDTable({
     setFormOpen(true);
   };
 
+  const filterConditions = [
+    { value: "equals", label: "Igual a" },
+    { value: "not_equals", label: "Distinto de" },
+    { value: "contains", label: "Contiene" },
+    { value: "not_contains", label: "No contiene" },
+    { value: "greater", label: "Mayor que" },
+    { value: "lower", label: "Menor que" },
+    { value: "is_null", label: "Es nulo" },
+    { value: "is_not_null", label: "No es nulo" },
+  ];
+
   const handleAddFilter = () => {
     if (
       !filterDraft.column ||
@@ -207,6 +218,7 @@ export default function GenericCRUDTable({
         onOpenChange={setShowFilterDialog}
         columns={columns}
         filterDraft={filterDraft}
+        filterConditions={filterConditions}
         setFilterDraft={setFilterDraft}
         onAddFilter={handleAddFilter}
       />
