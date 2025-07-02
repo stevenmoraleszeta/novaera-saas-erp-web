@@ -20,6 +20,7 @@ export default function GenericCRUDTable({
   renderForm,
   useFilter = true,
 }) {
+
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState("create");
   const [selectedItem, setSelectedItem] = useState(null);
@@ -220,14 +221,17 @@ export default function GenericCRUDTable({
         ))}
       </div>
   )}
-      <Table
-        columns={columns}
-        data={filteredData}
-        getRowKey={getRowKey}
-        pagination={true}
-        onRowClick={handleEdit}
-      />
-
+      <div className="overflow-x-auto w-full" style={{ maxWidth: "100%" }}>
+        <Table
+          className="w-full"
+          style={{ minWidth: `${columns.length * 150}px` }}
+          columns={columns}
+          data={filteredData}
+          getRowKey={getRowKey}
+          pagination={true}
+          onRowClick={handleEdit}
+        />
+      </div>
       {renderForm &&
         renderForm({
           mode: formMode,
