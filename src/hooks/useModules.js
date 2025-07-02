@@ -76,7 +76,6 @@ export function useModules(initialParams = {}) {
     const handleCreateModule = async (data) => {
       try {
         const newModule = await createModule(data);
-        console.log("panic: ", newModule.message.module_id, "data", data);
 
         const datatable = await createOrUpdateTable({
           name: data.name,

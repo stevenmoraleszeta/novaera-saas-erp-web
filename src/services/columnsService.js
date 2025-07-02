@@ -75,14 +75,17 @@ export async function getColumnById(columnId) {
 // Actualizar columna
 export async function updateColumn(columnId, updatedColumn) {
   const payload = mapColumnToBackend(updatedColumn);
-  console.log("payload", payload);
+  console.log("payload", columnId);
   const res = await axios.put(`/columns/${columnId}`, payload);
   return mapColumnFromBackend(res.data);
 }
 
 // Eliminar columna
 export async function deleteColumn(columnId) {
+        console.log("mana: intenta borrar adentro", columnId)
   const res = await axios.delete(`/columns/${columnId}`);
+
+  console.log("mana: intenta delete service", res);
   return res.data;
 }
 

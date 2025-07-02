@@ -49,7 +49,7 @@ export async function createLogicalTableRecord(tableId, recordData) {
 
 // Actualizar un registro en una tabla lógica
 export async function updateLogicalTableRecord(recordId, recordData) {
-  const { data } = await axios.put(`/records//${recordId}`, recordData);
+  const { data } = await axios.put(`/records/${recordId}`, recordData);
   return data;
 }
 

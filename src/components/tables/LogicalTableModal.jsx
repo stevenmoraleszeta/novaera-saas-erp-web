@@ -76,7 +76,7 @@ export default function LogicalTableModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] h-[80vh] flex flex-col">
+      <DialogContent className="sm:max-w-[600px] h-[80vh] flex flex-col max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {mode === "edit"

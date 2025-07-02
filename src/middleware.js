@@ -27,6 +27,7 @@ export function middleware(request) {
     "/roles",
     "/permissions",
     "/profile",
+    "/notifications",
   ];
 
   // Check if current path is an auth route
@@ -71,5 +72,6 @@ export const config = {
     "/roles/:path*",
     "/permissions/:path*",
     "/profile/:path*",
+    "/notifications/:path*", 
   ],
 };

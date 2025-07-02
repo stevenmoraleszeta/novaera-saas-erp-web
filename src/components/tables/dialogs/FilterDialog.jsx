@@ -1,4 +1,4 @@
-import React from "react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -7,6 +7,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectTrigger,
@@ -19,18 +20,25 @@ export default function FilterDialog({
   open,
   onOpenChange,
   columns,
-  filterConditions,
+  filterConditions = [],
   filterDraft,
   setFilterDraft,
   onAddFilter,
+  columnVisibility,
+  setColumnVisibility,
 }) {
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Filtros</DialogTitle>
+          <DialogTitle>Filtros {columnVisibility && "y Columnas"}</DialogTitle>
         </DialogHeader>
-        <div className="flex flex-col gap-4">
+
+        {/* FILTROS */}
+        <div className="flex flex-col gap-4 mb-6 border-b pb-6">
+          <h4 className="text-sm font-semibold">Agregar Filtro</h4>
+
           <Select
             value={filterDraft.column}
             onValueChange={(val) =>
@@ -42,12 +50,13 @@ export default function FilterDialog({
             </SelectTrigger>
             <SelectContent>
               {columns.map((col) => (
-                <SelectItem key={col.name} value={col.name}>
-                  {col.name}
+                <SelectItem key={col.column_id} value={col.name}>
+                  {col.header || col.name || col.column_id}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+
           <Select
             value={filterDraft.condition}
             onValueChange={(val) =>
@@ -65,6 +74,7 @@ export default function FilterDialog({
               ))}
             </SelectContent>
           </Select>
+
           {filterDraft.condition &&
             !["is_null", "is_not_null"].includes(filterDraft.condition) && (
               <input
@@ -76,8 +86,7 @@ export default function FilterDialog({
                 }
               />
             )}
-        </div>
-        <DialogFooter>
+
           <Button
             onClick={onAddFilter}
             disabled={
@@ -90,6 +99,37 @@ export default function FilterDialog({
           >
             Agregar filtro
           </Button>
+        </div>
+
+        {/* Column visibility (opcional) */}
+        {columnVisibility && setColumnVisibility && (
+          <div className="flex flex-col gap-3">
+            <h4 className="text-sm font-semibold">Mostrar u ocultar columnas</h4>
+            {columns.map((col) => (
+              <div key={col.name} className="flex items-center space-x-3">
+                <Checkbox
+                  id={`col-${col.name}`}
+                  checked={columnVisibility[col.name] !== false}
+                  onCheckedChange={(checked) => {
+                    setColumnVisibility((prev) => ({
+                      ...prev,
+                      [col.name]: checked,
+                    }));
+                  }}
+                />
+                <label
+                  htmlFor={`col-${col.name}`}
+                  className="text-sm font-medium leading-none"
+                >
+                  {col.name}
+                </label>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <DialogFooter className="pt-6">
+          <Button onClick={() => onOpenChange(false)}>Cerrar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
