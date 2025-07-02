@@ -42,7 +42,7 @@ import { Input } from "../ui/input";
 import ViewForm from "@/components/ViewForm";
 import GenericCRUDTable from "../common/GenericCRUDTable";
 
-export default function LogicalTableDataView({ tableId, refresh }) {
+export default function LogicalTableDataView({ tableId, refresh, colName, constFilter, hiddenColumns }) {
   const { isEditingMode } = useEditModeStore();
   const { getTableById } = useLogicalTables(null);
   const {
@@ -105,6 +105,7 @@ export default function LogicalTableDataView({ tableId, refresh }) {
   
   const { handleCreate, handleUpdatePosition, handleDelete } = useColumns(null);
 
+  constFilter = constFilter || null;
 
   const filterConditions = [
     { value: "equals", label: "Igual a" },
@@ -202,7 +203,8 @@ export default function LogicalTableDataView({ tableId, refresh }) {
   };
 
   const tableColumns = columns
-    .filter((col) => columnVisibility[col.name] !== false)
+    .filter((col) => columnVisibility[col.name] !== false &&
+    !(hiddenColumns || []).includes(col.name))
     .map((col) => ({
       key: col.name,
       header: col.name,
@@ -231,7 +233,35 @@ export default function LogicalTableDataView({ tableId, refresh }) {
     });
   }, [isEditingMode, tableColumns, columns]);
 
+  
+
   let processedRecords = [...records];
+
+  if (constFilter) {
+    processedRecords = processedRecords.filter((row) => {
+      const val = (row.record_data || row)[constFilter.column];
+      switch (constFilter.condition) {
+        case "equals":
+          return String(val) === String(constFilter.value);
+        case "not_equals":
+          return String(val) !== String(constFilter.value);
+        case "contains":
+          return String(val || "").toLowerCase().includes(String(constFilter.value).toLowerCase());
+        case "not_contains":
+          return !String(val || "").toLowerCase().includes(String(constFilter.value).toLowerCase());
+        case "greater":
+          return Number(val) > Number(constFilter.value);
+        case "lower":
+          return Number(val) < Number(constFilter.value);
+        case "is_null":
+          return val == null || val === "";
+        case "is_not_null":
+          return val != null && val !== "";
+        default:
+          return true;
+      }
+    });
+  }
   if (activeFilters.length > 0) {
     processedRecords = processedRecords.filter((row) => {
       return activeFilters.every((filter) => {
@@ -758,6 +788,8 @@ export default function LogicalTableDataView({ tableId, refresh }) {
               renderForm={({ mode, item, open, onClose, onSubmit }) => (
                   <DynamicRecordFormDialog
                     open={open}
+                    colName={colName}
+                    foreignForm={!!(constFilter && hiddenColumns)}
                     onOpenChange={(val) => {
                       if (!val) onClose();
                     }}
@@ -826,6 +858,8 @@ export default function LogicalTableDataView({ tableId, refresh }) {
         open={showAddRecordDialog}
         onOpenChange={setShowAddRecordDialog}
         tableId={tableId}
+        colName={colName}
+        foreignForm={!!(constFilter && hiddenColumns)}
         onSubmitSuccess={async (createdRecord) => {
           const userColumn = columns.find((col) => col.data_type === "user");
           const userId = userColumn
@@ -1009,6 +1043,7 @@ export default function LogicalTableDataView({ tableId, refresh }) {
             <GenericCRUDTable
               title="Columnas"
               data={columns}
+              hiddenColumns = {hiddenColumns}
               columns={[
                 { column_id: "name", name: "name",  key: "name", header: "Nombre"},
                 { column_id: "data_type", name: "data_type",  key: "data_type", header: "Tipo"},

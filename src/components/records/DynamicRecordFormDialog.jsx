@@ -34,6 +34,8 @@ export default function DynamicRecordFormDialog({
   record = null, // objeto con datos a editar en modo edit
   onSubmitSuccess,
   onDelete,
+  colName,
+  foreignForm = false,
 }) {
   const [columns, setColumns] = useState([]);
   const [values, setValues] = useState({});
@@ -47,7 +49,9 @@ export default function DynamicRecordFormDialog({
   const [foreignTableLoading, setForeignTableLoading] = useState(false);
   const [foreignTableError, setForeignTableError] = useState(null);
   const [intermediateTableId, setIntermediateTableId] = useState(null);
+  const [columnName, setcolumnName] = useState(null);
   const [tables, setTables] = useState([]);
+
 
   // Carga columnas y valores iniciales según modo y record
   useEffect(() => {
@@ -60,7 +64,12 @@ export default function DynamicRecordFormDialog({
 
         const initialValues = {};
           cols.forEach((col) => {
-            
+            // Si estamos en modo foreignForm y es original_record_id, asignar el valor automático
+            if (foreignForm && col.name === "original_record_id") {
+              initialValues[col.name] = colName.column_id;
+              return;
+            }
+
             if (mode === "edit" && record?.record_data?.[col.name] !== undefined) {
               const rawValue = record.record_data[col.name];
               initialValues[col.name] = castValueByDataType(col.data_type, rawValue);
@@ -157,6 +166,7 @@ export default function DynamicRecordFormDialog({
     async (e) => {
       e.preventDefault();
       setSubmitError(null);
+      console.log("dirt: values = ", values)
       if (!validate()) return;
 
       setLoading(true);
@@ -218,11 +228,13 @@ export default function DynamicRecordFormDialog({
   }, [foreignModalOpen, foreignModalColumn]);
 
   const handleOpenForeignModal = (col) => {
+    console.log("dirt: columna clikeada:", col)
     const interTable = tables.find(
       t =>
         (t.original_table_id === tableId && t.foreign_table_id === col.foreign_table_id) ||
         (t.original_table_id === col.foreign_table_id && t.foreign_table_id === tableId)
     );
+    setcolumnName(col);
     setForeignModalOpen(true);
     setForeignModalColumn(col);
     setIntermediateTableId(interTable ? interTable.id : null);
@@ -257,7 +269,11 @@ export default function DynamicRecordFormDialog({
               className="flex flex-col h-full"
             >
               <div className="flex-1 space-y-6 overflow-y-auto pr-1">
-                {columns.map((col) => (
+              {columns.map((col) => {
+                // Si es original_record_id y estamos en foreignForm, no mostrar
+                if (foreignForm && col.name === "original_record_id") return null;
+
+                return (
                   <div key={col.column_id} className="space-y-2">
                     <Label htmlFor={`field-${col.name}`}>
                       {col.name}
@@ -268,17 +284,12 @@ export default function DynamicRecordFormDialog({
                       )}
                     </Label>
                     {col.data_type === "foreign" ? (
-                      <>
-                        <Button
-                          type="button"
-                          onClick={() => handleOpenForeignModal(col)}
-                        >
-                          Abrir tabla
-                        </Button>
-                        {/* Aquí podrías mostrar un resumen de los registros seleccionados si aplica */}
-                      </>
+                      <Button type="button" onClick={() => handleOpenForeignModal(col)}>
+                        Abrir tabla
+                      </Button>
                     ) : (
                       <FieldRenderer
+                        colName={colName?.foreign_column_name}
                         id={`field-${col.name}`}
                         column={col}
                         value={values[col.name]}
@@ -300,7 +311,8 @@ export default function DynamicRecordFormDialog({
                       </div>
                     )}
                   </div>
-                ))}
+                );
+              })}
 
                 {submitError && (
                   <Alert variant="destructive">
@@ -354,8 +366,13 @@ export default function DynamicRecordFormDialog({
             </DialogTitle>
           </DialogHeader>
           {foreignModalColumn && intermediateTableId && (
-            <LogicalTableDataView tableId={intermediateTableId} />
-          )}
+            <LogicalTableDataView tableId={intermediateTableId} colName={columnName} constFilter={{
+              column: "original_record_id",
+              condition: "equals",
+              value: columnName?.column_id ?? "",
+            }}
+            hiddenColumns={["original_record_id"]}/>
+            )}
           <div className="flex justify-end mt-4">
             <Button onClick={() => setForeignModalOpen(false)}>Cerrar</Button>
           </div>
