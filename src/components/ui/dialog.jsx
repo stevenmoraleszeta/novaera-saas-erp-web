@@ -52,7 +52,7 @@ function DialogContent({
         )}
         {...props}
       >
-        <div className="flex flex-col h-full max-w-lg">{children}</div>
+        <div className="flex flex-col h-full ">{children}</div>
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"

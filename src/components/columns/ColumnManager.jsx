@@ -97,22 +97,7 @@ export default function ColumnManager({ tableId, tableName, onRefresh }) {
 
   return (
     <div className="flex-1 p-6 overflow-hidden">
-      <Card className="h-full flex flex-col">
-        <CardHeader className="flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl flex items-center gap-2">
-              <Settings className="w-5 h-5" />
-              Gestor de Columnas
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-xs">
-                {columns.length} columnas
-              </Badge>
-            </div>
-          </div>
-        </CardHeader>
 
-        <CardContent className="flex-1 overflow-hidden space-y-6">
           {visibleError && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg transition-all">
               <p className="text-sm text-red-700">{visibleError}</p>
@@ -134,38 +119,6 @@ export default function ColumnManager({ tableId, tableName, onRefresh }) {
             />
           </div>
 
-          {columns.length > 0 && (
-            <div className="flex-shrink-0">
-              <TablePreview tableName={tableName} columns={columns} />
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* El nuevo ColumnForm ya incluye su propio <Dialog /> */}
-      <ColumnForm
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        mode={formMode}
-        initialData={selectedColumn}
-        onSubmit={handleFormSubmit}
-        onCancel={handleFormCancel}
-        onDelete={handleDeleteClick}
-        loading={loading}
-        error={error}
-        tableId={tableId}
-        lastPosition={columns.length}
-      />
-
-      <DeleteConfirmationModal
-        open={showDeleteDialog}
-        onOpenChange={(open) => {
-          if (!open) handleCancelDelete();
-        }}
-        onConfirm={handleConfirmDelete}
-        title="¿Eliminar Columna?"
-        itemName={columnToDelete?.name}
-      />
     </div>
   );
 }

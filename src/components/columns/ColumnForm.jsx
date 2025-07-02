@@ -116,9 +116,6 @@ export default function ColumnForm({
   };
 
   const handleDelete = () => {
-    console.log("ColumnForm handleDelete called");
-    console.log("onDelete function:", onDelete);
-    console.log("initialData:", initialData);
     if (onDelete && initialData?.column_id) {
       console.log("Calling onDelete with ID:", initialData.column_id);
       onDelete(initialData.column_id);
@@ -135,7 +132,7 @@ export default function ColumnForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] h-[80vh] flex flex-col">
+      <DialogContent className="sm:max-w-[700px] h-[80vh] flex flex-col max-h-[90vh] overflow-y-auto">
         <div ref={topRef} />
         <DialogHeader>
           <DialogTitle>
@@ -143,7 +140,7 @@ export default function ColumnForm({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 ">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Nombre */}
             <div className="space-y-2">
@@ -218,14 +215,15 @@ export default function ColumnForm({
                 tables={tables}
                 columnsByTable={columnsByTable}
                 selectedTableId={formData.foreign_table_id}
-                selectedColumnId={formData.foreign_column_id}
-                onTableChange={(tableId) =>
+                selectedColumnId={formData.foreign_column_name}
+                onChangeTable={(tableId) =>
                   handleChange("foreign_table_id", tableId)
                 }
-                onColumnChange={(columnId) =>
-                  handleChange("foreign_column_id", columnId)
+                onChangeColumn={(columnId) =>
+                  handleChange("foreign_column_name", columnId)
                 }
               />
+
             )}
 
             {/* Validaciones */}
@@ -267,7 +265,7 @@ export default function ColumnForm({
                 Guardando...
               </>
             ) : (
-              <>{mode === "edit" ? "Actualizar" : "Crear"}</>
+              <>{mode === "edit" ? "Guardar" : "Crear"}</>
             )}
           </Button>
           {mode === "edit" && onDelete && (

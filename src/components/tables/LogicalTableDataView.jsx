@@ -2,7 +2,6 @@ import React, { useEffect, useState, useMemo } from "react";
 import {
   getLogicalTableStructure,
   getLogicalTableRecords,
-  updateLogicalTableRecord,
   deleteLogicalTableRecord,
 } from "@/services/logicalTableService";
 import Table from "@/components/tables/Table";
@@ -15,34 +14,33 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Settings,
 } from "lucide-react";
 import useEditModeStore from "@/stores/editModeStore";
 import DynamicRecordFormDialog from "../records/DynamicRecordFormDialog";
-import DeleteConfirmationModal from "../common/DeleteConfirmationModal";
-import FieldRenderer from "@/components/common/FieldRenderer";
 import { notifyAssignedUser } from "@/components/notifications/notifyAssignedUser";
 import { useLogicalTables } from "@/hooks/useLogicalTables";
 import { useViews } from "@/hooks/useViews";
 import SearchBar from "@/components/common/SearchBar";
 import FilterDialog from "./dialogs/FilterDialog";
 import SortDialog from "./dialogs/SortDialog";
-import ColumnSettingsDialog from "./dialogs/ColumnSettingsDialog";
 import ColumnForm from "../columns/ColumnForm";
 import {
-  createColumn,
   updateColumn,
-  deleteColumn,
 } from "@/services/columnsService";
+import { useColumns } from "@/hooks/useColumns";
 import ConfirmationDialog from "../common/ConfirmationDialog";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
+
+import ViewForm from "@/components/ViewForm";
+import GenericCRUDTable from "../common/GenericCRUDTable";
 
 export default function LogicalTableDataView({ tableId, refresh }) {
   const { isEditingMode } = useEditModeStore();
@@ -50,7 +48,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
   const {
     views,
     columns: viewColumns,
-    loadingViews,
     error: viewsError,
     loadViews,
     loadColumns,
@@ -59,7 +56,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
     handleUpdateView,
     handleDeleteView,
     handleAddColumnToView,
-    handleUpdateViewColumn,
     handleDeleteViewColumn,
   } = useViews(tableId);
 
@@ -69,10 +65,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
-  const [editingRecordId, setEditingRecordId] = useState(null);
-  const [editFields, setEditFields] = useState({});
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState(null);
   const [showAddRecordDialog, setShowAddRecordDialog] = useState(false);
   const [deleteConfirmRecord, setDeleteConfirmRecord] = useState(null);
   const [localRefreshFlag, setLocalRefreshFlag] = useState(false);
@@ -80,7 +72,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [showSortDialog, setShowSortDialog] = useState(false);
   const [showFilterDialog, setShowFilterDialog] = useState(false);
-  const [showColumnSettingsDialog, setShowColumnSettingsDialog] =
     useState(false);
   const [showColumnFormDialog, setShowColumnFormDialog] = useState(false);
   const [sortConfig, setSortConfig] = useState(null);
@@ -105,6 +96,15 @@ export default function LogicalTableDataView({ tableId, refresh }) {
   const [columnFormMode, setColumnFormMode] = useState("create");
   const [columnToDelete, setColumnToDelete] = useState(null);
   const [showColumnDeleteDialog, setShowColumnDeleteDialog] = useState(false);
+
+  const [showManageViewsDialog, setShowManageViewsDialog] = useState(false);
+  const [showEditRecordDialog, setShowEditRecordDialog] = useState(false);
+  const [recordToEdit, setRecordToEdit] = useState(null);
+
+  const [showManageColumnsDialog, setShowManageColumnsDialog] = useState(false);
+  
+  const { handleCreate, handleUpdatePosition, handleDelete } = useColumns(null);
+
 
   const filterConditions = [
     { value: "equals", label: "Igual a" },
@@ -163,17 +163,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
   }, [tableId, page, pageSize, refresh, localRefreshFlag]);
 
   useEffect(() => {
-    if (editingRecordId) {
-      const rec = records.find((r) => r.id === editingRecordId);
-      setEditFields(rec ? { ...rec.record_data } : {});
-      setSaveError(null);
-    } else {
-      setEditFields({});
-      setSaveError(null);
-    }
-  }, [editingRecordId, records]);
-
-  useEffect(() => {
     const fetchMeta = async () => {
       if (!tableId) return;
       try {
@@ -186,35 +175,11 @@ export default function LogicalTableDataView({ tableId, refresh }) {
     fetchMeta();
   }, [tableId, getTableById]);
 
-  const handleFieldChange = (col, e) => {
-    const val = e.target?.value ?? e.target?.checked ?? e;
-    setEditFields((prev) => ({ ...prev, [col]: val }));
-  };
-
-  const handleSave = async (record) => {
-    setSaving(true);
-    setSaveError(null);
-    try {
-      await updateLogicalTableRecord(record.id, {
-        table_id: tableId,
-        record_data: editFields,
-      });
-      setEditingRecordId(null);
-      setLocalRefreshFlag((prev) => !prev);
-    } catch (err) {
-      setSaveError("Error al guardar cambios");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleEditRecord = (record) => {
-    setEditingRecordId(record.id);
-  };
-
-  const handleCancelEdit = () => {
-    setEditingRecordId(null);
-  };
+  useEffect(() => {
+  if (!selectedView && views.length > 0 && columns.length > 0) {
+    handleSelectView(views[0]);
+  }
+  }, [views, columns, selectedView]);
 
   const handleDeleteRecord = async (record) => {
     setDeleteConfirmRecord(record);
@@ -242,26 +207,11 @@ export default function LogicalTableDataView({ tableId, refresh }) {
       key: col.name,
       header: col.name,
       width: col.data_type === "int" ? "80px" : "auto",
-      render: (value, row) => {
-        const isEditing = isEditingMode && editingRecordId === row.id;
-
-        if (isEditing) {
-          return (
-            <FieldRenderer
-              id={`edit-${row.id}-${col.name}`}
-              column={col}
-              value={editFields[col.name]}
-              onChange={(e) => handleFieldChange(col.name, e)}
-            />
-          );
-        }
-
-        return (
+        render: (value, row) => (
           <span className="text-sm">
             {row.record_data ? row.record_data[col.name] : row[col.name] || "-"}
           </span>
-        );
-      },
+        ),
     }));
 
   // Add column management actions to table headers when edit mode changes
@@ -273,19 +223,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
           header: (
             <div className="flex items-center justify-between group">
               <span>{col.header}</span>
-              <div className="flex gap-1 ml-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() =>
-                    handleEditColumn(columns.find((c) => c.name === col.key))
-                  }
-                  className="h-6 w-6 p-0"
-                  title="Editar columna"
-                >
-                  <Edit3 className="w-3 h-3" />
-                </Button>
-              </div>
             </div>
           ),
         };
@@ -368,15 +305,12 @@ export default function LogicalTableDataView({ tableId, refresh }) {
     setActiveSort(sortConfig);
     setShowSortDialog(false);
   };
-  const handleRemoveFilter = (idx) => {
-    setActiveFilters((prev) => prev.filter((_, i) => i !== idx));
-  };
-  const handleClearSort = () => setActiveSort(null);
 
   // Column management functions
   const handleCreateColumn = async (columnData) => {
     try {
-      await createColumn(columnData);
+      //await createColumn(columnData);
+      await handleCreate({ ...columnData, table_id: tableId });
       // Refresh columns by refetching table structure
       const cols = await getLogicalTableStructure(tableId);
       setColumns(cols);
@@ -399,6 +333,7 @@ export default function LogicalTableDataView({ tableId, refresh }) {
       setShowColumnFormDialog(false);
       setColumnFormMode("create");
       setSelectedColumn(null);
+      setLocalRefreshFlag((prev) => !prev);
     } catch (err) {
       console.error("Error updating column:", err);
       throw err;
@@ -409,7 +344,7 @@ export default function LogicalTableDataView({ tableId, refresh }) {
     if (columnFormMode === "create") {
       await handleCreateColumn(formData);
     } else if (columnFormMode === "edit" && selectedColumn) {
-      await handleUpdateColumn(selectedColumn.id, formData);
+      await handleUpdateColumn(selectedColumn.column_id, formData);
     }
   };
 
@@ -419,17 +354,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
     setColumnFormMode("create");
   };
 
-  const handleCreateCol = () => {
-    setSelectedColumn(null);
-    setColumnFormMode("create");
-    setShowColumnFormDialog(true);
-  };
-
-  const handleEditColumn = (column) => {
-    setSelectedColumn(column);
-    setColumnFormMode("edit");
-    setShowColumnFormDialog(true);
-  };
 
   const handleDeleteColumnClick = (columnId) => {
     console.log("handleDeleteColumnClick called with columnId:", columnId);
@@ -445,29 +369,25 @@ export default function LogicalTableDataView({ tableId, refresh }) {
   };
 
   const handleDeleteColumn = async (column) => {
+    console.log("mana: intenta borrar");
     try {
-      await deleteColumn(column.column_id);
+      await handleDelete(column.column_id);
       // Refresh columns by refetching table structure
       const cols = await getLogicalTableStructure(tableId);
       setColumns(cols);
       setShowColumnDeleteDialog(false);
       setColumnToDelete(null);
     } catch (err) {
+      console.log("mana: falla borrar");
       console.error("Error deleting column:", err);
       throw err;
-    }
-  };
-
-  // Row click handler for edit mode
-  const handleRowClick = (row) => {
-    if (isEditingMode) {
-      handleEditRecord(row);
     }
   };
 
   // View management functions
   const handleSelectView = async (view) => {
     if (!view) {
+      console.log("mana: no hay view")
       // Clear view - reset to default state
       setSelectedView(null);
       setActiveSort(null);
@@ -475,62 +395,68 @@ export default function LogicalTableDataView({ tableId, refresh }) {
       setColumnVisibility({});
       return;
     }
-
+    console.log("mana: si hay view")
     setSelectedView(view);
 
     // Apply view sort configuration
     if (view.sortBy && view.sortDirection) {
+      console.log("mana: si tiene reglas")
+      const sortCol = columns.find(col => col.column_id === view.sortBy);
       setActiveSort({
-        column: view.sortBy,
+        column: sortCol?.name || null,
         direction: view.sortDirection,
       });
     }
 
     // Load and apply view columns configuration
     try {
-      await loadColumns(view.id);
-      const viewCols = getColumnsForView(view.id);
+        const viewCols = await loadColumns(view.id); // <-- usamos el resultado directamente
 
-      // Apply column visibility and filters from view columns
-      // Filters are stored as properties of each column in the view
-      const newColumnVisibility = {};
-      const newFilters = [];
+        const newColumnVisibility = {};
+        const newFilters = [];
 
-      viewCols.forEach((viewCol) => {
-        // Find the column by ID to get the name
-        const column = columns.find(
-          (col) => col.column_id === viewCol.column_id
-        );
-        if (column) {
-          // Set column visibility
-          newColumnVisibility[column.name] = viewCol.visible !== false;
+        viewCols.forEach((viewCol) => {
+          const column = columns.find(
+            (col) => col.column_id === viewCol.column_id
+          );
+          if (column) {
+            newColumnVisibility[column.name] = viewCol.visible !== false;
 
-          // If this column has filter settings, add them to active filters
-          if (viewCol.filter_condition && viewCol.filter_value) {
-            newFilters.push({
-              column: column.name,
-              condition: viewCol.filter_condition,
-              value: viewCol.filter_value,
-            });
+            if (
+              viewCol.filter_condition &&
+              (
+                viewCol.filter_condition === "is_null" ||
+                viewCol.filter_condition === "is_not_null" ||
+                (viewCol.filter_value !== null &&
+                  viewCol.filter_value !== undefined &&
+                  viewCol.filter_value !== "")
+              )
+            ) {
+              newFilters.push({
+                column: column.name,
+                condition: viewCol.filter_condition,
+                value: viewCol.filter_value,
+              });
+            }
           }
-        }
-      });
+        });
 
-      setColumnVisibility(newColumnVisibility);
-      setActiveFilters(newFilters);
-    } catch (err) {
-      console.error("Error loading view configuration:", err);
-    }
+        setColumnVisibility(newColumnVisibility);
+        setActiveFilters(newFilters);
+      } catch (err) {
+        console.error("Error loading view configuration:", err);
+      }
   };
 
   const handleCreateViewLocal = async (viewData) => {
     try {
+      const sortColumn = columns.find(col => col.name === activeSort?.column)
       // First, create the view with basic info (name, sort settings)
       const newView = await handleCreateView({
         ...viewData,
         tableId,
-        sortBy: activeSort?.column || null,
-        sortDirection: activeSort?.direction || null,
+        sort_by: sortColumn?.column_id || null,
+        sort_direction: activeSort?.direction || null,
       });
 
       // Then, add each column to the view with its configuration
@@ -540,7 +466,7 @@ export default function LogicalTableDataView({ tableId, refresh }) {
         const activeFilter = activeFilters.find((f) => f.column === col.name);
 
         return {
-          view_id: newView.id,
+          view_id: newView.message.view_id,
           column_id: col.column_id,
           visible: columnVisibility[col.name] !== false,
           filter_condition: activeFilter?.condition || null,
@@ -565,10 +491,12 @@ export default function LogicalTableDataView({ tableId, refresh }) {
 
   const handleUpdateViewLocal = async (viewId, viewData) => {
     try {
+
+      const sortColumn = columns.find(col => col.name === activeSort?.column);
       // First, update the view with basic info (name, sort settings)
       await handleUpdateView(viewId, {
         ...viewData,
-        sortBy: activeSort?.column || null,
+        sortBy: sortColumn?.column_id || null,
         sortDirection: activeSort?.direction || null,
       });
 
@@ -610,10 +538,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
     }
   };
 
-  const handleDeleteViewClick = (view) => {
-    setViewToDelete(view);
-    setShowViewDeleteDialog(true);
-  };
 
   const handleDeleteViewLocal = async (view) => {
     try {
@@ -679,7 +603,9 @@ export default function LogicalTableDataView({ tableId, refresh }) {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-6">
           <div className="flex gap-2">
-            {/* Default view (no filters/sort) */}
+
+          {/* Default view (no filters/sort) */}
+            {views.length === 0 && (
             <button
               className={`px-4 py-1 font-semibold text-sm border ${
                 !selectedView
@@ -691,32 +617,41 @@ export default function LogicalTableDataView({ tableId, refresh }) {
               Vista General
             </button>
 
+            )}
+
             {/* Dynamic view tabs */}
             {views.map((view) => (
-              <button
-                key={view.id}
-                className={`px-4 py-1 font-semibold text-sm border ${
-                  selectedView?.id === view.id
-                    ? "bg-black text-white shadow border-black"
-                    : "bg-gray-200 text-gray-800 border-gray-300"
-                }`}
-                onClick={() => handleSelectView(view)}
-              >
-                {view.name}
-              </button>
+              <div key={view.id} className="relative">
+                <button
+                  className={`text-sm font-bold rounded transition-colors border-[3px]
+                    ${
+                      selectedView?.id === view.id
+                        ? "bg-black/30 text-black border-black"
+                        : "bg-transparent text-black border-black"
+                    }`}
+                  style={{
+                    paddingTop: "5px",
+                    paddingBottom: "5px",
+                    paddingLeft: "24px",
+                    paddingRight: "24px",
+                  }}
+                  onClick={() => handleSelectView(view)}
+                >
+                  {view.name}
+                </button>
+              </div>
             ))}
 
-            {/* Add new view button */}
-            <button
-              className="px-4 py-1 bg-gray-200 text-gray-800 font-semibold text-sm border border-gray-300 hover:bg-gray-300"
-              onClick={() => {
-                setViewFormMode("create");
-                setSelectedView(null);
-                setShowViewDialog(true);
-              }}
-            >
-              <Plus className="w-4 h-4" />
-            </button>
+            {isEditingMode && (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setShowManageViewsDialog(true)}
+                title="Editar vistas"
+              >
+                <Edit3 className="w-4 h-4" />
+              </Button>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -736,36 +671,24 @@ export default function LogicalTableDataView({ tableId, refresh }) {
           >
             <ArrowUpDown className="w-5 h-5" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="w-9 h-9"
-            onClick={() => setShowColumnSettingsDialog(true)}
-          >
-            <Settings className="w-5 h-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="w-9 h-9"
-            onClick={handleCreateCol}
-            title="Agregar columna"
-          >
-            <Edit3 className="w-5 h-5" />
-          </Button>
-          <div className="mx-2" style={{ minWidth: 200, maxWidth: 320 }}>
+          <div className="flex items-center gap-2">
             <SearchBar
               onSearch={setSearchTerm}
-              placeholder="Buscar en la tabla..."
               debounceDelay={200}
+              placeholder="Buscar..."
             />
           </div>
           <Button
             onClick={() => setShowAddRecordDialog(true)}
-            className="ml-2"
             size="lg"
+            className="w-[150px] h-[36px] rounded-[5px] flex items-center justify-center"
           >
-            Nuevo
+            <span
+              className="w-[82px] h-[31px] flex items-center justify-center"
+              style={{ fontSize: "20px" }}
+            >
+              Nuevo
+            </span>
           </Button>
         </div>
       </div>
@@ -799,57 +722,80 @@ export default function LogicalTableDataView({ tableId, refresh }) {
               : ""}
           </span>
         ))}
-        <div className="flex-1" />
-        {((activeSort && activeSort.column) ||
-          (activeFilters && activeFilters.length > 0)) && (
-          <>
-            <Button
-              size="sm"
-              variant="outline"
-              className="ml-2"
-              onClick={() => {
-                setActiveFilters([]);
-                setActiveSort(null);
-              }}
-            >
-              Limpiar
-            </Button>
-            <Button
-              size="sm"
-              className="ml-2 bg-black text-white hover:bg-gray-900"
-              onClick={() => {
-                setViewFormMode("create");
-                setSelectedView(null);
-                setShowViewDialog(true);
-              }}
-            >
-              Guardar
-            </Button>
-          </>
-        )}
+        
       </div>
       <div
         className="flex-1 overflow-hidden bg-white relative"
         style={{ borderRadius: 0 }}
       >
-        {saveError && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-600">{saveError}</p>
+          {isEditingMode && (
+          <div className="absolute top-0 right-0 mt-1 mr-2 z-10">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setShowManageColumnsDialog(true)}
+              title="Gestionar columnas"
+            >
+              <Edit3 className="w-4 h-4" />
+            </Button>
           </div>
-        )}
+           )}
 
         {columns.length > 0 && (
-          <div className="h-full overflow-auto">
-            <Table
-              columns={tableColumnsWithActions}
-              data={filteredRecords}
-              pagination={true}
-              itemsPerPageOptions={[10, 25, 50]}
-              defaultItemsPerPage={10}
-              customizable={true}
-              resizable={true}
-              onRowClick={handleRowClick}
-            />
+        <div className="h-full overflow-auto">
+          <GenericCRUDTable
+            title={tableMeta?.name || "Tabla"}
+            data={filteredRecords}
+            useFilter = {false}
+            columns={tableColumnsWithActions}
+            getRowKey={(row) => row.id}
+            onCreate={() => setShowAddRecordDialog(true)}
+            onUpdate={(id, updatedData) => {
+              setRecordToEdit({ ...updatedData, id });
+              setShowEditRecordDialog(true);
+            }}
+            rowIdKey="id"
+              renderForm={({ mode, item, open, onClose, onSubmit }) => (
+                  <DynamicRecordFormDialog
+                    open={open}
+                    onOpenChange={(val) => {
+                      if (!val) onClose();
+                    }}
+                    onCancel={onClose}
+                    tableId={tableId}
+                    record={item}
+                    mode={mode}
+                    onDelete={handleDeleteRecord}
+                    onSubmitSuccess={async (createdOrUpdatedRecord) => {
+                      if (mode === "create") {
+                        const userColumn = columns.find((col) => col.data_type === "user");
+                        const userId = userColumn
+                          ? createdOrUpdatedRecord.message.record.record_data?.[userColumn.name]
+                          : null;
+
+                        if (userId) {
+                          try {
+                            const table = await getTableById(tableId);
+                            const tableName = table.name;
+
+                            await notifyAssignedUser({
+                              userId,
+                              action: "created",
+                              tableName,
+                              recordId: createdOrUpdatedRecord?.id,
+                            });
+                          } catch (err) {
+                            console.error("Error notificando usuario asignado:", err);
+                          }
+                        }
+                      }
+
+                      onSubmit(createdOrUpdatedRecord);
+                      setLocalRefreshFlag((prev) => !prev);
+                    }}
+                  />
+                )}
+          />
           </div>
         )}
       </div>
@@ -859,6 +805,8 @@ export default function LogicalTableDataView({ tableId, refresh }) {
         open={showFilterDialog}
         onOpenChange={setShowFilterDialog}
         columns={columns}
+        columnVisibility={columnVisibility}
+        setColumnVisibility={setColumnVisibility}
         filterConditions={filterConditions}
         filterDraft={filterDraft}
         setFilterDraft={setFilterDraft}
@@ -872,14 +820,6 @@ export default function LogicalTableDataView({ tableId, refresh }) {
         sortConfig={sortConfig}
         setSortConfig={setSortConfig}
         onSetSort={handleSetSort}
-      />
-
-      <ColumnSettingsDialog
-        open={showColumnSettingsDialog}
-        onOpenChange={setShowColumnSettingsDialog}
-        columns={columns}
-        columnVisibility={columnVisibility}
-        setColumnVisibility={setColumnVisibility}
       />
 
       <DynamicRecordFormDialog
@@ -912,13 +852,24 @@ export default function LogicalTableDataView({ tableId, refresh }) {
         }}
       />
 
-      <DeleteConfirmationModal
+
+      <ConfirmationDialog
         open={!!deleteConfirmRecord}
-        onOpenChange={() => setDeleteConfirmRecord(null)}
+        onClose={() => setDeleteConfirmRecord(null)}
         title="¿Eliminar registro?"
         message="Esta acción no se puede deshacer. Se eliminará permanentemente el registro."
-        onConfirm={confirmDeleteRecord}
-        onCancel={cancelDeleteRecord}
+        actions={[
+          {
+            label: "Cancelar",
+            onClick: cancelDeleteRecord,
+            variant: "default",
+          },
+          {
+            label: "Eliminar",
+            onClick: confirmDeleteRecord,
+            variant: "outline",
+          },
+        ]}
       />
 
       <ColumnForm
@@ -933,6 +884,30 @@ export default function LogicalTableDataView({ tableId, refresh }) {
         error={null}
         tableId={tableId}
         lastPosition={columns.length}
+      />
+      <ConfirmationDialog
+        open={showViewDeleteDialog}
+        onClose={() => {
+          setShowViewDeleteDialog(false);
+          setViewToDelete(null);
+        }}
+        title={`¿Desea eliminar la vista "${viewToDelete?.name || ""}"?`}
+        message={"Esta acción no se puede deshacer."}
+        actions={[
+          {
+            label: "Cancelar",
+            onClick: () => {
+              setShowViewDeleteDialog(false);
+              setViewToDelete(null);
+            },
+            variant: "default",
+          },
+          {
+            label: "Eliminar",
+            onClick: () => handleDeleteViewLocal(viewToDelete),
+            variant: "outline",
+          },
+        ]}
       />
 
       <ConfirmationDialog
@@ -962,7 +937,7 @@ export default function LogicalTableDataView({ tableId, refresh }) {
 
       {/* View Form Dialog */}
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {viewFormMode === "create" ? "Nueva Vista" : "Editar Vista"}
@@ -1025,31 +1000,130 @@ export default function LogicalTableDataView({ tableId, refresh }) {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={showManageColumnsDialog} onOpenChange={setShowManageColumnsDialog}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto"> 
+          <DialogHeader>
+            <DialogTitle>Columnas</DialogTitle>
+          </DialogHeader>
+
+            <GenericCRUDTable
+              title="Columnas"
+              data={columns}
+              columns={[
+                { column_id: "name", name: "name",  key: "name", header: "Nombre"},
+                { column_id: "data_type", name: "data_type",  key: "data_type", header: "Tipo"},
+                {
+                  column_id: "required",
+                  name: "required",
+                  key: "required",
+                  header: "Requerido",
+                  render: (val) => (val ? "Sí" : "No"),
+                },
+              ]}
+              getRowKey={(col) => col.column_id}
+              onCreate={handleCreateColumn}
+              onUpdate={handleUpdateColumn}
+              rowIdKey={"column_id"}
+              onDelete={handleDeleteColumn}
+              renderForm={({ mode, item, open, onClose, onSubmit }) => (
+                <ColumnForm
+                  open={open}
+                  onOpenChange={(val) => {
+                    if (!val) onClose();
+                  }}
+                  mode={mode}
+                  initialData={item}
+                  onSubmit={onSubmit}
+                  onCancel={onClose}
+                  onDelete={(colId) => {
+                    handleDeleteColumnClick(colId);
+                    onClose();
+                  }}
+                  loading={false}
+                  error={null}
+                  tableId={tableId}
+                  lastPosition={columns.length}
+                />
+              )}
+            />
+
+          {/*           <div className="overflow-x-auto border-t border-gray-200 mt-4 pt-4">
+            <ColumnManager tableId={tableId} tableName="x" />
+          </div>*/}
+
+        </DialogContent>
+      </Dialog>
       {/* View Delete Confirmation Dialog */}
-      <ConfirmationDialog
-        open={showViewDeleteDialog}
-        onClose={() => {
-          setShowViewDeleteDialog(false);
-          setViewToDelete(null);
-        }}
-        title={`¿Desea eliminar la vista "${viewToDelete?.name || ""}"?`}
-        message="Esta acción no se puede deshacer. Se eliminará permanentemente la vista y su configuración."
-        actions={[
-          {
-            label: "Cancelar",
-            onClick: () => {
-              setShowViewDeleteDialog(false);
-              setViewToDelete(null);
-            },
-            variant: "default",
-          },
-          {
-            label: "Eliminar",
-            onClick: () => handleDeleteViewLocal(viewToDelete),
-            variant: "outline",
-          },
-        ]}
-      />
+      <Dialog open={showManageViewsDialog} onOpenChange={setShowManageViewsDialog}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Vistas</DialogTitle>
+              </DialogHeader>
+            <GenericCRUDTable
+              title="Vistas Personalizadas"
+              data={views}
+              columns={[
+                {
+                  key: "name",
+                  column_id: "name",
+                  header: "Nombre",
+                  name: "name",
+                  render: (val) => <span>{val}</span>,
+                },
+                {
+                  key: "sort_by",
+                  column_id: "sort_by",
+                  header: "Orden",
+                  name: "sort_by",
+                  render: (val) =>
+                    columns.find((c) => c.column_id === val)?.name || "-",
+                },
+              ]}
+
+              getRowKey={(view) => view.id}
+              onCreate={handleCreateViewLocal}
+              onUpdate={handleUpdateViewLocal}
+              onDelete={handleDeleteViewLocal}
+              renderForm={({ mode, item, open, onClose, onSubmit }) => (
+              <ViewForm
+                  open={open}
+                  mode={mode}
+                  initialData={item}
+                  activeSort={activeSort}
+                  activeFilters={activeFilters}
+                  onClose={onClose}
+                  onSubmit={onSubmit}
+                  onDelete={(viewId) => {
+                    setViewToDelete(views.find((v) => v.id === viewId));
+                    setShowViewDeleteDialog(true);
+                    onClose();
+                  }}
+                />
+              )}
+            />
+
+        <DialogFooter className="flex justify-end gap-2 pt-4">
+            {((activeSort && activeSort.column) ||
+              (activeFilters && activeFilters.length > 0)) && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="ml-2"
+                  onClick={() => {
+                    setActiveFilters([]);
+                    setActiveSort(null);
+                  }}
+                >
+                  Limpiar
+                </Button>
+              </>
+            )}
+
+        </DialogFooter>
+
+          </DialogContent>
+        </Dialog>
     </div>
   );
 }

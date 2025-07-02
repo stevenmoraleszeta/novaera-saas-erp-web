@@ -54,110 +54,7 @@ export async function getModules(params = {}) {
     ) {
       console.info("Backend requiere autenticación.");
     }
-
-    const demoModules = [
-      {
-        id: 1,
-        name: "Inventario",
-        description: "Modulo para manejar inventarios",
-        iconUrl: "https://cdn-icons-png.flaticon.com/256/10996/10996252.png",
-        createdBy: 1,
-        createdAt: "2024-01-15T10:30:00Z",
-      },
-      {
-        id: 2,
-        name: "Compras",
-        description: "Modulo para manejar Compras",
-        iconUrl: "https://cdn-icons-png.flaticon.com/256/10996/10996252.png",
-        createdBy: 1,
-        createdAt: "2024-01-16T14:20:00Z",
-      },
-      {
-        id: 3,
-        name: "Recursos Humanos",
-        description: "Modulo para manejar Recursos Humanos",
-        iconUrl: "https://cdn-icons-png.flaticon.com/256/10996/10996252.png",
-        createdBy: 1,
-        createdAt: "2024-01-17T09:15:00Z",
-      },
-      {
-        id: 4,
-        name: "Horarios",
-        description: "Modulo para manejar Horarios",
-        iconUrl: "https://cdn-icons-png.flaticon.com/256/10996/10996252.png",
-        createdBy: 1,
-        createdAt: "2024-01-18T16:45:00Z",
-      },
-      {
-        id: 5,
-        name: "Facturas",
-        description: "Modulo para manejar Facturas",
-        iconUrl: "https://cdn-icons-png.flaticon.com/256/10996/10996252.png",
-        createdBy: 2,
-        createdAt: "2024-01-19T11:30:00Z",
-      },
-      {
-        id: 6,
-        name: "Facturas",
-        description: "Modulo para manejar Facturas",
-        iconUrl: "https://cdn-icons-png.flaticon.com/256/10996/10996252.png",
-        createdBy: 2,
-        createdAt: "2024-01-19T11:30:00Z",
-      },
-      {
-        id: 7,
-        name: "Facturas",
-        description: "Modulo para manejar Facturas",
-        iconUrl: "https://cdn-icons-png.flaticon.com/256/10996/10996252.png",
-        createdBy: 2,
-        createdAt: "2024-01-19T11:30:00Z",
-      },
-      {
-        id: 8,
-        name: "Facturas",
-        description: "Modulo para manejar Facturas",
-        iconUrl: "https://cdn-icons-png.flaticon.com/256/10996/10996252.png",
-        createdBy: 2,
-        createdAt: "2024-01-19T11:30:00Z",
-      },
-      {
-        id: 9,
-        name: "Facturas",
-        description: "Modulo para manejar Facturas",
-        iconUrl: "https://cdn-icons-png.flaticon.com/256/10996/10996252.png",
-        createdBy: 2,
-        createdAt: "2024-01-19T11:30:00Z",
-      },
-      {
-        id: 10,
-        name: "Facturas",
-        description: "Modulo para manejar Facturas",
-        iconUrl: "https://cdn-icons-png.flaticon.com/256/10996/10996252.png",
-        createdBy: 2,
-        createdAt: "2024-01-19T11:30:00Z",
-      },
-    ];
-
-    let modules = demoModules;
-
-    // Filtros opcionales
-    if (params.search) {
-      const search = params.search.toLowerCase();
-      modules = modules.filter(
-        (m) =>
-          m.name.toLowerCase().includes(search) ||
-          (m.description && m.description.toLowerCase().includes(search))
-      );
-    }
-
-    return {
-      modules,
-      total: modules.length,
-      currentPage: 1,
-      totalPages: 1,
-      itemsPerPage: modules.length,
-    };
-    //throw error;
+    throw error;
   }
 }
 
@@ -168,104 +65,15 @@ export async function getModuleById(id) {
     return mapModuleFromBackend(response.data);
   } catch (error) {
     console.error("Error fetching module by ID:", error.message);
-    const demoModules = [
-      {
-        id: 1,
-        name: "Inventario",
-        description: "Modulo para manejar inventarios",
-        iconUrl: "https://cdn-icons-png.flaticon.com/256/10996/10996252.png",
-        createdBy: 1,
-        createdAt: "2024-01-15T10:30:00Z",
-      },
-      {
-        id: 2,
-        name: "Compras",
-        description: "Modulo para manejar Compras",
-        iconUrl: "https://cdn-icons-png.flaticon.com/256/10996/10996252.png",
-        createdBy: 1,
-        createdAt: "2024-01-16T14:20:00Z",
-      },
-      {
-        id: 3,
-        name: "Recursos Humanos",
-        description: "Modulo para manejar Recursos Humanos",
-        iconUrl: "https://cdn-icons-png.flaticon.com/256/10996/10996252.png",
-        createdBy: 1,
-        createdAt: "2024-01-17T09:15:00Z",
-      },
-      {
-        id: 4,
-        name: "Horarios",
-        description: "Modulo para manejar Horarios",
-        iconUrl: "https://cdn-icons-png.flaticon.com/256/10996/10996252.png",
-        createdBy: 1,
-        createdAt: "2024-01-18T16:45:00Z",
-      },
-      {
-        id: 5,
-        name: "Facturas",
-        description: "Modulo para manejar Facturas",
-        iconUrl: "https://cdn-icons-png.flaticon.com/256/10996/10996252.png",
-        createdBy: 2,
-        createdAt: "2024-01-19T11:30:00Z",
-      },
-      {
-        id: 6,
-        name: "Facturas",
-        description: "Modulo para manejar Facturas",
-        iconUrl: "https://cdn-icons-png.flaticon.com/256/10996/10996252.png",
-        createdBy: 2,
-        createdAt: "2024-01-19T11:30:00Z",
-      },
-      {
-        id: 7,
-        name: "Facturas",
-        description: "Modulo para manejar Facturas",
-        iconUrl: "https://cdn-icons-png.flaticon.com/256/10996/10996252.png",
-        createdBy: 2,
-        createdAt: "2024-01-19T11:30:00Z",
-      },
-      {
-        id: 8,
-        name: "Facturas",
-        description: "Modulo para manejar Facturas",
-        iconUrl: "https://cdn-icons-png.flaticon.com/256/10996/10996252.png",
-        createdBy: 2,
-        createdAt: "2024-01-19T11:30:00Z",
-      },
-      {
-        id: 9,
-        name: "Facturas",
-        description: "Modulo para manejar Facturas",
-        iconUrl: "https://cdn-icons-png.flaticon.com/256/10996/10996252.png",
-        createdBy: 2,
-        createdAt: "2024-01-19T11:30:00Z",
-      },
-      {
-        id: 10,
-        name: "Facturas",
-        description: "Modulo para manejar Facturas",
-        iconUrl: "https://cdn-icons-png.flaticon.com/256/10996/10996252.png",
-        createdBy: 2,
-        createdAt: "2024-01-19T11:30:00Z",
-      },
-    ];
-
-    const response = demoModules.find((modulo) => modulo.id === Number(id));
-    return mapModuleFromBackend(response);
-
-    //throw error;
+    throw error;
   }
 }
 
 // Crear un nuevo módulo
 export async function createModule(data) {
   try {
-    console.log("creando: ", data);
     const payload = mapModuleToBackend(data);
-    console.log("CREADOOOO: ", payload);
     const response = await axios.post("/modules", payload);
-    console.log("lo logrooo : ", response);
     return mapModuleFromBackend(response.data);
   } catch (error) {
     console.error("Error creating module:", error.message);

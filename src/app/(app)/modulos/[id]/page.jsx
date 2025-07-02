@@ -289,7 +289,7 @@ export default function ModuleDetailPage() {
             No hay tablas lógicas para este módulo.
           </div>
         ) : (
-          <LogicalTableDataView tableId={tables[0].id} refresh={refreshData} />
+          <LogicalTableDataView tableId={tables[tables.length - 1].id} refresh={refreshData} />
         )}
       </div>
 
