@@ -7,6 +7,7 @@ import {
   getLogicalTableStructure,
   createLogicalTableRecord,
   updateLogicalTableRecord, // <--- debe existir en tu service
+  getLogicalTableRecords,
 } from "@/services/logicalTableService";
 import FieldRenderer from "../common/FieldRenderer";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,10 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
+import Table from "@/components/tables/Table";
+import LogicalTableDataView from "@/components/tables/LogicalTableDataView";
+import { useLogicalTables } from "@/hooks/useLogicalTables";
+import axios from "@/lib/axios";
 
 export default function DynamicRecordFormDialog({
   open = false,
@@ -35,6 +40,14 @@ export default function DynamicRecordFormDialog({
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const [foreignModalOpen, setForeignModalOpen] = useState(false);
+  const [foreignModalColumn, setForeignModalColumn] = useState(null);
+  const [foreignTableColumns, setForeignTableColumns] = useState([]);
+  const [foreignTableData, setForeignTableData] = useState([]);
+  const [foreignTableLoading, setForeignTableLoading] = useState(false);
+  const [foreignTableError, setForeignTableError] = useState(null);
+  const [intermediateTableId, setIntermediateTableId] = useState(null);
+  const [tables, setTables] = useState([]);
 
   // Carga columnas y valores iniciales según modo y record
   useEffect(() => {
@@ -69,6 +82,18 @@ export default function DynamicRecordFormDialog({
       }
     })();
   }, [tableId, open, mode, record]);
+
+  useEffect(() => {
+    // Solo cargar una vez al montar el componente
+    (async () => {
+      try {
+        const res = await axios.get("/tables");
+        setTables(res.data);
+      } catch (err) {
+        setTables([]);
+      }
+    })();
+  }, []);
 
     function castValueByDataType(type, value) {
     if (value === null || value === undefined) return value;
@@ -172,108 +197,170 @@ export default function DynamicRecordFormDialog({
     }
   };
 
+  useEffect(() => {
+    if (!foreignModalOpen || !foreignModalColumn?.foreign_table_id) return;
+    setForeignTableLoading(true);
+    setForeignTableError(null);
+    (async () => {
+      try {
+        const cols = await getLogicalTableStructure(foreignModalColumn.foreign_table_id);
+        const data = await getLogicalTableRecords(foreignModalColumn.foreign_table_id);
+        // Adapt columns to Table's expected format (key, header)
+        const tableCols = cols.map(col => ({ key: col.name, header: col.name }));
+        setForeignTableColumns(tableCols);
+        setForeignTableData(data);
+      } catch (err) {
+        setForeignTableError("Error al cargar la tabla intermedia");
+      } finally {
+        setForeignTableLoading(false);
+      }
+    })();
+  }, [foreignModalOpen, foreignModalColumn]);
+
+  const handleOpenForeignModal = (col) => {
+    const interTable = tables.find(
+      t =>
+        (t.original_table_id === tableId && t.foreign_table_id === col.foreign_table_id) ||
+        (t.original_table_id === col.foreign_table_id && t.foreign_table_id === tableId)
+    );
+    setForeignModalOpen(true);
+    setForeignModalColumn(col);
+    setIntermediateTableId(interTable ? interTable.id : null);
+  };
+
   return (
-     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {mode === "create" ? "Nuevo Registro" : "Editar Registro"}
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {mode === "create" ? "Nuevo Registro" : "Editar Registro"}
+            </DialogTitle>
+          </DialogHeader>
 
-        {!tableId ? (
-          <div className="text-center py-8 text-gray-500">
-            <Plus className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-            <h4 className="font-medium mb-2">Selecciona una tabla</h4>
-            <p className="text-sm">Elige una tabla para agregar registros</p>
-          </div>
-        ) : columns.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <Plus className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-            <h4 className="font-medium mb-2">No hay columnas definidas</h4>
-            <p className="text-sm">Esta tabla no tiene columnas configuradas</p>
-          </div>
-        ) : (
-          <form
-            onSubmit={handleSubmit}
-            noValidate
-            className="flex flex-col h-full"
-          >
-            <div className="flex-1 space-y-6 overflow-y-auto pr-1">
-              {columns.map((col) => (
-                <div key={col.column_id} className="space-y-2">
-                  <Label htmlFor={`field-${col.name}`}>
-                    {col.name}
-                    {col.is_required && (
-                      <Badge className="ml-auto text-xs text-destructive bg-transparent">
-                        *Requerido
-                      </Badge>
-                    )}
-                  </Label>
-                  <FieldRenderer
-                    id={`field-${col.name}`}
-                    column={col}
-                    value={values[col.name]}
-                    onChange={(e) =>
-                      handleChange(
-                        col.name,
-                        e.target.type === "checkbox"
-                          ? e.target.checked
-                          : e.target.value
-                      )
-                    }
-                    error={errors[col.name]}
-                  />
-                  {errors[col.name] && (
-                    <div className="text-sm text-red-600 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      {errors[col.name]}
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {submitError && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{submitError}</AlertDescription>
-                </Alert>
-              )}
+          {!tableId ? (
+            <div className="text-center py-8 text-gray-500">
+              <Plus className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <h4 className="font-medium mb-2">Selecciona una tabla</h4>
+              <p className="text-sm">Elige una tabla para agregar registros</p>
             </div>
+          ) : columns.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Plus className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <h4 className="font-medium mb-2">No hay columnas definidas</h4>
+              <p className="text-sm">Esta tabla no tiene columnas configuradas</p>
+            </div>
+          ) : (
+            <form
+              onSubmit={handleSubmit}
+              noValidate
+              className="flex flex-col h-full"
+            >
+              <div className="flex-1 space-y-6 overflow-y-auto pr-1">
+                {columns.map((col) => (
+                  <div key={col.column_id} className="space-y-2">
+                    <Label htmlFor={`field-${col.name}`}>
+                      {col.name}
+                      {col.is_required && (
+                        <Badge className="ml-auto text-xs text-destructive bg-transparent">
+                          *Requerido
+                        </Badge>
+                      )}
+                    </Label>
+                    {col.data_type === "foreign" ? (
+                      <>
+                        <Button
+                          type="button"
+                          onClick={() => handleOpenForeignModal(col)}
+                        >
+                          Abrir tabla
+                        </Button>
+                        {/* Aquí podrías mostrar un resumen de los registros seleccionados si aplica */}
+                      </>
+                    ) : (
+                      <FieldRenderer
+                        id={`field-${col.name}`}
+                        column={col}
+                        value={values[col.name]}
+                        onChange={(e) =>
+                          handleChange(
+                            col.name,
+                            e.target.type === "checkbox"
+                              ? e.target.checked
+                              : e.target.value
+                          )
+                        }
+                        error={errors[col.name]}
+                      />
+                    )}
+                    {errors[col.name] && (
+                      <div className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors[col.name]}
+                      </div>
+                    )}
+                  </div>
+                ))}
 
-            {/* Botones fuera del scroll */}
-            <div className="flex gap-2 pt-4 border-t mt-4 pt-4">
-              <Button
-                type="submit"
-                disabled={loading}
-                className="flex-1 max-w-40"
-              >
-                {loading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Guardando...
-                  </>
-                ) : (
-                  <>Guardar</>
+                {submitError && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{submitError}</AlertDescription>
+                  </Alert>
                 )}
-              </Button>
+              </div>
 
-              {mode === "edit" && onDelete && (
+              {/* Botones fuera del scroll */}
+              <div className="flex gap-2 pt-4 border-t mt-4 pt-4">
                 <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleDelete}
+                  type="submit"
                   disabled={loading}
                   className="flex-1 max-w-40"
                 >
-                  Eliminar
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      Guardando...
+                    </>
+                  ) : (
+                    <>Guardar</>
+                  )}
                 </Button>
-              )}
-            </div>
-          </form>
-        )}
-      </DialogContent>
 
-    </Dialog>
+                {mode === "edit" && onDelete && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleDelete}
+                    disabled={loading}
+                    className="flex-1 max-w-40"
+                  >
+                    Eliminar
+                  </Button>
+                )}
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={foreignModalOpen} onOpenChange={setForeignModalOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {foreignModalColumn
+                ? `Registros relacionados de ${foreignModalColumn.foreign_table_name || 'Tabla intermedia'}`
+                : 'Registros relacionados'}
+            </DialogTitle>
+          </DialogHeader>
+          {foreignModalColumn && intermediateTableId && (
+            <LogicalTableDataView tableId={intermediateTableId} />
+          )}
+          <div className="flex justify-end mt-4">
+            <Button onClick={() => setForeignModalOpen(false)}>Cerrar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

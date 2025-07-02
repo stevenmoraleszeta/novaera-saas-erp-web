@@ -7,3 +7,8 @@ export async function getTables() {
   // Espera un array de objetos: [{ id, name }]
   return res.data;
 }
+
+export async function getOrCreateJoinTable(tableA_id, tableB_id) {
+  const res = await axios.post('/tables/join', { tableA_id, tableB_id });
+  return res.data; // { status: 'found' | 'created', joinTable }
+}

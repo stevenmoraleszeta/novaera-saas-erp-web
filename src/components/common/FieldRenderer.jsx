@@ -12,11 +12,15 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { getLogicalTableRecords } from "@/services/logicalTableService";
+import Modal from "./Modal";
+import DynamicRecordFormDialog from "../records/DynamicRecordFormDialog";
 
 export default function FieldRenderer({ id, column, value, onChange, error }) {
   const baseClassName = `w-full ${error ? "border-red-500 focus:border-red-500" : ""}`;
   const [foreignOptions, setForeignOptions] = useState([]);
   const { users, loadUsers } = useUsers();
+  const [showForeignModal, setShowForeignModal] = useState(false);
+  const [foreignDisplay, setForeignDisplay] = useState("");
 
   useEffect(() => {
     async function loadOptions() {
@@ -91,6 +95,34 @@ export default function FieldRenderer({ id, column, value, onChange, error }) {
         </Select>
       );
     }
+
+  // Si es llave foránea tipo 'foreign', mostrar botón para abrir modal
+  if (column.data_type === "foreign") {
+    return (
+      <>
+        <button
+          type="button"
+          className={baseClassName + " border px-4 py-2 rounded bg-white hover:bg-gray-50"}
+          onClick={() => setShowForeignModal(true)}
+        >
+          {foreignDisplay ? `Registro: ${foreignDisplay}` : "Abrir tabla"}
+        </button>
+        <Modal open={showForeignModal} onOpenChange={setShowForeignModal}>
+          <DynamicRecordFormDialog
+            open={showForeignModal}
+            onOpenChange={setShowForeignModal}
+            tableId={column.foreign_table_id}
+            mode="select"
+            onSubmitSuccess={(record) => {
+              setForeignDisplay(record?.record_data?.name || record?.id || "");
+              onChange({ target: { value: record.id } });
+              setShowForeignModal(false);
+            }}
+          />
+        </Modal>
+      </>
+    );
+  }
 
   // Resto de tipos
   switch (column.data_type) {
