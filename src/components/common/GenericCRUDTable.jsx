@@ -81,9 +81,15 @@ export default function GenericCRUDTable({
   };
 
   const filteredData = useMemo(() => {
+
+    const implicitFilters = [
+      { column: "Nombre", condition: "not_contains", value: "original_record_id" },
+    ];
+      
+    const allFilters = [...implicitFilters, ...activeFilters];
     let result = [...data];
 
-    for (const filter of activeFilters) {
+    for (const filter of allFilters) {
       result = result.filter((row) => {
         const value = row[filter.column];
         switch (filter.condition) {

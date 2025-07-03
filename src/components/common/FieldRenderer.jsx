@@ -25,12 +25,21 @@ export default function FieldRenderer({ id, column, value, onChange, error, colN
   useEffect(() => {
     async function loadOptions() {
       try {
-        if (column.is_foreign_key && column.foreign_table_id && column.foreign_column_name) {
+        if (column.data_type === "select" || (column.is_foreign_key && column.foreign_table_id && column.foreign_column_name)) {
           const records = await getLogicalTableRecords(column.foreign_table_id);
-          const opts = records.map((record) => ({
+          let opts;
+          if(!colName){
+          opts = records.map((record) => ({
+            value: record.record_data[column.foreign_column_name],
+            label: record.record_data[column.foreign_column_name],
+          }));
+          } else {
+          opts = records.map((record) => ({
             value: record.record_data[colName],
             label: record.record_data[colName],
           }));
+          }
+
           setForeignOptions(opts);
         } else if (column.data_type === "user") {
           await loadUsers();
@@ -45,7 +54,7 @@ export default function FieldRenderer({ id, column, value, onChange, error, colN
 
 
     // Llave foránea: mostrar opciones desde tabla relacionada
-    if (column.is_foreign_key && column.foreign_table_id && column.foreign_column_name) {
+    if (column.data_type === "select" || (column.is_foreign_key && column.foreign_table_id && column.foreign_column_name)) {
       return (
         <Select
           value={value?.toString() || ""}
@@ -64,6 +73,7 @@ export default function FieldRenderer({ id, column, value, onChange, error, colN
         </Select>
       );
     }
+
 
     // Tipo especial: "user"
     if (column.data_type === "user") {

@@ -89,7 +89,7 @@ export function useModules(initialParams = {}) {
             is_required: false,
             is_foreign_key: false,
             relation_type: "",
-            foreign_table_id: 0,
+            foreign_table_id: null,
             foreign_column_name: "",
             foreign_column_id: "",
             validations: "",

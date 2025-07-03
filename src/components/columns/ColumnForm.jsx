@@ -136,7 +136,6 @@ export default function ColumnForm({
         foreign_column_name: formData.data_type === "foreign" || formData.data_type === "select" ? formData.foreign_column_name : null,
       };
 
-      console.log("columnData enviado:", columnData);
 
       await onSubmit(columnData);
     } catch (err) {

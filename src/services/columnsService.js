@@ -54,9 +54,9 @@ export async function getColumns() {
 
 // Crear una nueva columna
 export async function createColumn(column) {
-  const payload = mapColumnToBackend(column);
-  console.log("payload", payload);
-  const res = await axios.post('/columns', payload);
+  //const payload = mapColumnToBackend(column);
+  //console.log("payload", payload);
+  const res = await axios.post('/columns', column);
   return mapColumnFromBackend(res.data);
 }
 
