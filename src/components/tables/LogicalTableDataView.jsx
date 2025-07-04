@@ -14,6 +14,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Eye
 } from "lucide-react";
 import useEditModeStore from "@/stores/editModeStore";
 import DynamicRecordFormDialog from "../records/DynamicRecordFormDialog";
@@ -710,6 +711,14 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
               placeholder="Buscar..."
             />
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="w-9 h-9"
+            onClick={() => setShowFilterDialog(true)}
+          >
+            <Eye className="w-5 h-5" />
+          </Button>
           <Button
             onClick={() => setShowAddRecordDialog(true)}
             size="lg"
