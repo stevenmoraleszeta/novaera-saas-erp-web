@@ -125,7 +125,8 @@ export default function ColumnForm({
         formData.foreign_table_id &&
         formData.table_id
       ) {
-        await getOrCreateJoinTable(formData.table_id, formData.foreign_table_id);
+        console.log("data = ", formData)
+        await getOrCreateJoinTable(formData.table_id, formData.foreign_table_id, formData.foreign_column_name);
       }
 
       // Prepara el objeto para crear la columna

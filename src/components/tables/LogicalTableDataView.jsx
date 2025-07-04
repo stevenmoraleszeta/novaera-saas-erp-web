@@ -102,6 +102,8 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   const [recordToEdit, setRecordToEdit] = useState(null);
 
   const [showManageColumnsDialog, setShowManageColumnsDialog] = useState(false);
+
+  const [showFilterManager, setShowFilterManager] = useState(false);
   
   const { handleCreate, handleUpdatePosition, handleDelete } = useColumns(null);
 
@@ -689,7 +691,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
             variant="ghost"
             size="icon"
             className="w-9 h-9"
-            onClick={() => setShowFilterDialog(true)}
+            onClick={() => setShowFilterManager(true)}
           >
             <Filter className="w-5 h-5" />
           </Button>
@@ -1159,6 +1161,126 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
 
           </DialogContent>
         </Dialog>
+
+        <Dialog open={showFilterManager} onOpenChange={setShowFilterManager}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Filtros aplicados</DialogTitle>
+            </DialogHeader>
+
+            <GenericCRUDTable
+              title="Filtros"
+              data={activeFilters}
+              columns={[
+                {
+                  key: "column",
+                  column_id: "column",
+                  header: "Columna",
+                  name: "column",
+                  render: (val) => columns.find((c) => c.name === val)?.name || val,
+                },
+                {
+                  key: "condition",
+                  column_id: "condition",
+                  header: "Condición",
+                  name: "condition",
+                  render: (val) =>
+                    filterConditions.find((cond) => cond.value === val)?.label || val,
+                },
+                {
+                  key: "value",
+                  column_id: "value",
+                  header: "Valor",
+                  name: "value",
+                },
+              ]}
+              getRowKey={(_, i) => i} // índice como ID
+              rowIdKey={"column"} // solo para evitar warning
+              onCreate={(newFilter) =>
+                setActiveFilters((prev) => [...prev, newFilter])
+              }
+              onUpdate={(i, updatedFilter) => {
+                setActiveFilters((prev) =>
+                  prev.map((f, index) => (index === i ? updatedFilter : f))
+                );
+              }}
+              onDelete={(_, idx) => {
+                setActiveFilters((prev) => prev.filter((_, i) => i !== idx));
+              }}
+              renderForm={({ mode, item, open, onClose, onSubmit }) => {
+                const [formData, setFormData] = useState(item || {
+                  column: columns[0]?.name,
+                  condition: "equals",
+                  value: "",
+                });
+
+                return (
+                  <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>
+                          {mode === "create" ? "Nuevo Filtro" : "Editar Filtro"}
+                        </DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <Label>Columna</Label>
+                        <select
+                          value={formData.column}
+                          onChange={(e) =>
+                            setFormData({ ...formData, column: e.target.value })
+                          }
+                          className="w-full border px-2 py-1"
+                        >
+                          {columns.map((col) => (
+                            <option key={col.name} value={col.name}>
+                              {col.name}
+                            </option>
+                          ))}
+                        </select>
+
+                        <Label>Condición</Label>
+                        <select
+                          value={formData.condition}
+                          onChange={(e) =>
+                            setFormData({ ...formData, condition: e.target.value })
+                          }
+                          className="w-full border px-2 py-1"
+                        >
+                          {filterConditions.map((cond) => (
+                            <option key={cond.value} value={cond.value}>
+                              {cond.label}
+                            </option>
+                          ))}
+                        </select>
+
+                        {!["is_null", "is_not_null"].includes(formData.condition) && (
+                          <>
+                            <Label>Valor</Label>
+                            <Input
+                              value={formData.value}
+                              onChange={(e) =>
+                                setFormData({ ...formData, value: e.target.value })
+                              }
+                            />
+                          </>
+                        )}
+                      </div>
+                      <DialogFooter className="pt-4">
+                        <Button variant="outline" onClick={onClose}>
+                          Cancelar
+                        </Button>
+                        <Button onClick={() => onSubmit(formData)}>
+                          {mode === "create" ? "Agregar" : "Actualizar"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                );
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+
     </div>
   );
 }

@@ -8,7 +8,7 @@ export async function getTables() {
   return res.data;
 }
 
-export async function getOrCreateJoinTable(tableA_id, tableB_id) {
-  const res = await axios.post('/tables/join', { tableA_id, tableB_id });
+export async function getOrCreateJoinTable(tableA_id, tableB_id, forName) {
+  const res = await axios.post('/tables/join', { tableA_id, tableB_id, forName });
   return res.data; // { status: 'found' | 'created', joinTable }
 }

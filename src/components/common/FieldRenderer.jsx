@@ -54,26 +54,28 @@ export default function FieldRenderer({ id, column, value, onChange, error, colN
 
 
     // Llave foránea: mostrar opciones desde tabla relacionada
-    if (column.data_type === "select" || (column.is_foreign_key && column.foreign_table_id && column.foreign_column_name)) {
+   if (column.data_type === "select" || (column.is_foreign_key && column.foreign_table_id && column.foreign_column_name)) {
       return (
         <Select
-          value={value?.toString() || ""}
-          onValueChange={(val) => onChange({ target: { value: val } })}
+          value={value?.toString() || "none"}
+          onValueChange={(val) => onChange({ target: { value: val === "none" ? "" : val } })}
         >
           <SelectTrigger className={baseClassName}>
             <SelectValue placeholder={`Selecciona ${column.name}`} />
           </SelectTrigger>
           <SelectContent>
-            {foreignOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
+            <SelectItem value="none">-- Ninguno --</SelectItem>
+            {foreignOptions
+              .filter((option) => option.value !== "")
+              .map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
       );
     }
-
 
     // Tipo especial: "user"
     if (column.data_type === "user") {
