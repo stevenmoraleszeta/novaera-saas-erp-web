@@ -24,8 +24,6 @@ if(idRow){
     id = getRowKey?.(row) ?? row.id ?? rowIndex;
 }
   
-
-
   const {
     attributes,
     listeners,

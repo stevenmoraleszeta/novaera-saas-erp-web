@@ -113,7 +113,7 @@ export function useColumns(tableId) {
       try {
         setError(null);
         setSuccess(null);
-        console.log('NEWPO, ', newPosition );
+        console.log('chat: NEWPO, ', columnId, newPosition );
         await updateColumnPosition(columnId, newPosition);
         setSuccess('Posición actualizada correctamente');
         fetchColumns(); // O lo que uses para recargar la lista

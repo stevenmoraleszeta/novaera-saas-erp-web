@@ -44,7 +44,7 @@ import GenericCRUDTable from "../common/GenericCRUDTable";
 
 export default function LogicalTableDataView({ tableId, refresh, colName, constFilter, hiddenColumns }) {
   const { isEditingMode } = useEditModeStore();
-  const { getTableById } = useLogicalTables(null);
+  const { getTableById, handleUpdatePositionRecord } = useLogicalTables(null);
   const {
     views,
     columns: viewColumns,
@@ -780,6 +780,16 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
             data={filteredRecords}
             useFilter = {false}
             columns={tableColumnsWithActions}
+            onOrderChange={async (reorderedRecords) => {
+                try {
+                  for (let i = 0; i < reorderedRecords.length; i++) {
+                    await handleUpdatePositionRecord(reorderedRecords[i].id, i + 1);
+                  }
+                  setLocalRefreshFlag((prev) => !prev); // Refresca una sola vez al final
+                } catch (err) {
+                  console.error("Error al reordenar registros:", err);
+                }
+              }}
             getRowKey={(row) => row.id}
             onCreate={() => setShowAddRecordDialog(true)}
             onUpdate={(id, updatedData) => {
@@ -1057,6 +1067,16 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
                   render: (val) => (val ? "Sí" : "No"),
                 },
               ]}
+              onOrderChange={async (reorderedCols) => {
+                try {
+                  for (let i = 0; i < reorderedCols.length; i++) {
+                    await handleUpdatePosition(reorderedCols[i].column_id, i + 1);
+                  }
+                  setLocalRefreshFlag((prev) => !prev); // Refresca una sola vez al final
+                } catch (err) {
+                  console.error("Error al reordenar columnas:", err);
+                }
+              }}
               getRowKey={(col) => col.column_id}
               onCreate={handleCreateColumn}
               onUpdate={handleUpdateColumn}
@@ -1116,7 +1136,6 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
                     columns.find((c) => c.column_id === val)?.name || "-",
                 },
               ]}
-
               getRowKey={(view) => view.id}
               onCreate={handleCreateViewLocal}
               onUpdate={handleUpdateViewLocal}

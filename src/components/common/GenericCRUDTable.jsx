@@ -19,6 +19,7 @@ export default function GenericCRUDTable({
   onDelete,
   renderForm,
   useFilter = true,
+  onOrderChange,
 }) {
 
   const [formOpen, setFormOpen] = useState(false);
@@ -85,7 +86,7 @@ export default function GenericCRUDTable({
     const implicitFilters = [
       { column: "name", condition: "not_contains", value: "original_record_id" },
     ];
-      
+
     const allFilters = [...implicitFilters, ...activeFilters];
     let result = [...data];
 
@@ -141,8 +142,8 @@ export default function GenericCRUDTable({
             ? 1
             : -1
           : aVal < bVal
-          ? 1
-          : -1;
+            ? 1
+            : -1;
       });
     }
 
@@ -189,51 +190,58 @@ export default function GenericCRUDTable({
               </span>
             </Button>
           </div>
-           )}
+        )}
       </div>
 
-  {useFilter && (
-      <div className="flex flex-wrap mb-2 items-center">
-        {activeSort?.column && (
-          <span className="inline-flex items-center text-sm font-medium mr-4">
-            {columns.find((c) => c.name === activeSort.column)?.header ||
-              activeSort.column}
-            {activeSort.direction === "asc" ? (
-              <ArrowUp className="ml-1 w-4 h-4 inline" />
-            ) : (
-              <ArrowDown className="ml-1 w-4 h-4 inline" />
-            )}
-          </span>
-        )}
-        {activeSort?.column && activeFilters.length > 0 && (
-          <div className="w-px h-4 bg-black mx-2" />
-        )}
-        {activeFilters.map((f, idx) => (
-          <span
-            key={idx}
-            className="inline-flex items-center text-sm font-medium mr-4"
-          >
-            {columns.find((c) => c.name === f.column)?.header || f.column}{" "}
-            {
-              filterConditions.find((cond) => cond.value === f.condition)
-                ?.label
-            }{" "}
-            {f.value &&
-            f.condition !== "is_null" &&
-            f.condition !== "is_not_null"
-              ? `"${f.value}"`
-              : ""}
-          </span>
-        ))}
-      </div>
-  )}
-      <div className="overflow-x-auto w-full" style={{ maxWidth: "100%" }}>
+      {useFilter && (
+        <div className="flex flex-wrap mb-2 items-center">
+          {activeSort?.column && (
+            <span className="inline-flex items-center text-sm font-medium mr-4">
+              {columns.find((c) => c.name === activeSort.column)?.header ||
+                activeSort.column}
+              {activeSort.direction === "asc" ? (
+                <ArrowUp className="ml-1 w-4 h-4 inline" />
+              ) : (
+                <ArrowDown className="ml-1 w-4 h-4 inline" />
+              )}
+            </span>
+          )}
+          {activeSort?.column && activeFilters.length > 0 && (
+            <div className="w-px h-4 bg-black mx-2" />
+          )}
+          {activeFilters.map((f, idx) => (
+            <span
+              key={idx}
+              className="inline-flex items-center text-sm font-medium mr-4"
+            >
+              {columns.find((c) => c.name === f.column)?.header || f.column}{" "}
+              {
+                filterConditions.find((cond) => cond.value === f.condition)
+                  ?.label
+              }{" "}
+              {f.value &&
+                f.condition !== "is_null" &&
+                f.condition !== "is_not_null"
+                ? `"${f.value}"`
+                : ""}
+            </span>
+          ))}
+        </div>
+      )}
+      <div
+        className="overflow-x-auto overflow-y-auto w-full"
+        style={{
+          maxWidth: "100%",
+          maxHeight: "calc(90vh - 250px)", // Ajusta este valor según tus necesidades
+        }}
+      >
         <Table
-          className="w-full"
+          className="w-full "
           style={{ minWidth: `${columns.length * 150}px` }}
           columns={columns}
           data={filteredData}
           getRowKey={getRowKey}
+          onOrderChange={onOrderChange}
           pagination={true}
           onRowClick={handleEdit}
         />

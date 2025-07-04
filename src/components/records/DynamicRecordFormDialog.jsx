@@ -27,6 +27,7 @@ export default function DynamicRecordFormDialog({
   onDelete,
   colName,
   foreignForm = false,
+  lastPosition = 0,
 }) {
   const [columns, setColumns] = useState([]);
   const [values, setValues] = useState({});
@@ -122,7 +123,8 @@ export default function DynamicRecordFormDialog({
       if (mode === "create") {
         result = await createLogicalTableRecord(tableId, values);
       } else if (mode === "edit" && record) {
-        result = await updateLogicalTableRecord(record.id, values);
+        result = await updateLogicalTableRecord(record.id, values, lastPosition);
+
       }
       if (onSubmitSuccess) onSubmitSuccess(result);
       if (mode === "create") {
@@ -135,6 +137,7 @@ export default function DynamicRecordFormDialog({
       }
       onOpenChange?.(false);
     } catch (err) {
+      console.log("chat: ERROR:", err);
       setSubmitError(err?.response?.data?.message || "Error al guardar el registro");
     } finally {
       setLoading(false);
