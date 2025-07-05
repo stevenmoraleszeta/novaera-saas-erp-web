@@ -14,6 +14,8 @@ import { Label } from "@/components/ui/label";
 import { getLogicalTableRecords } from "@/services/logicalTableService";
 import Modal from "./Modal";
 import DynamicRecordFormDialog from "../records/DynamicRecordFormDialog";
+import FileUpload from "./FileUpload";
+import FileDisplay from "./FileDisplay";
 
 export default function FieldRenderer({ id, column, value, onChange, error, colName }) {
   const baseClassName = `w-full ${error ? "border-red-500 focus:border-red-500" : ""}`;
@@ -248,6 +250,28 @@ export default function FieldRenderer({ id, column, value, onChange, error, colN
             ))}
           </SelectContent>
         </Select>
+      );
+
+    case "file":
+      return (
+        <FileUpload
+          value={value}
+          onChange={(fileData) => onChange({ target: { value: fileData } })}
+          error={error}
+          multiple={false}
+          placeholder={`Seleccionar archivo para ${column.name}`}
+        />
+      );
+
+    case "file_array":
+      return (
+        <FileUpload
+          value={value}
+          onChange={(fileData) => onChange({ target: { value: fileData } })}
+          error={error}
+          multiple={true}
+          placeholder={`Seleccionar archivos para ${column.name}`}
+        />
       );
 
     default:

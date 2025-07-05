@@ -55,7 +55,24 @@ export default function DynamicRecordFormDialog({
           if (mode === "edit" && record?.record_data?.[col.name] !== undefined) {
             initialValues[col.name] = castValueByDataType(col.data_type, record.record_data[col.name]);
           } else {
-            initialValues[col.name] = col.data_type === "boolean" ? false : col.data_type === "int" || col.data_type === "number" ? 0 : "";
+            // Valores por defecto según el tipo de dato
+            switch (col.data_type) {
+              case "boolean":
+                initialValues[col.name] = false;
+                break;
+              case "int":
+              case "number":
+                initialValues[col.name] = 0;
+                break;
+              case "file":
+                initialValues[col.name] = null;
+                break;
+              case "file_array":
+                initialValues[col.name] = [];
+                break;
+              default:
+                initialValues[col.name] = "";
+            }
           }
         });
         setValues(initialValues);
@@ -93,6 +110,8 @@ export default function DynamicRecordFormDialog({
       case "date":
       case "datetime":
       case "timestamp": return typeof value === "string" ? value : new Date(value).toISOString().slice(0, 16);
+      case "file": return value || null;
+      case "file_array": return Array.isArray(value) ? value : [];
       default: return value;
     }
   }
@@ -130,7 +149,23 @@ export default function DynamicRecordFormDialog({
       if (mode === "create") {
         const initialValues = {};
         columns.forEach((col) => {
-          initialValues[col.name] = col.data_type === "boolean" ? false : "";
+          switch (col.data_type) {
+            case "boolean":
+              initialValues[col.name] = false;
+              break;
+            case "int":
+            case "number":
+              initialValues[col.name] = 0;
+              break;
+            case "file":
+              initialValues[col.name] = null;
+              break;
+            case "file_array":
+              initialValues[col.name] = [];
+              break;
+            default:
+              initialValues[col.name] = "";
+          }
         });
         setValues(initialValues);
         setErrors({});

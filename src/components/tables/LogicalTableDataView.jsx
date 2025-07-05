@@ -42,6 +42,7 @@ import { Input } from "../ui/input";
 
 import ViewForm from "@/components/ViewForm";
 import GenericCRUDTable from "../common/GenericCRUDTable";
+import { FileTableCell } from "../common/FileDisplay";
 
 export default function LogicalTableDataView({ tableId, refresh, colName, constFilter, hiddenColumns }) {
   const { isEditingMode } = useEditModeStore();
@@ -212,11 +213,26 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
       key: col.name,
       header: col.name,
       width: col.data_type === "int" ? "80px" : "auto",
-        render: (value, row) => (
-          <span className="text-sm">
-            {row.record_data ? row.record_data[col.name] : row[col.name] || "-"}
-          </span>
-        ),
+        render: (value, row) => {
+          const cellValue = row.record_data ? row.record_data[col.name] : row[col.name];
+          
+          // Renderizar archivos de manera especial
+          if (col.data_type === "file" || col.data_type === "file_array") {
+            return (
+              <FileTableCell 
+                value={cellValue} 
+                multiple={col.data_type === "file_array"} 
+              />
+            );
+          }
+          
+          // Renderizar otros tipos de datos
+          return (
+            <span className="text-sm">
+              {cellValue || "-"}
+            </span>
+          );
+        },
     }));
 
   // Add column management actions to table headers when edit mode changes

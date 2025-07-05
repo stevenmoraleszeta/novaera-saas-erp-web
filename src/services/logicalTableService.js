@@ -35,6 +35,14 @@ export async function createLogicalTableRecord(tableId, recordData) {
       case "date":
         value = value || null;
         break;
+      case "file":
+        // Para archivos, mantener la estructura con file_id
+        value = value || null;
+        break;
+      case "file_array":
+        // Para arrays de archivos, mantener el array
+        value = Array.isArray(value) ? value : [];
+        break;
       default:
         value = value || "";
     }

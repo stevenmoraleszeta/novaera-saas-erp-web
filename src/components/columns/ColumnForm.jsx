@@ -109,6 +109,14 @@ export default function ColumnForm({
       handleChange("foreign_table_id", 0);
       handleChange("relation_type", "");
     }
+    
+    // Para tipos de archivo, limpiar configuraciones de foreign key
+    if (value === "file" || value === "file_array") {
+      handleChange("is_foreign_key", false);
+      handleChange("foreign_table_id", 0);
+      handleChange("foreign_column_name", "");
+      handleChange("relation_type", "");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -133,9 +141,17 @@ export default function ColumnForm({
       const columnData = {
         ...formData,
         is_foreign_key: formData.data_type === "foreign",
-        foreign_table_id: formData.data_type === "foreign" || formData.data_type === "select" ? formData.foreign_table_id : null,
-        foreign_column_name: formData.data_type === "foreign" || formData.data_type === "select" ? formData.foreign_column_name : null,
+        foreign_table_id: (formData.data_type === "foreign" || formData.data_type === "select") ? formData.foreign_table_id : null,
+        foreign_column_name: (formData.data_type === "foreign" || formData.data_type === "select") ? formData.foreign_column_name : null,
       };
+
+      // Para tipos de archivo, asegurar que no tengan configuraciones de foreign key
+      if (formData.data_type === "file" || formData.data_type === "file_array") {
+        columnData.is_foreign_key = false;
+        columnData.foreign_table_id = null;
+        columnData.foreign_column_name = null;
+        columnData.relation_type = "";
+      }
 
 
       await onSubmit(columnData);
@@ -286,6 +302,24 @@ export default function ColumnForm({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+
+            {/* Información para tipos de archivo */}
+            {(formData.data_type === "file" || formData.data_type === "file_array") && (
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="space-y-2">
+                  <h4 className="font-medium text-blue-900">
+                    {formData.data_type === "file" ? "Archivo individual" : "Múltiples archivos"}
+                  </h4>
+                  <div className="text-sm text-blue-800 space-y-1">
+                    <p>• Tipos permitidos: Imágenes (JPEG, PNG, GIF, WebP), PDF, Word, Excel, TXT</p>
+                    <p>• Tamaño máximo por archivo: 10MB</p>
+                    {formData.data_type === "file_array" && (
+                      <p>• Los usuarios podrán subir múltiples archivos para este campo</p>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 

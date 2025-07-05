@@ -20,6 +20,8 @@ const DATA_TYPES = [
   { label: "Fecha y hora", value: "datetime" },
   { label: "Relación Foránea", value: "foreign" },
   { label: "Selección", value: "select" },
+  { label: "Archivo", value: "file" },
+  { label: "Múltiples archivos", value: "file_array" },
   { label: "JSON", value: "json" },
   { label: "UUID", value: "uuid" },
 ];
