@@ -9,10 +9,13 @@ import RoleForm from "@/components/roles/RoleForm";
 import RolePermissionsModal from "@/components/roles/RolePermissionsModal";
 import PermissionsMatrix from "@/components/roles/PermissionsMatrix";
 import { useRoles } from "@/hooks/useRoles";
+import useEditModeStore from "@/stores/editModeStore";
 import MainContent from "@/components/MainContent";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Edit3 } from "lucide-react";
 
 export default function RolesPage() {
+  const { isEditingMode } = useEditModeStore();
   const {
     roles,
     loading,
@@ -66,7 +69,12 @@ export default function RolesPage() {
           <div className="lg:w-1/2">
             <Card>
               <CardHeader>
-                <CardTitle>Gestión de Roles</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  Gestión de Roles
+                  {isEditingMode && (
+                    <Edit3 className="w-4 h-4 text-gray-500" />
+                  )}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex justify-between items-center mb-4">
@@ -87,6 +95,8 @@ export default function RolesPage() {
                   onViewPermissions={handleViewPermissions}
                   onSelectForPermissions={handleSelectRoleForPermissions}
                   selectedRole={selectedRoleForPermissions}
+                  isEditingMode={isEditingMode}
+                  searchQuery={search}
                 />
                 <div className="mt-4">
                   <Pagination

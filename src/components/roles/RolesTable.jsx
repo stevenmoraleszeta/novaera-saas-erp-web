@@ -1,15 +1,10 @@
 "use client";
 import React, { useState } from 'react';
 import {
-  PiCaretUpBold,
-  PiCaretDownBold,
-  PiPencilBold,
-  PiTrashBold,
-  PiShieldCheckBold,
-  PiToggleLeftBold,
-  PiToggleRightBold,
-  PiUsersBold
-} from 'react-icons/pi';
+  ChevronUp,
+  ChevronDown,
+  Shield
+} from 'lucide-react';
 import RoleStatusBadge from './RoleStatusBadge';
 
 export default function RolesTable({
@@ -21,7 +16,9 @@ export default function RolesTable({
   selectedRole,
   loading = false,
   sortConfig = { key: null, direction: 'asc' },
-  onSort
+  onSort,
+  isEditingMode = false,
+  searchQuery = ""
 }) {
   const [selectedRoles, setSelectedRoles] = useState([]);
 
@@ -56,7 +53,7 @@ export default function RolesTable({
     }
     return (
       <span className="sort-icon active">
-        {sortConfig.direction === 'asc' ? <PiCaretUpBold /> : <PiCaretDownBold />}
+        {sortConfig.direction === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
       </span>
     );
   };
@@ -104,11 +101,22 @@ export default function RolesTable({
   }
 
   if (roles.length === 0) {
+    const isSearching = searchQuery && searchQuery.trim() !== '';
     return (
       <div className="empty-state">
-        <PiUsersBold className="empty-icon" />
-        <h3>No se encontraron roles</h3>
-        <p>No hay roles que coincidan con los criterios de búsqueda.</p>
+        <Shield className="empty-icon" />
+        <h3>{isSearching ? 'No se encontraron resultados' : 'No hay roles registrados'}</h3>
+        <p>
+          {isSearching 
+            ? `No hay roles que coincidan con "${searchQuery}". Intenta con otros términos de búsqueda.`
+            : 'Aún no se han creado roles en el sistema.'
+          }
+        </p>
+        {isSearching && (
+          <p className="search-suggestion">
+            <strong>Sugerencias:</strong> Busca por nombre o descripción del rol.
+          </p>
+        )}
         <style jsx>{`
           .empty-state {
             text-align: center;
@@ -123,10 +131,21 @@ export default function RolesTable({
           .empty-state h3 {
             margin: 0 0 0.5em 0;
             color: #374151;
+            font-size: 1.125rem;
+            font-weight: 600;
           }
           .empty-state p {
-            margin: 0;
+            margin: 0 0 1em 0;
             font-size: 0.9em;
+            line-height: 1.5;
+          }
+          .search-suggestion {
+            background: #f3f4f6;
+            padding: 1em;
+            border-radius: 8px;
+            font-size: 0.875rem !important;
+            color: #4b5563 !important;
+            margin-top: 1em !important;
           }
         `}</style>
       </div>
@@ -149,90 +168,65 @@ export default function RolesTable({
               </th>
               <th className="sortable-header" onClick={() => handleSort('name')}>
                 <div className="header-content">
-                  <PiShieldCheckBold className="header-icon" />
+                  <Shield className="header-icon w-4 h-4" />
                   <span>Nombre</span>
                   {renderSortIcon('name')}
                 </div>
               </th>
-              <th className="sortable-header" onClick={() => handleSort('description')}>
-                <div className="header-content">
-                  <span>Descripción</span>
-                  {renderSortIcon('description')}
-                </div>
-              </th>
-              <th className="sortable-header" onClick={() => handleSort('active')}>
-                <div className="header-content">
-                  <span>Estado</span>
-                  {renderSortIcon('active')}
-                </div>
-              </th>
-              <th className="actions-column">Acciones</th>
+              {!isEditingMode && <th className="actions-column">Acciones</th>}
             </tr>
           </thead>
           <tbody>
             {roles.map((role) => (
               <tr 
                 key={role.id} 
-                className={`table-row ${isRoleSelectedForPermissions(role) ? 'selected-for-permissions' : ''}`}
-                onClick={() => handleSelectRoleForPermissions(role)}
-                style={{ cursor: 'pointer' }}
+                className={`table-row ${isEditingMode ? 'clickable' : ''} ${isRoleSelectedForPermissions(role) ? 'selected-for-permissions' : ''}`}
+                onClick={() => {
+                  if (isEditingMode) {
+                    onEdit && onEdit(role);
+                  } else {
+                    handleSelectRoleForPermissions(role);
+                  }
+                }}
               >
                 <td className="checkbox-column">
                   <input
                     type="checkbox"
                     checked={selectedRoles.includes(role.id)}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      handleSelectRole(role.id, e.target.checked);
-                    }}
+                    onChange={(e) => handleSelectRole(role.id, e.target.checked)}
                     className="table-checkbox"
+                    onClick={(e) => e.stopPropagation()}
                   />
                 </td>
                 <td className="role-name">
-                  <span className="role-badge-main">{role.name}</span>
-                  {isRoleSelectedForPermissions(role) && (
-                    <span className="selected-indicator">• Editando permisos</span>
-                  )}
-                </td>
-                <td className="role-description">{role.description || '-'}</td>
-                <td className="role-status">
-                  <RoleStatusBadge active={role.active} />
-                </td>
-                <td className="role-actions">
-                  <div className="actions-group">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEdit(role);
-                      }}
-                      className="action-button edit"
-                      title="Editar rol"
-                    >
-                      <PiPencilBold style={{ marginRight: 4 }} /> Editar
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onViewPermissions && onViewPermissions(role);
-                      }}
-                      className={`action-button view ${isRoleSelectedForPermissions(role) ? 'selected' : ''}`}
-                      title="Ver permisos"
-                      style={{ background: '#e0f2fe', color: '#0284c7' }}
-                    >
-                      <PiShieldCheckBold style={{ marginRight: 4 }} /> Permisos
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete(role);
-                      }}
-                      className="action-button delete"
-                      title="Eliminar rol"
-                    >
-                      <PiTrashBold style={{ marginRight: 4 }} /> Eliminar
-                    </button>
+                  <div className="role-info">
+                    <div className="role-avatar">
+                      {role.name?.charAt(0)?.toUpperCase() || 'R'}
+                    </div>
+                    <div className="role-details">
+                      <span className="name">{role.name}</span>
+                      {isRoleSelectedForPermissions(role) && !isEditingMode && (
+                        <span className="selected-indicator">• Editando permisos</span>
+                      )}
+                    </div>
                   </div>
                 </td>
+                {!isEditingMode && (
+                  <td className="role-actions">
+                    <div className="actions-group">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onViewPermissions && onViewPermissions(role);
+                        }}
+                        className={`action-button view ${isRoleSelectedForPermissions(role) ? 'selected' : ''}`}
+                        title="Ver permisos"
+                      >
+                        <Shield className="w-4 h-4 mr-1" /> Permisos
+                      </button>
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -356,11 +350,11 @@ export default function RolesTable({
           transform: translateY(-1px);
         }
         .action-button.view {
-          background: #e0f2fe;
-          color: #0284c7;
+          background: #f3f4f6;
+          color: #374151;
         }
         .action-button.view:hover {
-          background: #b2e0f0;
+          background: #e5e7eb;
           transform: translateY(-1px);
         }
         .action-button.delete {
@@ -379,11 +373,49 @@ export default function RolesTable({
           background: #f8fafc;
           border-left: 4px solid #3b82f6;
         }
+        
+        .table-row.clickable {
+          cursor: pointer;
+        }
+        
+        .table-row.clickable:hover {
+          background-color: #f8fafc;
+        }
+        
+        .role-info {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+        
+        .role-avatar {
+          width: 2rem;
+          height: 2rem;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #7ed957 0%, #5cb85c 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: 600;
+          font-size: 0.875rem;
+        }
+        
+        .role-details {
+          display: flex;
+          flex-direction: column;
+          gap: 0.125rem;
+        }
+        
+        .role-details .name {
+          font-weight: 600;
+          color: #111827;
+        }
+        
         .selected-indicator {
-          font-size: 0.75em;
-          color: #3b82f6;
+          font-size: 0.75rem;
+          color: #0284c7;
           font-weight: 500;
-          margin-left: 8px;
         }
         .table-row:hover {
           background: #f9fafb;

@@ -8,7 +8,6 @@ import {
   Eye,
   Users,
   Shield,
-  Key,
   User,
   LogOut,
   Check,
@@ -186,12 +185,6 @@ export default function Header() {
               <DropdownMenuItem onClick={() => handleNavigation("/roles")}>
                 <Shield className="w-4 h-4 mr-2" />
                 Roles
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleNavigation("/permissions")}
-              >
-                <Key className="w-4 h-4 mr-2" />
-                Permisos
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
