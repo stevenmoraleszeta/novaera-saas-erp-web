@@ -1,16 +1,9 @@
 import React, { useState } from 'react';
 import {
-  PiCaretUpBold,
-  PiCaretDownBold,
-  PiPencilBold,
-  PiEyeBold,
-  PiTrashBold,
-  PiToggleLeftBold,
-  PiToggleRightBold,
-  PiUserBold,
-  PiEnvelopeBold,
-  PiShieldCheckBold
-} from 'react-icons/pi';
+  ChevronUp,
+  ChevronDown,
+  User
+} from 'lucide-react';
 import UserStatusBadge from './UserStatusBadge';
 
 export default function UsersTable({
@@ -21,7 +14,9 @@ export default function UsersTable({
   onToggleStatus,
   loading = false,
   sortConfig = { key: null, direction: 'asc' },
-  onSort
+  onSort,
+  isEditingMode = false,
+  searchQuery = ""
 }) {
   const [selectedUsers, setSelectedUsers] = useState([]);
 
@@ -52,15 +47,6 @@ export default function UsersTable({
     }
   };
 
-  // Format date
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
   // Render sort icon
   const renderSortIcon = (column) => {
     if (sortConfig.key !== column) {
@@ -69,7 +55,7 @@ export default function UsersTable({
 
     return (
       <span className="sort-icon active">
-        {sortConfig.direction === 'asc' ? <PiCaretUpBold /> : <PiCaretDownBold />}
+        {sortConfig.direction === 'asc' ? <ChevronUp /> : <ChevronDown />}
       </span>
     );
   };
@@ -107,11 +93,23 @@ export default function UsersTable({
   }
 
   if (users.length === 0) {
+    const isSearching = searchQuery && searchQuery.trim().length > 0;
+    
     return (
       <div className="empty-state">
-        <PiUserBold className="empty-icon" />
-        <h3>No se encontraron usuarios</h3>
-        <p>No hay usuarios que coincidan con los criterios de búsqueda.</p>
+        <User className="empty-icon" />
+        <h3>{isSearching ? 'No se encontraron resultados' : 'No hay usuarios registrados'}</h3>
+        <p>
+          {isSearching 
+            ? `No hay usuarios que coincidan con "${searchQuery}". Intenta con otros términos de búsqueda.`
+            : 'Aún no se han registrado usuarios en el sistema.'
+          }
+        </p>
+        {isSearching && (
+          <p className="search-suggestion">
+            <strong>Sugerencias:</strong> Busca por nombre, email o rol del usuario.
+          </p>
+        )}
         <style jsx>{`
           .empty-state {
             text-align: center;
@@ -126,10 +124,21 @@ export default function UsersTable({
           .empty-state h3 {
             margin: 0 0 0.5em 0;
             color: #374151;
+            font-size: 1.125rem;
+            font-weight: 600;
           }
           .empty-state p {
-            margin: 0;
+            margin: 0 0 1em 0;
             font-size: 0.9em;
+            line-height: 1.5;
+          }
+          .search-suggestion {
+            background: #f3f4f6;
+            padding: 1em;
+            border-radius: 8px;
+            font-size: 0.875rem !important;
+            color: #4b5563 !important;
+            margin-top: 1em !important;
           }
         `}</style>
       </div>
@@ -155,7 +164,6 @@ export default function UsersTable({
                 onClick={() => handleSort('name')}
               >
                 <div className="header-content">
-                  <PiUserBold className="header-icon" />
                   <span>Nombre</span>
                   {renderSortIcon('name')}
                 </div>
@@ -165,7 +173,6 @@ export default function UsersTable({
                 onClick={() => handleSort('email')}
               >
                 <div className="header-content">
-                  <PiEnvelopeBold className="header-icon" />
                   <span>Email</span>
                   {renderSortIcon('email')}
                 </div>
@@ -175,7 +182,6 @@ export default function UsersTable({
                 onClick={() => handleSort('role')}
               >
                 <div className="header-content">
-                  <PiShieldCheckBold className="header-icon" />
                   <span>Rol</span>
                   {renderSortIcon('role')}
                 </div>
@@ -189,27 +195,22 @@ export default function UsersTable({
                   {renderSortIcon('isActive')}
                 </div>
               </th>
-              <th
-                className="sortable-header"
-                onClick={() => handleSort('createdAt')}
-              >
-                <div className="header-content">
-                  <span>Fecha Registro</span>
-                  {renderSortIcon('createdAt')}
-                </div>
-              </th>
-              <th className="actions-column">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {users.map((user) => (
-              <tr key={user.id} className="table-row">
+              <tr 
+                key={user.id} 
+                className={`table-row ${isEditingMode ? 'clickable' : ''}`}
+                onClick={() => isEditingMode && onEdit && onEdit(user)}
+              >
                 <td className="checkbox-column">
                   <input
                     type="checkbox"
                     checked={selectedUsers.includes(user.id)}
                     onChange={(e) => handleSelectUser(user.id, e.target.checked)}
                     className="table-checkbox"
+                    onClick={(e) => e.stopPropagation()}
                   />
                 </td>
                 <td className="user-name">
@@ -225,49 +226,12 @@ export default function UsersTable({
                 </td>
                 <td className="user-email">{user.email}</td>
                 <td className="user-role">
-                  <span className={`role-badge ${user.role?.toLowerCase()}`}>
+                  <span className={`role-badge ${(user.role || 'usuario').toString().toLowerCase()}`}>
                     {user.role || 'Usuario'}
                   </span>
                 </td>
                 <td className="user-status">
                   <UserStatusBadge isActive={user.isActive} size="small" />
-                </td>
-                <td className="user-date">
-                  <span className="date-text">
-                    {user.createdAt ? formatDate(user.createdAt) : 'N/A'}
-                  </span>
-                </td>
-                <td className="user-actions">
-                  <div className="actions-group">
-                    <button
-                      onClick={() => onView(user)}
-                      className="action-button view"
-                      title="Ver detalles"
-                    >
-                      <PiEyeBold />
-                    </button>
-                    <button
-                      onClick={() => onEdit(user)}
-                      className="action-button edit"
-                      title="Editar usuario"
-                    >
-                      <PiPencilBold />
-                    </button>
-                    <button
-                      onClick={() => onToggleStatus(user)}
-                      className={`action-button toggle ${user.isActive ? 'active' : 'inactive'}`}
-                      title={user.isActive ? 'Desactivar usuario' : 'Activar usuario'}
-                    >
-                      {user.isActive ? <PiToggleRightBold /> : <PiToggleLeftBold />}
-                    </button>
-                    <button
-                      onClick={() => onDelete(user)}
-                      className="action-button delete"
-                      title="Eliminar usuario"
-                    >
-                      <PiTrashBold />
-                    </button>
-                  </div>
                 </td>
               </tr>
             ))}
@@ -435,29 +399,9 @@ export default function UsersTable({
           font-weight: 600;
         }
         
-        .date-text {
-          color: #374151;
-          font-weight: 500;
-          font-size: 0.875rem;
+        .table-row.clickable {
+          cursor: pointer;
         }
-        
-        .actions-column {
-          width: 10em;
-          text-align: center;
-        }
-        
-        .actions-group {
-          display: flex;
-          gap: 0.3em;
-          justify-content: center;
-        }
-        
-        .action-button {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 2em;
-          height: 2em;
           border: none;
           border-radius: 6px;
           cursor: pointer;
@@ -485,34 +429,14 @@ export default function UsersTable({
           transform: translateY(-1px);
         }
         
-        .action-button.toggle.active {
-          background: #d4f2cb;
-          color: #2d5a27;
+        .table-row.clickable {
+          cursor: pointer;
         }
         
-        .action-button.toggle.active:hover {
-          background: #bbf7af;
+        .table-row.clickable:hover {
+          background-color: #f1f5f9;
           transform: translateY(-1px);
-        }
-        
-        .action-button.toggle.inactive {
-          background: #f3f4f6;
-          color: #6b7280;
-        }
-        
-        .action-button.toggle.inactive:hover {
-          background: #e5e7eb;
-          transform: translateY(-1px);
-        }
-        
-        .action-button.delete {
-          background: #fee2e2;
-          color: #dc2626;
-        }
-        
-        .action-button.delete:hover {
-          background: #fecaca;
-          transform: translateY(-1px);
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         @media (max-width: 768px) {
@@ -528,16 +452,6 @@ export default function UsersTable({
           .user-avatar {
             width: 2em;
             height: 2em;
-            font-size: 0.8em;
-          }
-          
-          .actions-group {
-            gap: 0.2em;
-          }
-          
-          .action-button {
-            width: 1.8em;
-            height: 1.8em;
             font-size: 0.8em;
           }
         }

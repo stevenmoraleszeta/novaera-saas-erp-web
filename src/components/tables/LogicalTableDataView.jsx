@@ -43,6 +43,8 @@ import { Input } from "../ui/input";
 import ViewForm from "@/components/ViewForm";
 import GenericCRUDTable from "../common/GenericCRUDTable";
 import { FileTableCell } from "../common/FileDisplay";
+import useUserPermissions from "@/hooks/useUserPermissions";
+import ProtectedSection from "../common/ProtectedSection";
 
 export default function LogicalTableDataView({ tableId, refresh, colName, constFilter, hiddenColumns }) {
   const { isEditingMode } = useEditModeStore();
@@ -60,6 +62,9 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     handleAddColumnToView,
     handleDeleteViewColumn,
   } = useViews(tableId);
+
+  // Hook para verificar permisos del usuario
+  const { permissions, loading: permissionsLoading, canCreate, canRead, canUpdate, canDelete } = useUserPermissions(tableId);
 
   const [columns, setColumns] = useState([]);
   const [records, setRecords] = useState([]);
@@ -735,18 +740,20 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
           >
             <Eye className="w-5 h-5" />
           </Button>
-          <Button
-            onClick={() => setShowAddRecordDialog(true)}
-            size="lg"
-            className="w-[150px] h-[36px] rounded-[5px] flex items-center justify-center"
-          >
-            <span
-              className="w-[82px] h-[31px] flex items-center justify-center"
-              style={{ fontSize: "20px" }}
+          {canCreate && (
+            <Button
+              onClick={() => setShowAddRecordDialog(true)}
+              size="lg"
+              className="w-[150px] h-[36px] rounded-[5px] flex items-center justify-center"
             >
-              Nuevo
-            </span>
-          </Button>
+              <span
+                className="w-[82px] h-[31px] flex items-center justify-center"
+                style={{ fontSize: "20px" }}
+              >
+                Nuevo
+              </span>
+            </Button>
+          )}
         </div>
       </div>
       <div className="flex flex-wrap mb-2 items-center">
@@ -816,12 +823,19 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
                 }
               }}
             getRowKey={(row) => row.id}
-            onCreate={() => setShowAddRecordDialog(true)}
-            onUpdate={(id, updatedData) => {
+            onCreate={canCreate ? () => setShowAddRecordDialog(true) : undefined}
+            onUpdate={canUpdate ? (id, updatedData) => {
               setRecordToEdit({ ...updatedData, id });
               setShowEditRecordDialog(true);
-            }}
+            } : undefined}
+            onDelete={canDelete ? handleDeleteRecord : undefined}
             rowIdKey="id"
+            permissions={{
+              canCreate,
+              canRead,
+              canUpdate,
+              canDelete
+            }}
               renderForm={({ mode, item, open, onClose, onSubmit }) => (
                   <DynamicRecordFormDialog
                     open={open}
@@ -834,7 +848,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
                     tableId={tableId}
                     record={item}
                     mode={mode}
-                    onDelete={handleDeleteRecord}
+                    onDelete={canDelete ? handleDeleteRecord : undefined}
                     onSubmitSuccess={async (createdOrUpdatedRecord) => {
                       if (mode === "create") {
                         const userColumn = columns.find((col) => col.data_type === "user");

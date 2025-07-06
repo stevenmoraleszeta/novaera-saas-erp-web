@@ -47,6 +47,19 @@ export async function getUser() {
   }
 }
 
+export async function getUserWithRoles() {
+  try {
+    const response = await axios.get("/auth/me");
+    return response.data;
+  } catch (error) {
+    // Don't log 401 errors as they're expected when user is not authenticated
+    if (error?.response?.status !== 401) {
+      console.error("AuthService: Error getting user with roles:", error);
+    }
+    throw error;
+  }
+}
+
 export async function logout() {
   try {
     const response = await axios.post("/auth/logout");

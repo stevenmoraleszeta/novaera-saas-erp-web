@@ -17,6 +17,8 @@ export default function RolesTable({
   onEdit,
   onDelete,
   onViewPermissions,
+  onSelectForPermissions,
+  selectedRole,
   loading = false,
   sortConfig = { key: null, direction: 'asc' },
   onSort
@@ -57,6 +59,16 @@ export default function RolesTable({
         {sortConfig.direction === 'asc' ? <PiCaretUpBold /> : <PiCaretDownBold />}
       </span>
     );
+  };
+
+  const handleSelectRoleForPermissions = (role) => {
+    if (onSelectForPermissions) {
+      onSelectForPermissions(role);
+    }
+  };
+
+  const isRoleSelectedForPermissions = (role) => {
+    return selectedRole && selectedRole.id === role.id;
   };
 
   if (loading) {
@@ -159,41 +171,61 @@ export default function RolesTable({
           </thead>
           <tbody>
             {roles.map((role) => (
-              <tr key={role.id} className="table-row">
+              <tr 
+                key={role.id} 
+                className={`table-row ${isRoleSelectedForPermissions(role) ? 'selected-for-permissions' : ''}`}
+                onClick={() => handleSelectRoleForPermissions(role)}
+                style={{ cursor: 'pointer' }}
+              >
                 <td className="checkbox-column">
                   <input
                     type="checkbox"
                     checked={selectedRoles.includes(role.id)}
-                    onChange={(e) => handleSelectRole(role.id, e.target.checked)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      handleSelectRole(role.id, e.target.checked);
+                    }}
                     className="table-checkbox"
                   />
                 </td>
                 <td className="role-name">
                   <span className="role-badge-main">{role.name}</span>
+                  {isRoleSelectedForPermissions(role) && (
+                    <span className="selected-indicator">• Editando permisos</span>
+                  )}
                 </td>
-                <td className="role-description">{role.description}</td>
+                <td className="role-description">{role.description || '-'}</td>
                 <td className="role-status">
                   <RoleStatusBadge active={role.active} />
                 </td>
                 <td className="role-actions">
                   <div className="actions-group">
                     <button
-                      onClick={() => onEdit(role)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(role);
+                      }}
                       className="action-button edit"
                       title="Editar rol"
                     >
                       <PiPencilBold style={{ marginRight: 4 }} /> Editar
                     </button>
                     <button
-                      onClick={() => onViewPermissions && onViewPermissions(role)}
-                      className="action-button view"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onViewPermissions && onViewPermissions(role);
+                      }}
+                      className={`action-button view ${isRoleSelectedForPermissions(role) ? 'selected' : ''}`}
                       title="Ver permisos"
                       style={{ background: '#e0f2fe', color: '#0284c7' }}
                     >
                       <PiShieldCheckBold style={{ marginRight: 4 }} /> Permisos
                     </button>
                     <button
-                      onClick={() => onDelete(role)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(role);
+                      }}
                       className="action-button delete"
                       title="Eliminar rol"
                     >
@@ -338,6 +370,26 @@ export default function RolesTable({
         .action-button.delete:hover {
           background: #fecaca;
           transform: translateY(-1px);
+        }
+        .action-button.selected {
+          border: 2px solid #7ed957;
+          background: #f0fdf4;
+        }
+        .table-row.selected-for-permissions {
+          background: #f8fafc;
+          border-left: 4px solid #3b82f6;
+        }
+        .selected-indicator {
+          font-size: 0.75em;
+          color: #3b82f6;
+          font-weight: 500;
+          margin-left: 8px;
+        }
+        .table-row:hover {
+          background: #f9fafb;
+        }
+        .table-row.selected-for-permissions:hover {
+          background: #f1f5f9;
         }
         @media (max-width: 768px) {
           .roles-table th,

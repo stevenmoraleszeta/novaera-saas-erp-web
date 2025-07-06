@@ -20,6 +20,9 @@ import UserLinkDialog from "@/components/users/UserLinkDialog";
 import { useColumns } from "@/hooks/useColumns";
 import useUserStore from "@/stores/userStore";
 import LogicalTableDataView from "@/components/tables/LogicalTableDataView";
+import useUserPermissions from "@/hooks/useUserPermissions";
+import ProtectedSection from "@/components/common/ProtectedSection";
+import PermissionDenied from "@/components/common/PermissionDenied";
 
 export default function ModuleDetailPage() {
   const { modules, getById } = useModules();
@@ -289,7 +292,22 @@ export default function ModuleDetailPage() {
             No hay tablas lógicas para este módulo.
           </div>
         ) : (
-          <LogicalTableDataView tableId={tables[tables.length - 1].id} refresh={refreshData} />
+          <ProtectedSection 
+            tableId={tables[tables.length - 1].id}
+            requiredPermissions={['can_read']}
+            fallback={
+              <PermissionDenied 
+                title="Sin permisos de lectura"
+                message="No tienes permisos para ver los datos de esta tabla."
+                variant="default"
+              />
+            }
+          >
+            <LogicalTableDataView 
+              tableId={tables[tables.length - 1].id} 
+              refresh={refreshData} 
+            />
+          </ProtectedSection>
         )}
       </div>
 
