@@ -7,6 +7,7 @@ const mapViewFromBackend = (backendView) => ({
   name: backendView.name,
   sortBy: backendView.sort_by,
   sortDirection: backendView.sort_direction,
+  position_num: backendView.position_num,
   columns: backendView.columns || [], // esto puede llenarse aparte
 });
 
@@ -15,12 +16,14 @@ const mapViewToBackend = (frontendView) => ({
   table_id: frontendView.tableId,
   name: frontendView.name,
   sort_by: frontendView.sort_by,
+  position_num: frontendView.position_num,
   sort_direction: frontendView.sort_direction,
 });
 
 // Crear una vista
 export async function createView(viewData) {
   const payload = mapViewToBackend(viewData);
+  console.log("cave: crea en el service payload", payload);
   const response = await axios.post("/views", payload);
   return response.data;
 }
@@ -30,6 +33,7 @@ export async function getViewsByTable(tableId) {
   const response = await axios.get(`/views`, {
     params: { table_id: tableId },
   });
+     console.log("cave: INTENTA JALAR RESP, ", response.data);
   return response.data.map(mapViewFromBackend);
 }
 
@@ -70,4 +74,11 @@ export async function updateViewColumn(id, updatedData) {
 export async function deleteViewColumn(id) {
   const response = await axios.delete(`/views/columns/${id}`);
   return response.data;
+}
+
+export async function updateViewPosition(view_id, newPosition) {
+  const res = await axios.patch(`/views/${view_id}/update_views`, {
+    position: newPosition,
+  });
+  return res.data.message; // o lo que devuelva el backend
 }

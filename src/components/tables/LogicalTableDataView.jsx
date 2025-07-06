@@ -61,6 +61,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     handleDeleteView,
     handleAddColumnToView,
     handleDeleteViewColumn,
+    handleUpdatePosition: handleUpdateViewPosition,
   } = useViews(tableId);
 
   // Hook para verificar permisos del usuario
@@ -145,7 +146,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         setLoading(false);
         return;
       }
-
+            loadViews();
       setLoading(true);
       try {
         const cols = await getLogicalTableStructure(tableId);
@@ -168,7 +169,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         setLoading(false);
       }
     };
-
+    
     fetchData();
   }, [tableId, page, pageSize, refresh, localRefreshFlag]);
 
@@ -503,7 +504,9 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   };
 
   const handleCreateViewLocal = async (viewData) => {
+    console.log("cave: vistas:", views);
     try {
+      console.log("cave: try");
       const sortColumn = columns.find(col => col.name === activeSort?.column)
       // First, create the view with basic info (name, sort settings)
       const newView = await handleCreateView({
@@ -511,6 +514,8 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         tableId,
         sort_by: sortColumn?.column_id || null,
         sort_direction: activeSort?.direction || null,
+        position_num: activeFilters.length
+        
       });
 
       // Then, add each column to the view with its configuration
@@ -1143,10 +1148,6 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
               )}
             />
 
-          {/*           <div className="overflow-x-auto border-t border-gray-200 mt-4 pt-4">
-            <ColumnManager tableId={tableId} tableName="x" />
-          </div>*/}
-
         </DialogContent>
       </Dialog>
       {/* View Delete Confirmation Dialog */}
@@ -1175,6 +1176,17 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
                     columns.find((c) => c.column_id === val)?.name || "-",
                 },
               ]}
+
+              onOrderChange={async (reorderedViews) => {
+                try {
+                  for (let i = 0; i < reorderedViews.length; i++) {
+                    await handleUpdateViewPosition(reorderedViews[i].id, i + 1);
+                  }
+                  setLocalRefreshFlag((prev) => !prev); // Refresca una sola vez al final
+                } catch (err) {
+                  console.error("Error al reordenar vistas:", err);
+                }
+              }}
               getRowKey={(view) => view.id}
               onCreate={handleCreateViewLocal}
               onUpdate={handleUpdateViewLocal}

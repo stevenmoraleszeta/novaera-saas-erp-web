@@ -8,6 +8,7 @@ import {
   getColumnsByView,
   updateViewColumn,
   deleteViewColumn,
+  updateViewPosition,
 } from "@/services/viewsService";
 
 export function useViews(tableId) {
@@ -16,6 +17,7 @@ export function useViews(tableId) {
   const [loadingViews, setLoadingViews] = useState(false);
   const [loadingColumns, setLoadingColumns] = useState(false);
   const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(null);
 
   // Auto-load views when tableId changes
   useEffect(() => {
@@ -26,14 +28,17 @@ export function useViews(tableId) {
 
   // Cargar vistas de una tabla
   const loadViews = useCallback(async () => {
+    console.log("cave: LOADEDS VIEWS")
     if (!tableId) return;
 
     setLoadingViews(true);
     setError(null);
     try {
       const data = await getViewsByTable(tableId);
+      console.log("cave: data", data, "de" , tableId)
       setViews(data);
     } catch (err) {
+      console.log("cave: error de carga", err)
       setError(err.message || "Error loading views");
     } finally {
       setLoadingViews(false);
@@ -70,6 +75,7 @@ export function useViews(tableId) {
   const handleCreateView = useCallback(
     async (viewData) => {
       try {
+        console.log("cave: crea en el use", viewData);
         const newView = await createView(viewData);
         await loadViews();
         return newView;
@@ -166,6 +172,18 @@ export function useViews(tableId) {
     [loadColumns]
   );
 
+    const handleUpdatePosition = async (viewId, newPosition) => {
+    try {
+      setError(null);
+      setSuccess(null);
+      await updateViewPosition(viewId, newPosition);
+      setSuccess('Posición actualizada correctamente');
+    } catch (err) {
+      console.error('Error actualizando posición:', err);
+      setError(err?.response?.data?.error || 'Error al actualizar la posición');
+    }
+  };
+
   return {
     views,
     columns,
@@ -181,5 +199,6 @@ export function useViews(tableId) {
     handleAddColumnToView,
     handleUpdateViewColumn,
     handleDeleteViewColumn,
+    handleUpdatePosition,
   };
 }
