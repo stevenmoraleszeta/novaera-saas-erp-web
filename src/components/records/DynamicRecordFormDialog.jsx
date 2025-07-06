@@ -194,7 +194,7 @@ export default function DynamicRecordFormDialog({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/30 flex items-start justify-center pt-30 px-8">
-      <div className={`bg-white rounded-lg shadow-lg ${foreignModalOpen ? "w-[900px]" : "w-[1150px]"} min-h-[80vh] overflow-y-auto p-4 relative z-10  `}>
+      <div className={`bg-white rounded-lg shadow-lg ${foreignModalOpen ? "w-[900px]" : "w-[1150px]"}  p-4 relative z-10 max-h-[80vh] overflow-y-auto`}>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">
           {mode === "create" ? "Nuevo Registro" : "Editar Registro"}
@@ -218,7 +218,7 @@ export default function DynamicRecordFormDialog({
             {columns.map((col) => {
               if (foreignForm && col.name === "original_record_id") return null;
               return (
-                <div key={col.column_id} className="space-y-2">
+                <div key={col.column_id} className="space-y-2 ">
                   <Label htmlFor={`field-${col.name}`}>{col.name}{col.is_required && <Badge className="ml-1 text-xs text-destructive bg-transparent">*Requerido</Badge>}</Label>
                   {col.data_type === "foreign" ? (
                     <Button type="button" onClick={() => handleOpenForeignModal(col)}>Abrir tabla</Button>
@@ -260,7 +260,7 @@ export default function DynamicRecordFormDialog({
       </div>
 
       {foreignModalOpen && (
-        <div className="bg-white rounded-lg shadow-lg w-[900px] min-h-[80vh] overflow-y-auto p-4 ml-4 relative z-20">
+        <div className="bg-white rounded-lg shadow-lg w-[900px] min-h-[80vh] overflow-y-auto p-4 ml-4 relative z-20 ">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">
               {foreignModalColumn ? `Registros relacionados de ${foreignModalColumn.foreign_table_name || 'Tabla intermedia'}` : 'Registros relacionados'}

@@ -7,6 +7,7 @@ import { Filter, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import SearchBar from "@/components/common/SearchBar";
 import FilterDialog from "@/components/tables/dialogs/FilterDialog";
 import SortDialog from "@/components/tables/dialogs/SortDialog";
+import useEditModeStore from "@/stores/editModeStore";
 
 export default function GenericCRUDTable({
   title,
@@ -25,6 +26,7 @@ export default function GenericCRUDTable({
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState("create");
   const [selectedItem, setSelectedItem] = useState(null);
+  const { isEditingMode } = useEditModeStore();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilterDialog, setShowFilterDialog] = useState(false);
@@ -45,9 +47,10 @@ export default function GenericCRUDTable({
   };
 
   const handleEdit = (item) => {
-    setFormMode("edit");
-    setSelectedItem(item);
-    setFormOpen(true);
+  if (!isEditingMode) return;
+  setFormMode("edit");
+  setSelectedItem(item);  
+  setFormOpen(true);
   };
 
   const filterConditions = [
@@ -246,7 +249,7 @@ export default function GenericCRUDTable({
           onRowClick={handleEdit}
         />
       </div>
-      {renderForm &&
+      {renderForm && isEditingMode &&
         renderForm({
           mode: formMode,
           item: selectedItem,
