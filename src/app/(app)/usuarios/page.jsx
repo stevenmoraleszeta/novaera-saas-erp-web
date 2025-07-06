@@ -7,8 +7,18 @@ import { Badge } from "@/components/ui/badge";
 import { Edit3 } from "lucide-react";
 import Alert from "@/components/common/Alert";
 import UserForm from "@/components/users/UserForm";
-import DeleteConfirmationModal from "@/components/common/DeleteConfirmationModal";
 import UserList from "@/components/users/UserList";
+import MainContent from "@/components/MainContent";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  getUsers, 
+  createUser, 
+  updateUser, 
+  deleteUser, 
+  fetchRoles, 
+  assignRoleToUser, 
+  getUserRoles 
+} from "@/services/userService";
 
 export default function UsuariosPage() {
   const { user } = useUserStore();
@@ -21,10 +31,9 @@ export default function UsuariosPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [roles, setRoles] = useState([]);
 
   const { isEditingMode } = useEditModeStore();
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [userToDelete, setUserToDelete] = useState(null);
 
   const [modalState, setModalState] = React.useState({
     showModal: false,
@@ -33,59 +42,76 @@ export default function UsuariosPage() {
     formError: null,
   });
 
-  // Mock data - replace with actual API call
+  // Fetch users and roles
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        const mockUsers = [
-          {
-            id: 1,
-            name: "Juan Pérez",
-            email: "juan.perez@empresa.com",
-            role: "Administrador",
-            department: "IT",
-            status: "Activo",
-            createdAt: "2024-01-15",
-            lastLogin: "2024-01-20T10:30:00Z",
-          },
-          {
-            id: 2,
-            name: "María García",
-            email: "maria.garcia@empresa.com",
-            role: "Usuario",
-            department: "Ventas",
-            status: "Activo",
-            createdAt: "2024-01-16",
-            lastLogin: "2024-01-19T14:20:00Z",
-          },
-          {
-            id: 3,
-            name: "Carlos López",
-            email: "carlos.lopez@empresa.com",
-            role: "Supervisor",
-            department: "Recursos Humanos",
-            status: "Inactivo",
-            createdAt: "2024-01-17",
-            lastLogin: "2024-01-18T09:15:00Z",
-          },
-        ];
-
-        setUsers(mockUsers);
-        setTotalUsers(mockUsers.length);
-        setTotalPages(Math.ceil(mockUsers.length / itemsPerPage));
+        setError(null);
+        
+        // Fetch users - getUsers returns an object with users array
+        const usersResponse = await getUsers();
+        console.log('Fetched users response:', usersResponse);
+        
+        // Extract users array from response
+        const usersData = usersResponse.users || [];
+        console.log('Extracted users data:', usersData);
+        
+        // Fetch roles
+        const rolesData = await fetchRoles();
+        console.log('Fetched roles:', rolesData);
+        
+        // Enrich users with their roles
+        const enrichedUsers = await Promise.all(
+          usersData.map(async (user) => {
+            try {
+              console.log(`Fetching roles for user ${user.id}:`, user.name);
+              const userRoles = await getUserRoles(user.id);
+              console.log(`Roles for user ${user.id}:`, userRoles);
+              
+              // getUserRoles returns an array - could be role names or role objects
+              let primaryRole = 'Sin rol';
+              if (userRoles && userRoles.length > 0) {
+                // Check if it's an array of strings or objects
+                if (typeof userRoles[0] === 'string') {
+                  primaryRole = userRoles[0];
+                } else if (userRoles[0] && userRoles[0].name) {
+                  primaryRole = userRoles[0].name;
+                } else if (userRoles[0]) {
+                  primaryRole = userRoles[0].toString();
+                }
+              }
+              
+              return {
+                ...user,
+                role: primaryRole,
+                roles: userRoles || []
+              };
+            } catch (err) {
+              console.warn(`Error fetching roles for user ${user.id}:`, err);
+              return {
+                ...user,
+                role: 'Sin rol',
+                roles: []
+              };
+            }
+          })
+        );
+        
+        setUsers(enrichedUsers);
+        setRoles(rolesData);
+        setTotalUsers(enrichedUsers.length);
+        setTotalPages(Math.ceil(enrichedUsers.length / itemsPerPage));
+        
       } catch (err) {
-        setError("Error al cargar usuarios");
-        console.error("Error fetching users:", err);
+        console.error("Error fetching data:", err);
+        setError("Error al cargar los datos: " + err.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUsers();
+    fetchData();
   }, [itemsPerPage]);
 
   const handleSearch = (query) => {
@@ -97,6 +123,29 @@ export default function UsuariosPage() {
     setCurrentPage(page);
   };
 
+  // Filter users based on search query
+  const filteredUsers = users.filter((user) => {
+    if (!searchQuery) return true;
+    
+    const query = searchQuery.toLowerCase();
+    return (
+      (user.name && user.name.toLowerCase().includes(query)) ||
+      (user.email && user.email.toLowerCase().includes(query)) ||
+      (user.role && user.role.toLowerCase().includes(query))
+    );
+  });
+
+  // Reset to first page if search results change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  // Paginate filtered users
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+  const totalFilteredPages = Math.ceil(filteredUsers.length / itemsPerPage);
+
   const handleCreateUser = async (data) => {
     try {
       setModalState((prev) => ({
@@ -104,23 +153,64 @@ export default function UsuariosPage() {
         formLoading: true,
         formError: null,
       }));
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const newUser = {
-        id: Date.now(),
-        ...data,
-        createdAt: new Date().toISOString(),
-        lastLogin: null,
-      };
-
-      setUsers((prev) => [...prev, newUser]);
+      console.log('Creating user with data:', data);
+      
+      // Create user
+      const result = await createUser(data);
+      console.log('User created:', result);
+      
+      // If role is provided, assign it
+      if (data.role && data.role !== 'Sin rol') {
+        await assignRoleToUser(result.id, data.role);
+      }
+      
+      // Refresh users list
+      const usersResponse = await getUsers();
+      const usersData = usersResponse.users || [];
+      const enrichedUsers = await Promise.all(
+        usersData.map(async (user) => {
+          try {
+            const userRoles = await getUserRoles(user.id);
+            console.log(`Roles for user ${user.id} after create:`, userRoles);
+            
+            // getUserRoles returns an array - could be role names or role objects
+            let primaryRole = 'Sin rol';
+            if (userRoles && userRoles.length > 0) {
+              // Check if it's an array of strings or objects
+              if (typeof userRoles[0] === 'string') {
+                primaryRole = userRoles[0];
+              } else if (userRoles[0] && userRoles[0].name) {
+                primaryRole = userRoles[0].name;
+              } else if (userRoles[0]) {
+                primaryRole = userRoles[0].toString();
+              }
+            }
+            
+            return {
+              ...user,
+              role: primaryRole,
+              roles: userRoles || []
+            };
+          } catch (err) {
+            return {
+              ...user,
+              role: 'Sin rol',
+              roles: []
+            };
+          }
+        })
+      );
+      
+      setUsers(enrichedUsers);
       setSuccess("Usuario creado exitosamente");
       closeModal();
+      
     } catch (err) {
+      console.error('Error creating user:', err);
       setModalState((prev) => ({
         ...prev,
-        formError: "Error al crear usuario",
+        formError: err.message || "Error al crear usuario",
         formLoading: false,
       }));
     }
@@ -133,18 +223,64 @@ export default function UsuariosPage() {
         formLoading: true,
         formError: null,
       }));
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      setUsers((prev) =>
-        prev.map((user) => (user.id === id ? { ...user, ...data } : user))
+      console.log('Updating user with data:', data);
+      
+      // Update user
+      const result = await updateUser(id, data);
+      console.log('User updated:', result);
+      
+      // If role is provided, assign it
+      if (data.role && data.role !== 'Sin rol') {
+        await assignRoleToUser(id, data.role);
+      }
+      
+      // Refresh users list
+      const usersResponse = await getUsers();
+      const usersData = usersResponse.users || [];
+      const enrichedUsers = await Promise.all(
+        usersData.map(async (user) => {
+          try {
+            const userRoles = await getUserRoles(user.id);
+            console.log(`Roles for user ${user.id} after update:`, userRoles);
+            
+            // getUserRoles returns an array - could be role names or role objects
+            let primaryRole = 'Sin rol';
+            if (userRoles && userRoles.length > 0) {
+              // Check if it's an array of strings or objects
+              if (typeof userRoles[0] === 'string') {
+                primaryRole = userRoles[0];
+              } else if (userRoles[0] && userRoles[0].name) {
+                primaryRole = userRoles[0].name;
+              } else if (userRoles[0]) {
+                primaryRole = userRoles[0].toString();
+              }
+            }
+            
+            return {
+              ...user,
+              role: primaryRole,
+              roles: userRoles || []
+            };
+          } catch (err) {
+            return {
+              ...user,
+              role: 'Sin rol',
+              roles: []
+            };
+          }
+        })
       );
+      
+      setUsers(enrichedUsers);
       setSuccess("Usuario actualizado exitosamente");
       closeModal();
+      
     } catch (err) {
+      console.error('Error updating user:', err);
       setModalState((prev) => ({
         ...prev,
-        formError: "Error al actualizar usuario",
+        formError: err.message || "Error al actualizar usuario",
         formLoading: false,
       }));
     }
@@ -152,32 +288,52 @@ export default function UsuariosPage() {
 
   const handleDeleteUser = async (user) => {
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      setUsers((prev) => prev.filter((u) => u.id !== user.id));
+      console.log('Deleting user:', user);
+      
+      // Eliminar físicamente el usuario con tipo 'fisica'
+      await deleteUser(user.id, 'fisica');
+      
+      // Refresh users list
+      const usersResponse = await getUsers();
+      const usersData = usersResponse.users || [];
+      const enrichedUsers = await Promise.all(
+        usersData.map(async (user) => {
+          try {
+            const userRoles = await getUserRoles(user.id);
+            let primaryRole = 'Sin rol';
+            if (userRoles && userRoles.length > 0) {
+              if (typeof userRoles[0] === 'string') {
+                primaryRole = userRoles[0];
+              } else if (userRoles[0] && userRoles[0].name) {
+                primaryRole = userRoles[0].name;
+              } else if (userRoles[0]) {
+                primaryRole = userRoles[0].toString();
+              }
+            }
+            
+            return {
+              ...user,
+              role: primaryRole,
+              roles: userRoles || []
+            };
+          } catch (err) {
+            return {
+              ...user,
+              role: 'Sin rol',
+              roles: []
+            };
+          }
+        })
+      );
+      
+      setUsers(enrichedUsers);
       setSuccess("Usuario eliminado exitosamente");
-      setShowDeleteDialog(false);
-      setUserToDelete(null);
+      closeModal(); // Cerrar el modal después de eliminar
+      
     } catch (err) {
-      setError("Error al eliminar usuario");
+      console.error('Error deleting user:', err);
+      setError(err.message || "Error al eliminar usuario");
     }
-  };
-
-  const handleDeleteClick = (user) => {
-    setUserToDelete(user);
-    setShowDeleteDialog(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (userToDelete) {
-      await handleDeleteUser(userToDelete);
-    }
-  };
-
-  const handleCancelDelete = () => {
-    setShowDeleteDialog(false);
-    setUserToDelete(null);
   };
 
   const openCreateModal = () =>
@@ -188,13 +344,15 @@ export default function UsuariosPage() {
       formError: null,
     });
 
-  const openEditModal = (user) =>
+  const openEditModal = (user) => {
+    console.log('Opening edit modal for user:', user);
     setModalState({
       showModal: true,
       selectedUser: user,
       formLoading: false,
       formError: null,
     });
+  };
 
   const closeModal = () =>
     setModalState({
@@ -222,63 +380,63 @@ export default function UsuariosPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4">
-      {error && <Alert type="error" message={error} onClose={clearMessages} />}
-      {success && (
-        <Alert type="success" message={success} onClose={clearMessages} />
-      )}
+    <MainContent>
+      <div className="usuarios-page space-y-6">
+        {error && <Alert type="error" message={error} onClose={clearMessages} />}
+        {success && (
+          <Alert type="success" message={success} onClose={clearMessages} />
+        )}
 
-      {isEditingMode && (
-        <div className="mb-8">
-          <Badge
-            variant="default"
-            className="bg-green-600 hover:bg-green-700 text-white"
-          >
-            <Edit3 className="w-5 h-5" />
-            Modo edición
-          </Badge>
-        </div>
-      )}
+        {isEditingMode && (
+          <div className="mb-4">
+            <Badge
+              variant="default"
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              <Edit3 className="w-5 h-5 mr-2" />
+              Modo edición
+            </Badge>
+          </div>
+        )}
 
-      <UserList
-        users={users}
-        loading={loading}
-        onAdd={openCreateModal}
-        onEdit={openEditModal}
-        onDelete={handleDeleteClick}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={totalUsers}
-        itemsPerPage={itemsPerPage}
-        onPageChange={handlePageChange}
-        isEditingMode={isEditingMode}
-        searchQuery={searchQuery}
-        onSearch={handleSearch}
-      />
+        <Card>
+          <CardHeader>
+            <CardTitle>Gestión de Usuarios</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <UserList
+              users={paginatedUsers}
+              loading={loading}
+              onAdd={openCreateModal}
+              onEdit={openEditModal}
+              currentPage={currentPage}
+              totalPages={totalFilteredPages}
+              totalItems={filteredUsers.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={handlePageChange}
+              isEditingMode={isEditingMode}
+              searchQuery={searchQuery}
+              onSearch={handleSearch}
+              roles={roles}
+            />
+          </CardContent>
+        </Card>
 
-      <UserForm
-        open={modalState.showModal}
-        onOpenChange={(open) => {
-          if (!open) closeModal();
-        }}
-        mode={modalState.selectedUser ? "edit" : "create"}
-        initialData={modalState.selectedUser}
-        onSubmit={handleFormSubmit}
-        onCancel={closeModal}
-        onDelete={handleDeleteClick}
-        loading={modalState.formLoading}
-        error={modalState.formError}
-      />
-
-      <DeleteConfirmationModal
-        open={showDeleteDialog}
-        onOpenChange={(open) => {
-          if (!open) handleCancelDelete();
-        }}
-        onConfirm={handleConfirmDelete}
-        title="¿Eliminar usuario?"
-        itemName={userToDelete?.name}
-      />
-    </div>
+        <UserForm
+          open={modalState.showModal}
+          onOpenChange={(open) => {
+            if (!open) closeModal();
+          }}
+          mode={modalState.selectedUser ? "edit" : "create"}
+          initialData={modalState.selectedUser}
+          onSubmit={handleFormSubmit}
+          onCancel={closeModal}
+          onDelete={handleDeleteUser}
+          loading={modalState.formLoading}
+          error={modalState.formError}
+          roles={roles}
+        />
+      </div>
+    </MainContent>
   );
 }

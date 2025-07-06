@@ -12,7 +12,7 @@ export async function getLogicalTableStructure(tableId) {
 // Obtener registros de una tabla lógica (con filtros y paginación opcionales)
 export async function getLogicalTableRecords(tableId, params = {}) {
   // params: { page, pageSize, filters, search }
-  const { data } = await axios.get(`/records//table/${tableId}`, { params });
+  const { data } = await axios.get(`/records/table/${tableId}`, { params });
   return data; // Array de registros
 }
 
@@ -35,6 +35,14 @@ export async function createLogicalTableRecord(tableId, recordData) {
       case "date":
         value = value || null;
         break;
+      case "file":
+        // Para archivos, mantener la estructura con file_id
+        value = value || null;
+        break;
+      case "file_array":
+        // Para arrays de archivos, mantener el array
+        value = Array.isArray(value) ? value : [];
+        break;
       default:
         value = value || "";
     }
@@ -48,13 +56,24 @@ export async function createLogicalTableRecord(tableId, recordData) {
 }
 
 // Actualizar un registro en una tabla lógica
-export async function updateLogicalTableRecord(recordId, recordData) {
-  const { data } = await axios.put(`/records/${recordId}`, recordData);
-  return data;
+export async function updateLogicalTableRecord(recordId, recordData, positionNum) {
+   const response = await axios.put(`/records/${recordId}`, {
+    recordData,
+    position_num: positionNum,
+  });
+  
+  return response;
 }
 
 // Eliminar un registro en una tabla lógica
 export async function deleteLogicalTableRecord(recordId) {
   const { data } = await axios.delete(`/records//${recordId}`);
   return data;
+}
+
+export async function updateRecordPosition(recordId, newPosition) {
+  const res = await axios.patch(`/records/${recordId}/update_records`, {
+    position: newPosition,
+  });
+  return res.data.message; // o lo que devuelva el backend
 }

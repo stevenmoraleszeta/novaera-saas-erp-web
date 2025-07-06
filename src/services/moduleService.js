@@ -96,8 +96,9 @@ export async function updateModule(id, data) {
 // Eliminar un módulo
 export async function deleteModule(id) {
   try {
-    console.log("Id a borrar, ", id);
-    const response = await axios.delete(`/modules/${id}`);
+    const response = await axios.delete(`/modules/${id}`, {
+      params: { cascada: true },
+    });
     return response.data;
   } catch (error) {
     console.error("Error deleting module:", error.message);

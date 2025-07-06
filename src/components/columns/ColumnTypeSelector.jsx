@@ -12,13 +12,17 @@ import { Label } from "@/components/ui/label";
 
 const DATA_TYPES = [
   { label: "Texto", value: "string" },
+  { label: "Texto largo", value: "text" },
   { label: "Número entero", value: "integer" },
   { label: "Número decimal", value: "decimal" },
-  { label: "Booleano", value: "boolean" },
+  { label: "Checkbox", value: "boolean" },
   { label: "Fecha", value: "date" },
   { label: "Fecha y hora", value: "datetime" },
+  { label: "Relación Foránea", value: "foreign" },
+  { label: "Selección", value: "select" },
+  { label: "Archivo", value: "file" },
+  { label: "Múltiples archivos", value: "file_array" },
   { label: "JSON", value: "json" },
-  { label: "Texto largo", value: "text" },
   { label: "UUID", value: "uuid" },
 ];
 
@@ -26,7 +30,7 @@ export default function ColumnTypeSelector({
   value,
   onChange,
   error,
-  label = "Tipo de dato",
+  label = "",
   required = false,
 }) {
   return (

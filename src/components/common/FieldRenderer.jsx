@@ -12,21 +12,36 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { getLogicalTableRecords } from "@/services/logicalTableService";
+import Modal from "./Modal";
+import DynamicRecordFormDialog from "../records/DynamicRecordFormDialog";
+import FileUpload from "./FileUpload";
+import FileDisplay from "./FileDisplay";
 
-export default function FieldRenderer({ id, column, value, onChange, error }) {
+export default function FieldRenderer({ id, column, value, onChange, error, colName }) {
   const baseClassName = `w-full ${error ? "border-red-500 focus:border-red-500" : ""}`;
   const [foreignOptions, setForeignOptions] = useState([]);
   const { users, loadUsers } = useUsers();
+  const [showForeignModal, setShowForeignModal] = useState(false);
+  const [foreignDisplay, setForeignDisplay] = useState("");
 
   useEffect(() => {
     async function loadOptions() {
       try {
-        if (column.is_foreign_key && column.foreign_table_id && column.foreign_column_name) {
+        if (column.data_type === "select" || (column.is_foreign_key && column.foreign_table_id && column.foreign_column_name)) {
           const records = await getLogicalTableRecords(column.foreign_table_id);
-          const opts = records.map((record) => ({
+          let opts;
+          if(!colName){
+          opts = records.map((record) => ({
             value: record.record_data[column.foreign_column_name],
             label: record.record_data[column.foreign_column_name],
           }));
+          } else {
+          opts = records.map((record) => ({
+            value: record.record_data[colName],
+            label: record.record_data[colName],
+          }));
+          }
+
           setForeignOptions(opts);
         } else if (column.data_type === "user") {
           await loadUsers();
@@ -41,21 +56,24 @@ export default function FieldRenderer({ id, column, value, onChange, error }) {
 
 
     // Llave foránea: mostrar opciones desde tabla relacionada
-    if (column.is_foreign_key && column.foreign_table_id && column.foreign_column_name) {
+   if (column.data_type === "select" || (column.is_foreign_key && column.foreign_table_id && column.foreign_column_name)) {
       return (
         <Select
-          value={value?.toString() || ""}
-          onValueChange={(val) => onChange({ target: { value: val } })}
+          value={value?.toString() || "none"}
+          onValueChange={(val) => onChange({ target: { value: val === "none" ? "" : val } })}
         >
           <SelectTrigger className={baseClassName}>
             <SelectValue placeholder={`Selecciona ${column.name}`} />
           </SelectTrigger>
           <SelectContent>
-            {foreignOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
+            <SelectItem value="none">-- Ninguno --</SelectItem>
+            {foreignOptions
+              .filter((option) => option.value !== "")
+              .map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
       );
@@ -91,6 +109,8 @@ export default function FieldRenderer({ id, column, value, onChange, error }) {
         </Select>
       );
     }
+
+
 
   // Resto de tipos
   switch (column.data_type) {
@@ -230,6 +250,28 @@ export default function FieldRenderer({ id, column, value, onChange, error }) {
             ))}
           </SelectContent>
         </Select>
+      );
+
+    case "file":
+      return (
+        <FileUpload
+          value={value}
+          onChange={(fileData) => onChange({ target: { value: fileData } })}
+          error={error}
+          multiple={false}
+          placeholder={`Seleccionar archivo para ${column.name}`}
+        />
+      );
+
+    case "file_array":
+      return (
+        <FileUpload
+          value={value}
+          onChange={(fileData) => onChange({ target: { value: fileData } })}
+          error={error}
+          multiple={true}
+          placeholder={`Seleccionar archivos para ${column.name}`}
+        />
       );
 
     default:

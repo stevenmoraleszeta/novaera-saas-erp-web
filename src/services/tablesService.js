@@ -7,3 +7,15 @@ export async function getTables() {
   // Espera un array de objetos: [{ id, name }]
   return res.data;
 }
+
+export async function getOrCreateJoinTable(tableA_id, tableB_id, forName) {
+  const res = await axios.post('/tables/join', { tableA_id, tableB_id, forName });
+  return res.data; // { status: 'found' | 'created', joinTable }
+}
+
+export async function updateTablePosition(tableId, newPosition) {
+  const res = await axios.patch(`/tables/${tableId}/update_tables`, {
+    position: newPosition,
+  });
+  return res.data.message; // o lo que devuelva el backend
+}

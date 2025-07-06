@@ -31,7 +31,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import useUserStore from "../../stores/userStore";
 import useEditModeStore from "../../stores/editModeStore";
@@ -141,7 +140,7 @@ export default function Header() {
   };
 
   return (
-    <header className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+    <header className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-[60]">
       <Link href="/">
         <h1 className="text-xl font-bold text-gray-900 dark:text-white">
           ERPLOGO
@@ -322,39 +321,15 @@ export default function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Profile Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full cursor-pointer"
-              >
-                <Avatar className="text-black w-8 h-8">
-                  <AvatarImage src="" />
-                  <AvatarFallback>
-                    {user?.name?.charAt(0) || "U"}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link href="/profile" className="flex items-center">
-                  <User className="w-4 h-4 mr-2" />
-                  Mi Perfil
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={handleLogout}
-                className="focus:text-black"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Cerrar Sesión
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Logout Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleLogout}
+            className="text-gray-600 hover:text-gray-900"
+          >
+            <LogOut className="w-5 h-5" />
+          </Button>
         </TooltipProvider>
       </div>
     </header>
