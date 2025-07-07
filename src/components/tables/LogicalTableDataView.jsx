@@ -61,6 +61,8 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     handleDeleteView,
     handleAddColumnToView,
     handleDeleteViewColumn,
+    handleUpdateViewColumn,
+    handleUpdatePosition: handleUpdateViewPosition,
   } = useViews(tableId);
 
   // Hook para verificar permisos del usuario
@@ -145,7 +147,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         setLoading(false);
         return;
       }
-
+            loadViews();
       setLoading(true);
       try {
         const cols = await getLogicalTableStructure(tableId);
@@ -168,7 +170,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         setLoading(false);
       }
     };
-
+    
     fetchData();
   }, [tableId, page, pageSize, refresh, localRefreshFlag]);
 
@@ -354,6 +356,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     setFilterDraft({ column: "", condition: "", value: "" });
     setShowFilterDialog(false);
   };
+
   const handleSetSort = () => {
     if (!sortConfig?.column || !sortConfig?.direction) return;
     setActiveSort(sortConfig);
@@ -423,7 +426,6 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   };
 
   const handleDeleteColumn = async (column) => {
-    console.log("mana: intenta borrar");
     try {
       await handleDelete(column.column_id);
       // Refresh columns by refetching table structure
@@ -432,7 +434,6 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
       setShowColumnDeleteDialog(false);
       setColumnToDelete(null);
     } catch (err) {
-      console.log("mana: falla borrar");
       console.error("Error deleting column:", err);
       throw err;
     }
@@ -441,7 +442,6 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   // View management functions
   const handleSelectView = async (view) => {
     if (!view) {
-      console.log("mana: no hay view")
       // Clear view - reset to default state
       setSelectedView(null);
       setActiveSort(null);
@@ -449,12 +449,10 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
       setColumnVisibility({});
       return;
     }
-    console.log("mana: si hay view")
     setSelectedView(view);
 
     // Apply view sort configuration
     if (view.sortBy && view.sortDirection) {
-      console.log("mana: si tiene reglas")
       const sortCol = columns.find(col => col.column_id === view.sortBy);
       setActiveSort({
         column: sortCol?.name || null,
@@ -487,6 +485,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
               )
             ) {
               newFilters.push({
+                id: viewCol.id,
                 column: column.name,
                 condition: viewCol.filter_condition,
                 value: viewCol.filter_value,
@@ -511,6 +510,8 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         tableId,
         sort_by: sortColumn?.column_id || null,
         sort_direction: activeSort?.direction || null,
+        position_num: activeFilters.length
+        
       });
 
       // Then, add each column to the view with its configuration
@@ -894,6 +895,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         filterDraft={filterDraft}
         setFilterDraft={setFilterDraft}
         onAddFilter={handleAddFilter}
+        showFilters = {false}
       />
 
       <SortDialog
@@ -1143,10 +1145,6 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
               )}
             />
 
-          {/*           <div className="overflow-x-auto border-t border-gray-200 mt-4 pt-4">
-            <ColumnManager tableId={tableId} tableName="x" />
-          </div>*/}
-
         </DialogContent>
       </Dialog>
       {/* View Delete Confirmation Dialog */}
@@ -1175,6 +1173,17 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
                     columns.find((c) => c.column_id === val)?.name || "-",
                 },
               ]}
+
+              onOrderChange={async (reorderedViews) => {
+                try {
+                  for (let i = 0; i < reorderedViews.length; i++) {
+                    await handleUpdateViewPosition(reorderedViews[i].id, i + 1);
+                  }
+                  setLocalRefreshFlag((prev) => !prev); // Refresca una sola vez al final
+                } catch (err) {
+                  console.error("Error al reordenar vistas:", err);
+                }
+              }}
               getRowKey={(view) => view.id}
               onCreate={handleCreateViewLocal}
               onUpdate={handleUpdateViewLocal}
@@ -1252,26 +1261,70 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
                   name: "value",
                 },
               ]}
-              getRowKey={(_, i) => i} // índice como ID
-              rowIdKey={"column"} // solo para evitar warning
-              onCreate={(newFilter) =>
-                setActiveFilters((prev) => [...prev, newFilter])
-              }
-              onUpdate={(i, updatedFilter) => {
-                setActiveFilters((prev) =>
-                  prev.map((f, index) => (index === i ? updatedFilter : f))
+              getRowKey={(row) => row.id}
+              rowIdKey="id"
+              onCreate={(newFilter) => {
+                setActiveFilters((prev) => [...prev, newFilter]);
+                const matchingColumn = columns.find(
+                  (col) => col.name === newFilter.column && col.table_id === tableId
                 );
+                const columnId = matchingColumn?.column_id || null;
+                const visible = columnVisibility[matchingColumn?.name] || null;
+                
+                let filterToAdd = {
+                  view_id: selectedView.id,
+                  column_id: columnId,
+                  visible: visible,
+                  filter_condition: newFilter?.condition || null,
+                  filter_value: newFilter?.value || null,
+                };
+                
+                handleAddColumnToView(filterToAdd);
               }}
-              onDelete={(_, idx) => {
-                setActiveFilters((prev) => prev.filter((_, i) => i !== idx));
+              onUpdate={(_, updatedFilter) => {
+
+                setActiveFilters((prev) =>
+                  prev.map((f) => (f.id === updatedFilter.id ? updatedFilter : f))
+                );
+                const matchingColumn = columns.find(
+                  (col) => col.name === updatedFilter.column && col.table_id === tableId
+                );
+                const columnId = matchingColumn?.column_id || null;
+                const visible = columnVisibility[matchingColumn?.name] || null;
+                let filterEdited = {
+                  view_id: selectedView.id,
+                  column_id: columnId,
+                  visible: visible,
+                  filter_condition: updatedFilter?.condition || null,
+                  filter_value: updatedFilter?.value || null,
+                };
+                handleUpdateViewColumn(_, filterEdited);
               }}
-              renderForm={({ mode, item, open, onClose, onSubmit }) => {
-                const [formData, setFormData] = useState(item || {
+
+              onDelete={(id) => {
+                setActiveFilters((prev) => prev.filter((f) => f.id !== id));
+                handleDeleteViewColumn(id, selectedView.id);
+              }}
+              renderForm={({ mode, item, open, onClose, onSubmit, onDelete  }) => {
+                const [formData, setFormData] = useState({
+                  id: "",
                   column: columns[0]?.name,
                   condition: "equals",
                   value: "",
+                  onDelete: handleDelete,
                 });
-
+                useEffect(() => {
+                  if (open && mode === "create") {
+                    setFormData({
+                      id: crypto.randomUUID(),
+                      column: columns[0]?.name,
+                      condition: "equals",
+                      value: "",
+                    });
+                  } else if (mode === "edit" && item) {
+                    setFormData(item);
+                  }
+                }, [open, mode, item, columns]);
                 return (
                   <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
                     <DialogContent className="sm:max-w-md">
@@ -1324,12 +1377,20 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
                         )}
                       </div>
                       <DialogFooter className="pt-4">
-                        <Button variant="outline" onClick={onClose}>
-                          Cancelar
-                        </Button>
                         <Button onClick={() => onSubmit(formData)}>
-                          {mode === "create" ? "Agregar" : "Actualizar"}
+                          {mode === "create" ? "Agregar" : "Guardar"}
                         </Button>
+                        {mode === "edit" && typeof onDelete === "function" && (
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              onClose();
+                              onDelete(item.id);
+                            }}
+                          >
+                            Eliminar
+                          </Button>
+                        )}
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
