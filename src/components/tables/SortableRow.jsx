@@ -17,7 +17,6 @@ export default function SortableRow({
 }) {
 
 let id;
-
 if(idRow){
     id = idRow;
 } else {

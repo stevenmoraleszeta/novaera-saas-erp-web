@@ -61,6 +61,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     handleDeleteView,
     handleAddColumnToView,
     handleDeleteViewColumn,
+    handleUpdateViewColumn,
     handleUpdatePosition: handleUpdateViewPosition,
   } = useViews(tableId);
 
@@ -484,6 +485,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
               )
             ) {
               newFilters.push({
+                id: viewCol.id,
                 column: column.name,
                 condition: viewCol.filter_condition,
                 value: viewCol.filter_value,
@@ -1262,21 +1264,46 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
               getRowKey={(row) => row.id}
               rowIdKey="id"
               onCreate={(newFilter) => {
-                const filterWithId = {
-                  id: crypto.randomUUID(), 
-                  ...newFilter,
+                setActiveFilters((prev) => [...prev, newFilter]);
+                const matchingColumn = columns.find(
+                  (col) => col.name === newFilter.column && col.table_id === tableId
+                );
+                const columnId = matchingColumn?.column_id || null;
+                const visible = columnVisibility[matchingColumn?.name] || null;
+                
+                let filterToAdd = {
+                  view_id: selectedView.id,
+                  column_id: columnId,
+                  visible: visible,
+                  filter_condition: newFilter?.condition || null,
+                  filter_value: newFilter?.value || null,
                 };
-                setActiveFilters((prev) => [...prev, filterWithId]);
-                handleAddColumnToView(newFilter);
+                
+                handleAddColumnToView(filterToAdd);
               }}
               onUpdate={(_, updatedFilter) => {
+
                 setActiveFilters((prev) =>
                   prev.map((f) => (f.id === updatedFilter.id ? updatedFilter : f))
                 );
+                const matchingColumn = columns.find(
+                  (col) => col.name === updatedFilter.column && col.table_id === tableId
+                );
+                const columnId = matchingColumn?.column_id || null;
+                const visible = columnVisibility[matchingColumn?.name] || null;
+                let filterEdited = {
+                  view_id: selectedView.id,
+                  column_id: columnId,
+                  visible: visible,
+                  filter_condition: updatedFilter?.condition || null,
+                  filter_value: updatedFilter?.value || null,
+                };
+                handleUpdateViewColumn(_, filterEdited);
               }}
 
               onDelete={(id) => {
                 setActiveFilters((prev) => prev.filter((f) => f.id !== id));
+                handleDeleteViewColumn(id, selectedView.id);
               }}
               renderForm={({ mode, item, open, onClose, onSubmit, onDelete  }) => {
                 const [formData, setFormData] = useState({
@@ -1287,17 +1314,17 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
                   onDelete: handleDelete,
                 });
                 useEffect(() => {
-                  if (mode === "edit" && item) {
-                    setFormData(item);
-                  } else if (mode === "create") {
+                  if (open && mode === "create") {
                     setFormData({
                       id: crypto.randomUUID(),
                       column: columns[0]?.name,
                       condition: "equals",
                       value: "",
                     });
+                  } else if (mode === "edit" && item) {
+                    setFormData(item);
                   }
-                }, [mode, item, columns]);
+                }, [open, mode, item, columns]);
                 return (
                   <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
                     <DialogContent className="sm:max-w-md">
