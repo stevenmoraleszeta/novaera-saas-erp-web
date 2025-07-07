@@ -30,8 +30,6 @@ export default function RoleForm({
 
   const [formData, setFormData] = useState({
     name: "",
-    description: "",
-    permissions: "",
     created_by: user?.id || null,
   });
 
@@ -39,15 +37,11 @@ export default function RoleForm({
     if (initialData) {
       setFormData({
         name: initialData.name || "",
-        description: initialData.description || "",
-        permissions: initialData.permissions || "",
         created_by: user?.id || null,
       });
     } else {
       setFormData({
         name: "",
-        description: "",
-        permissions: "",
         created_by: user?.id || null,
       });
     }
@@ -94,32 +88,6 @@ export default function RoleForm({
                 onChange={(e) => handleChange("name", e.target.value)}
                 placeholder="Ej: Administrador, Usuario, Editor..."
                 required
-                disabled={loading}
-              />
-            </div>
-
-            {/* Description Field */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Descripción</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => handleChange("description", e.target.value)}
-                placeholder="Describe las responsabilidades y alcance de este rol..."
-                rows={4}
-                disabled={loading}
-              />
-            </div>
-
-            {/* Permissions Field */}
-            <div className="space-y-2">
-              <Label htmlFor="permissions">Permisos</Label>
-              <Textarea
-                id="permissions"
-                value={formData.permissions}
-                onChange={(e) => handleChange("permissions", e.target.value)}
-                placeholder="Lista de permisos separados por comas..."
-                rows={4}
                 disabled={loading}
               />
             </div>

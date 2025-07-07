@@ -8,6 +8,7 @@ import {
   getColumnsByView,
   updateViewColumn,
   deleteViewColumn,
+  updateViewPosition,
 } from "@/services/viewsService";
 
 export function useViews(tableId) {
@@ -16,6 +17,7 @@ export function useViews(tableId) {
   const [loadingViews, setLoadingViews] = useState(false);
   const [loadingColumns, setLoadingColumns] = useState(false);
   const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(null);
 
   // Auto-load views when tableId changes
   useEffect(() => {
@@ -119,6 +121,7 @@ export function useViews(tableId) {
   // Agregar columna a vista
   const handleAddColumnToView = useCallback(
     async (columnData) => {
+      console.log("cave: inside use llega ", columnData)
       try {
         const newColumn = await addColumnToView(columnData);
         if (columnData.view_id) {
@@ -166,6 +169,18 @@ export function useViews(tableId) {
     [loadColumns]
   );
 
+    const handleUpdatePosition = async (viewId, newPosition) => {
+    try {
+      setError(null);
+      setSuccess(null);
+      await updateViewPosition(viewId, newPosition);
+      setSuccess('Posición actualizada correctamente');
+    } catch (err) {
+      console.error('Error actualizando posición:', err);
+      setError(err?.response?.data?.error || 'Error al actualizar la posición');
+    }
+  };
+
   return {
     views,
     columns,
@@ -181,5 +196,6 @@ export function useViews(tableId) {
     handleAddColumnToView,
     handleUpdateViewColumn,
     handleDeleteViewColumn,
+    handleUpdatePosition,
   };
 }

@@ -25,7 +25,7 @@ import { X, Save, Trash2 } from "lucide-react";
 import useUserStore from "@/stores/userStore";
 import { useForeignKeyOptions } from "@/hooks/useForeignKeyOptions";
 import ColumnTypeSelector from "./ColumnTypeSelector";
-import ForeignKeySelector from "./ForeignKeySelector";
+import { getOrCreateJoinTable } from "@/services/tablesService";
 
 export default function ColumnForm({
   open = false,
@@ -100,6 +100,25 @@ export default function ColumnForm({
     }));
   };
 
+  const handleTypeChange = (value) => {
+    handleChange("data_type", value);
+    if (value === "foreign") {
+      handleChange("is_foreign_key", true);
+    } else {
+      handleChange("is_foreign_key", false);
+      handleChange("foreign_table_id", 0);
+      handleChange("relation_type", "");
+    }
+    
+    // Para tipos de archivo, limpiar configuraciones de foreign key
+    if (value === "file" || value === "file_array") {
+      handleChange("is_foreign_key", false);
+      handleChange("foreign_table_id", 0);
+      handleChange("foreign_column_name", "");
+      handleChange("relation_type", "");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name.trim()) {
@@ -108,7 +127,34 @@ export default function ColumnForm({
     }
     try {
       setFormError(null);
-      await onSubmit(formData);
+
+      if (
+        formData.data_type === "foreign" &&
+        formData.foreign_table_id &&
+        formData.table_id
+      ) {
+        console.log("data = ", formData)
+        await getOrCreateJoinTable(formData.table_id, formData.foreign_table_id, formData.foreign_column_name);
+      }
+
+      // Prepara el objeto para crear la columna
+      const columnData = {
+        ...formData,
+        is_foreign_key: formData.data_type === "foreign",
+        foreign_table_id: (formData.data_type === "foreign" || formData.data_type === "select") ? formData.foreign_table_id : null,
+        foreign_column_name: (formData.data_type === "foreign" || formData.data_type === "select") ? formData.foreign_column_name : null,
+      };
+
+      // Para tipos de archivo, asegurar que no tengan configuraciones de foreign key
+      if (formData.data_type === "file" || formData.data_type === "file_array") {
+        columnData.is_foreign_key = false;
+        columnData.foreign_table_id = null;
+        columnData.foreign_column_name = null;
+        columnData.relation_type = "";
+      }
+
+
+      await onSubmit(columnData);
     } catch (err) {
       const msg = err?.response?.data?.error || "Error al guardar la columna";
       setFormError(msg);
@@ -161,71 +207,137 @@ export default function ColumnForm({
               <Label>Tipo de Dato</Label>
               <ColumnTypeSelector
                 value={formData.data_type}
-                onChange={(value) => handleChange("data_type", value)}
+                onChange={handleTypeChange}
               />
             </div>
+
+            {/* Tabla Foránea para tipo foreign */}
+            {formData.data_type === "foreign" && (
+              <div className="space-y-2">
+                <Label>Tabla Foránea</Label>
+                <Select
+                  value={formData.foreign_table_id?.toString() || ""}
+                  onValueChange={(value) => handleChange("foreign_table_id", Number(value))}
+                  disabled={loading}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona una tabla" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tables
+                      .filter((table) => !table.name.startsWith('mid_'))
+                      .map((table) => (
+                        <SelectItem key={table.id} value={table.id.toString()}>
+                          {table.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Columna Foránea para tipo foreign */}
+            {formData.data_type === "foreign" && formData.foreign_table_id && (
+              <div className="space-y-2">
+                <Label>Columna Foránea</Label>
+                <Select
+                  value={formData.foreign_column_name || ""}
+                  onValueChange={(value) => handleChange("foreign_column_name", value)}
+                  disabled={loading}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona columna foránea" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(columnsByTable[formData.foreign_table_id] || []).map((col) => (
+                      <SelectItem key={col.name} value={col.name}>
+                        {col.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* --- NUEVO: Lógica separada para tipo select --- */}
+            {formData.data_type === "select" && (
+              <div className="space-y-2">
+                <Label>Tabla de origen (para select)</Label>
+                <Select
+                  value={formData.foreign_table_id?.toString() || ""}
+                  onValueChange={(value) => handleChange("foreign_table_id", Number(value))}
+                  disabled={loading}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona una tabla" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tables
+                      .filter((table) => !table.name.startsWith('mid_'))
+                      .map((table) => (
+                        <SelectItem key={table.id} value={table.id.toString()}>
+                          {table.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {formData.data_type === "select" && formData.foreign_table_id && (
+              <div className="space-y-2">
+                <Label>Campo a mostrar (para select)</Label>
+                <Select
+                  value={formData.foreign_column_name || ""}
+                  onValueChange={(value) => handleChange("foreign_column_name", value)}
+                  disabled={loading}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona campo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(columnsByTable[formData.foreign_table_id] || []).map((col) => (
+                      <SelectItem key={col.name} value={col.name}>
+                        {col.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Información para tipos de archivo */}
+            {(formData.data_type === "file" || formData.data_type === "file_array") && (
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="space-y-2">
+                  <h4 className="font-medium text-blue-900">
+                    {formData.data_type === "file" ? "Archivo individual" : "Múltiples archivos"}
+                  </h4>
+                  <div className="text-sm text-blue-800 space-y-1">
+                    <p>• Tipos permitidos: Imágenes (JPEG, PNG, GIF, WebP), PDF, Word, Excel, TXT</p>
+                    <p>• Tamaño máximo por archivo: 10MB</p>
+                    {formData.data_type === "file_array" && (
+                      <p>• Los usuarios podrán subir múltiples archivos para este campo</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Checkboxes */}
             <div className="flex gap-6">
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                 <Checkbox
-                  checked={formData.is_required}
+                  checked={formData.is_required || formData.data_type === "foreign"}
                   onCheckedChange={(checked) =>
                     handleChange("is_required", checked)
                   }
                   className="data-[state=checked]:bg-black data-[state=checked]:border-black"
+                  disabled={formData.data_type === "foreign"}
                 />
                 ¿Requerida?
               </label>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <Checkbox
-                  checked={formData.is_foreign_key}
-                  onCheckedChange={(checked) =>
-                    handleChange("is_foreign_key", checked)
-                  }
-                  className="data-[state=checked]:bg-black data-[state=checked]:border-black"
-                />
-                ¿Llave Foránea?
-              </label>
             </div>
-
-            {/* Tipo de Relación */}
-            <div className="space-y-2">
-              <Label htmlFor="relation_type">Tipo de Relación</Label>
-              <Select
-                value={formData.relation_type}
-                onValueChange={(value) => handleChange("relation_type", value)}
-                disabled={!formData.is_foreign_key || loading}
-              >
-                <SelectTrigger className="w-full p-2 bg-gray-200 rounded-none">
-                  <SelectValue placeholder="Selecciona el tipo de relación" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="one_to_one">Uno a Uno</SelectItem>
-                  <SelectItem value="one_to_many">Uno a Muchos</SelectItem>
-                  <SelectItem value="many_to_one">Muchos a Uno</SelectItem>
-                  <SelectItem value="many_to_many">Muchos a Muchos</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Foreign Key Selector */}
-            {formData.is_foreign_key && (
-              <ForeignKeySelector
-                tables={tables}
-                columnsByTable={columnsByTable}
-                selectedTableId={formData.foreign_table_id}
-                selectedColumnId={formData.foreign_column_name}
-                onChangeTable={(tableId) =>
-                  handleChange("foreign_table_id", tableId)
-                }
-                onChangeColumn={(columnId) =>
-                  handleChange("foreign_column_name", columnId)
-                }
-              />
-
-            )}
-
+            
             {/* Validaciones */}
             <div className="space-y-2">
               <Label htmlFor="validations">Validaciones</Label>

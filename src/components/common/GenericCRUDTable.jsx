@@ -7,6 +7,7 @@ import { Filter, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import SearchBar from "@/components/common/SearchBar";
 import FilterDialog from "@/components/tables/dialogs/FilterDialog";
 import SortDialog from "@/components/tables/dialogs/SortDialog";
+import useEditModeStore from "@/stores/editModeStore";
 
 export default function GenericCRUDTable({
   title,
@@ -19,11 +20,13 @@ export default function GenericCRUDTable({
   onDelete,
   renderForm,
   useFilter = true,
+  onOrderChange,
 }) {
 
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState("create");
   const [selectedItem, setSelectedItem] = useState(null);
+  const { isEditingMode } = useEditModeStore();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilterDialog, setShowFilterDialog] = useState(false);
@@ -44,9 +47,10 @@ export default function GenericCRUDTable({
   };
 
   const handleEdit = (item) => {
-    setFormMode("edit");
-    setSelectedItem(item);
-    setFormOpen(true);
+  if (!isEditingMode) return;
+  setFormMode("edit");
+  setSelectedItem(item);  
+  setFormOpen(true);
   };
 
   const filterConditions = [
@@ -81,9 +85,15 @@ export default function GenericCRUDTable({
   };
 
   const filteredData = useMemo(() => {
+
+    const implicitFilters = [
+      { column: "name", condition: "not_contains", value: "original_record_id" },
+    ];
+
+    const allFilters = [...implicitFilters, ...activeFilters];
     let result = [...data];
 
-    for (const filter of activeFilters) {
+    for (const filter of allFilters) {
       result = result.filter((row) => {
         const value = row[filter.column];
         switch (filter.condition) {
@@ -135,8 +145,8 @@ export default function GenericCRUDTable({
             ? 1
             : -1
           : aVal < bVal
-          ? 1
-          : -1;
+            ? 1
+            : -1;
       });
     }
 
@@ -183,71 +193,82 @@ export default function GenericCRUDTable({
               </span>
             </Button>
           </div>
-           )}
+        )}
       </div>
 
-  {useFilter && (
-      <div className="flex flex-wrap mb-2 items-center">
-        {activeSort?.column && (
-          <span className="inline-flex items-center text-sm font-medium mr-4">
-            {columns.find((c) => c.name === activeSort.column)?.header ||
-              activeSort.column}
-            {activeSort.direction === "asc" ? (
-              <ArrowUp className="ml-1 w-4 h-4 inline" />
-            ) : (
-              <ArrowDown className="ml-1 w-4 h-4 inline" />
-            )}
-          </span>
-        )}
-        {activeSort?.column && activeFilters.length > 0 && (
-          <div className="w-px h-4 bg-black mx-2" />
-        )}
-        {activeFilters.map((f, idx) => (
-          <span
-            key={idx}
-            className="inline-flex items-center text-sm font-medium mr-4"
-          >
-            {columns.find((c) => c.name === f.column)?.header || f.column}{" "}
-            {
-              filterConditions.find((cond) => cond.value === f.condition)
-                ?.label
-            }{" "}
-            {f.value &&
-            f.condition !== "is_null" &&
-            f.condition !== "is_not_null"
-              ? `"${f.value}"`
-              : ""}
-          </span>
-        ))}
-      </div>
-  )}
-      <div className="overflow-x-auto w-full" style={{ maxWidth: "100%" }}>
+      {useFilter && (
+        <div className="flex flex-wrap mb-2 items-center">
+          {activeSort?.column && (
+            <span className="inline-flex items-center text-sm font-medium mr-4">
+              {columns.find((c) => c.name === activeSort.column)?.header ||
+                activeSort.column}
+              {activeSort.direction === "asc" ? (
+                <ArrowUp className="ml-1 w-4 h-4 inline" />
+              ) : (
+                <ArrowDown className="ml-1 w-4 h-4 inline" />
+              )}
+            </span>
+          )}
+          {activeSort?.column && activeFilters.length > 0 && (
+            <div className="w-px h-4 bg-black mx-2" />
+          )}
+          {activeFilters.map((f, idx) => (
+            <span
+              key={idx}
+              className="inline-flex items-center text-sm font-medium mr-4"
+            >
+              {columns.find((c) => c.name === f.column)?.header || f.column}{" "}
+              {
+                filterConditions.find((cond) => cond.value === f.condition)
+                  ?.label
+              }{" "}
+              {f.value &&
+                f.condition !== "is_null" &&
+                f.condition !== "is_not_null"
+                ? `"${f.value}"`
+                : ""}
+            </span>
+          ))}
+        </div>
+      )}
+      <div
+        className="overflow-x-auto overflow-y-auto w-full"
+        style={{
+          maxWidth: "100%",
+          maxHeight: "calc(90vh - 250px)", // Ajusta este valor según tus necesidades
+        }}
+      >
         <Table
-          className="w-full"
+          className="w-full "
           style={{ minWidth: `${columns.length * 150}px` }}
           columns={columns}
           data={filteredData}
           getRowKey={getRowKey}
+          onOrderChange={onOrderChange}
           pagination={true}
           onRowClick={handleEdit}
         />
       </div>
-      {renderForm &&
-        renderForm({
-          mode: formMode,
-          item: selectedItem,
-          open: formOpen,
-          onClose: () => setFormOpen(false),
-          onSubmit: (formData) => {
-            if (formMode === "create") {
-              onCreate?.(formData);
-            } else {
-              const itemId = selectedItem?.[rowIdKey];
-              onUpdate?.(itemId, formData);
-            }
-            setFormOpen(false);
-          },
-        })}
+        {renderForm && isEditingMode &&
+          renderForm({
+            mode: formMode,
+            item: selectedItem,
+            open: formOpen,
+            onClose: () => setFormOpen(false),
+            onSubmit: (formData) => {
+              if (formMode === "create") {
+                onCreate?.(formData);
+              } else {
+                const itemId = selectedItem?.[rowIdKey];
+                onUpdate?.(itemId, formData);
+              }
+              setFormOpen(false);
+            },
+            onDelete: (id) => {
+              onDelete?.(id);
+              setFormOpen(false);
+            },
+          })}
 
       <FilterDialog
         open={showFilterDialog}
@@ -257,6 +278,7 @@ export default function GenericCRUDTable({
         filterConditions={filterConditions}
         setFilterDraft={setFilterDraft}
         onAddFilter={handleAddFilter}
+        showFilters = {true}
       />
 
       <SortDialog

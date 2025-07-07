@@ -27,10 +27,8 @@ export function useRoles() {
     try {
       const res = await axios.get('/roles', { params: { page, search } });
       setRoles((res.data || []).map(r => ({
-        id: r.rol_id,
-        name: r.rol_name,
-        description: r.rol_description,
-        active: r.rol_active
+        id: r.id,
+        name: r.name
       })));
       setTotalPages(res.data.totalPages || 1);
     } catch (err) {

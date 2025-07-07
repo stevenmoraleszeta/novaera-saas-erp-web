@@ -50,6 +50,16 @@ export default function LoginPage() {
       if (response && (response.user || response.id)) {
         const userToSet = response.user || response;
         console.log("🚀 Setting user:", userToSet);
+        console.log("🚀 User roles:", userToSet.roles);
+        console.log("🚀 User is_active:", userToSet.is_active);
+        
+        // Check if user is active
+        if (userToSet.is_active === false || userToSet.isActive === false) {
+          console.log("❌ User is inactive:", userToSet);
+          setLocalError("Tu cuenta está inactiva. Contacta al administrador para activarla.");
+          return;
+        }
+        
         setUser(userToSet);
         clearTabs();
         router.replace("/");

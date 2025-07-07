@@ -15,11 +15,13 @@ const mapUserFromBackend = (backendUser) => {
         // Map is_blocked to isBlocked  
         isBlocked: backendUser.is_blocked !== undefined ? backendUser.is_blocked :
             (backendUser.isBlocked !== undefined ? backendUser.isBlocked : false),
-        // Handle role field - can come from multiple sources
-        role: backendUser.role || backendUser.role_name || backendUser.rol_name || 'user',
+        // Handle role field - ensure it's always a string
+        role: String(backendUser.role || backendUser.role_name || backendUser.rol_name || 'Sin rol'),
         createdAt: backendUser.created_at || backendUser.createdAt,
         lastLogin: backendUser.last_login || backendUser.lastLogin,
         avatar: backendUser.avatar_url || backendUser.avatar,
+        // If roles array is present, include it
+        roles: backendUser.roles || [],
         // Preserve any other fields
         ...backendUser
     };
@@ -30,7 +32,7 @@ const enrichUserWithRole = async (user) => {
     try {
         console.log(`🔍 Enriching user ${user.id} (${user.name}) with role information...`);
 
-        if (user.role && user.role !== 'user' && user.role !== 'undefined' && user.role !== null) {
+        if (user.role && user.role !== 'user' && user.role !== 'undefined' && user.role !== null && user.role !== 'Sin rol') {
             // Si ya tiene un rol válido, no necesitamos buscar más
             console.log(`✅ User ${user.id} already has valid role: ${user.role}`);
             return user;
@@ -43,25 +45,26 @@ const enrichUserWithRole = async (user) => {
         if (userRoles && userRoles.length > 0) {
             // Tomar el primer rol (o podrías manejar múltiples roles)
             const primaryRole = userRoles[0];
-            const roleName = primaryRole.name || primaryRole.role_name || primaryRole.rol_name;
+            // Manejar el formato que viene del stored procedure: {rol_id: 1, rol_name: "Administrador"}
+            const roleName = primaryRole.rol_name || primaryRole.name || primaryRole.role_name;
 
             if (roleName) {
                 user.role = roleName;
                 console.log(`✅ Enriched user ${user.id} with role: ${user.role}`);
             } else {
-                user.role = 'user';
-                console.log(`⚠️ User ${user.id} has role data but no valid role name, defaulting to 'user'`);
+                user.role = 'Sin rol';
+                console.log(`⚠️ User ${user.id} has role data but no valid role name, defaulting to 'Sin rol'`);
             }
         } else {
-            // No hay roles asignados, usar 'user' por defecto
-            user.role = 'user';
-            console.log(`📝 User ${user.id} has no roles assigned, defaulting to 'user'`);
+            // No hay roles asignados, usar 'Sin rol' por defecto
+            user.role = 'Sin rol';
+            console.log(`📝 User ${user.id} has no roles assigned, defaulting to 'Sin rol'`);
         }
     } catch (error) {
         console.warn(`❌ Could not enrich user ${user.id} with role info:`, error.message);
-        // Si no se puede obtener el rol, usar 'user' por defecto
-        user.role = 'user';
-        console.log(`🔧 User ${user.id} role set to 'user' due to error`);
+        // Si no se puede obtener el rol, usar 'Sin rol' por defecto
+        user.role = 'Sin rol';
+        console.log(`🔧 User ${user.id} role set to 'Sin rol' due to error`);
     }
 
     console.log(`🎯 Final role for user ${user.id}: ${user.role}`);
@@ -538,7 +541,18 @@ export async function getUserRoles(userId) {
         const response = await axios.get(`/roles/user/${userId}`);
         const userRoles = response.data;
         console.log('User roles received:', userRoles);
-        return userRoles;
+        
+        // Normalizar el formato de los roles
+        const normalizedRoles = userRoles.map(role => ({
+            id: role.rol_id || role.id,
+            name: role.rol_name || role.name,
+            // Mantener formato original también
+            rol_id: role.rol_id || role.id,
+            rol_name: role.rol_name || role.name
+        }));
+        
+        console.log('Normalized roles:', normalizedRoles);
+        return normalizedRoles;
     } catch (error) {
         console.warn('Error fetching user roles:', error.message);
         return [];

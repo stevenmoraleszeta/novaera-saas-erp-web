@@ -7,6 +7,7 @@ const mapViewFromBackend = (backendView) => ({
   name: backendView.name,
   sortBy: backendView.sort_by,
   sortDirection: backendView.sort_direction,
+  position_num: backendView.position_num,
   columns: backendView.columns || [], // esto puede llenarse aparte
 });
 
@@ -15,6 +16,7 @@ const mapViewToBackend = (frontendView) => ({
   table_id: frontendView.tableId,
   name: frontendView.name,
   sort_by: frontendView.sort_by,
+  position_num: frontendView.position_num,
   sort_direction: frontendView.sort_direction,
 });
 
@@ -63,6 +65,7 @@ export async function updateView(id, updatedData) {
 // Actualizar columna de vista
 export async function updateViewColumn(id, updatedData) {
   const response = await axios.put(`/views/columns/${id}`, updatedData);
+  console.log("kino tries:", response )
   return response.data;
 }
 
@@ -70,4 +73,11 @@ export async function updateViewColumn(id, updatedData) {
 export async function deleteViewColumn(id) {
   const response = await axios.delete(`/views/columns/${id}`);
   return response.data;
+}
+
+export async function updateViewPosition(view_id, newPosition) {
+  const res = await axios.patch(`/views/${view_id}/update_views`, {
+    position: newPosition,
+  });
+  return res.data.message; // o lo que devuelva el backend
 }

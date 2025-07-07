@@ -27,8 +27,8 @@ export default function UserList({
   onRefresh,
 }) {
   const [sortConfig, setSortConfig] = useState({
-    key: "createdAt",
-    direction: "desc",
+    key: "name",
+    direction: "asc",
   });
 
   const handleSort = (newSortConfig) => {
@@ -58,8 +58,13 @@ export default function UserList({
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold text-gray-900">Usuarios</h1>
           <Badge variant="secondary" className="text-sm">
-            {totalItems} usuarios
+            {searchQuery ? `${totalItems} de ${totalItems} usuarios` : `${totalItems} usuarios`}
           </Badge>
+          {searchQuery && (
+            <Badge variant="outline" className="text-sm text-blue-600 border-blue-200">
+              Filtrado por: "{searchQuery}"
+            </Badge>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -90,9 +95,9 @@ export default function UserList({
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
           <SearchBar
-            placeholder="Buscar usuarios..."
+            placeholder="Buscar usuarios por nombre, email o rol..."
             value={searchQuery}
-            onChange={onSearch}
+            onSearch={onSearch}
             loading={loading}
           />
         </div>
@@ -116,6 +121,8 @@ export default function UserList({
           onToggleStatus={handleToggleStatus}
           sortConfig={sortConfig}
           onSort={handleSort}
+          isEditingMode={isEditingMode}
+          searchQuery={searchQuery}
         />
       </div>
 
