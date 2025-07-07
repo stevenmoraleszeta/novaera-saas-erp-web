@@ -16,8 +16,24 @@ import Modal from "./Modal";
 import DynamicRecordFormDialog from "../records/DynamicRecordFormDialog";
 import FileUpload from "./FileUpload";
 import FileDisplay from "./FileDisplay";
+import DateFieldWithNotifications from "../records/DateFieldWithNotifications";
+import AssignedUsersCell from "../tables/AssignedUsersCell";
 
-export default function FieldRenderer({ id, column, value, onChange, error, colName }) {
+export default function FieldRenderer({ 
+  id, 
+  column, 
+  value, 
+  onChange, 
+  error, 
+  colName, 
+  tableId, 
+  recordId, 
+  isEditing = false,
+  pendingNotifications = [],
+  onAddPendingNotification,
+  onRemovePendingNotification,
+  createdRecordId
+}) {
   const baseClassName = `w-full ${error ? "border-red-500 focus:border-red-500" : ""}`;
   const [foreignOptions, setForeignOptions] = useState([]);
   const { users, loadUsers } = useUsers();
@@ -110,6 +126,20 @@ export default function FieldRenderer({ id, column, value, onChange, error, colN
       );
     }
 
+    // Tipo especial: "assigned_users"
+    if (column.data_type === "assigned_users") {
+      return (
+        <AssignedUsersCell
+          value={value || []}
+          onChange={(newUsers) => onChange({ target: { value: newUsers } })}
+          tableId={tableId}
+          recordId={recordId}
+          isEditing={isEditing}
+          className="w-full"
+        />
+      );
+    }
+
 
 
   // Resto de tipos
@@ -173,24 +203,40 @@ export default function FieldRenderer({ id, column, value, onChange, error, colN
 
     case "date":
       return (
-        <Input
+        <DateFieldWithNotifications
           id={id}
           type="date"
           value={value || ""}
           onChange={onChange}
           className={baseClassName}
+          column={column}
+          tableId={tableId}
+          recordId={recordId}
+          isEditing={isEditing}
+          pendingNotifications={pendingNotifications}
+          onAddPendingNotification={onAddPendingNotification}
+          onRemovePendingNotification={onRemovePendingNotification}
+          createdRecordId={createdRecordId}
         />
       );
 
     case "datetime":
     case "timestamp":
       return (
-        <Input
+        <DateFieldWithNotifications
           id={id}
           type="datetime-local"
           value={value || ""}
           onChange={onChange}
           className={baseClassName}
+          column={column}
+          tableId={tableId}
+          recordId={recordId}
+          isEditing={isEditing}
+          pendingNotifications={pendingNotifications}
+          onAddPendingNotification={onAddPendingNotification}
+          onRemovePendingNotification={onRemovePendingNotification}
+          createdRecordId={createdRecordId}
         />
       );
 

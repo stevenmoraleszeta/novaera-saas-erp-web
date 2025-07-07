@@ -15,6 +15,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import LogicalTableDataView from "@/components/tables/LogicalTableDataView";
 import axios from "@/lib/axios";
+import scheduledNotificationsService from '@/services/scheduledNotificationsService';
+import { setAssignedUsersForRecord } from '@/services/recordAssignedUsersService';
 import { X } from "lucide-react";
 
 export default function DynamicRecordFormDialog({
@@ -39,15 +41,19 @@ export default function DynamicRecordFormDialog({
   const [intermediateTableId, setIntermediateTableId] = useState(null);
   const [columnName, setcolumnName] = useState(null);
   const [tables, setTables] = useState([]);
+  const [pendingNotifications, setPendingNotifications] = useState([]);
+  const [createdRecordId, setCreatedRecordId] = useState(null);
 
   useEffect(() => {
     if (!tableId || !open) return;
     (async () => {
       try {
         const cols = await getLogicalTableStructure(tableId);
-        setColumns(cols);
+        // Filtrar columnas virtuales que no existen en la base de datos
+        const realColumns = cols.filter(col => col.name !== 'assigned_users');
+        setColumns(realColumns);
         const initialValues = {};
-        cols.forEach((col) => {
+        realColumns.forEach((col) => {
           if (foreignForm && col.name === "original_record_id") {
             initialValues[col.name] = colName.column_id;
             return;
@@ -141,10 +147,50 @@ export default function DynamicRecordFormDialog({
       let result;
       if (mode === "create") {
         result = await createLogicalTableRecord(tableId, values);
+        
+        // Si se creó el registro exitosamente y hay notificaciones pendientes
+        if (result && result.id && pendingNotifications.length > 0) {
+          setCreatedRecordId(result.id);
+          
+          // Recopilar todos los usuarios asignados de todas las notificaciones
+          const allAssignedUsers = new Set();
+          
+          // Enviar notificaciones pendientes
+          for (const notification of pendingNotifications) {
+            try {
+              await scheduledNotificationsService.createScheduledNotification({
+                table_id: parseInt(tableId),
+                record_id: result.id,
+                column_id: notification.columnId,
+                target_date: notification.targetDate,
+                notification_title: notification.title,
+                notification_message: notification.message,
+                notify_before_days: notification.notifyBeforeDays,
+                assigned_users: notification.assignedUsers
+              });
+              
+              // Agregar usuarios asignados al conjunto
+              notification.assignedUsers.forEach(userId => allAssignedUsers.add(userId));
+            } catch (notifError) {
+              console.error('Error creating notification:', notifError);
+            }
+          }
+          
+          // Asignar usuarios al registro si hay usuarios asignados
+          if (allAssignedUsers.size > 0) {
+            try {
+              await setAssignedUsersForRecord(result.id, Array.from(allAssignedUsers));
+            } catch (assignError) {
+              console.error('Error assigning users to record:', assignError);
+            }
+          }
+          
+          setPendingNotifications([]);
+        }
       } else if (mode === "edit" && record) {
         result = await updateLogicalTableRecord(record.id, values, lastPosition);
-
       }
+      
       if (onSubmitSuccess) onSubmitSuccess(result);
       if (mode === "create") {
         const initialValues = {};
@@ -169,6 +215,7 @@ export default function DynamicRecordFormDialog({
         });
         setValues(initialValues);
         setErrors({});
+        setCreatedRecordId(null);
       }
       onOpenChange?.(false);
     } catch (err) {
@@ -189,6 +236,22 @@ export default function DynamicRecordFormDialog({
     setForeignModalColumn(col);
     setIntermediateTableId(interTable ? interTable.id : null);
   };
+
+  // Funciones para manejar notificaciones pendientes
+  const addPendingNotification = useCallback((columnId, targetDate, title, message, notifyBeforeDays, assignedUsers) => {
+    setPendingNotifications(prev => [...prev, {
+      columnId,
+      targetDate,
+      title,
+      message,
+      notifyBeforeDays,
+      assignedUsers
+    }]);
+  }, []);
+
+  const removePendingNotification = useCallback((index) => {
+    setPendingNotifications(prev => prev.filter((_, i) => i !== index));
+  }, []);
 
   if (!open) return null;
 
@@ -257,6 +320,13 @@ return (
                         )
                       }
                       error={errors[col.name]}
+                      tableId={tableId}
+                      recordId={record?.id}
+                      isEditing={mode === "edit"}
+                      pendingNotifications={pendingNotifications}
+                      onAddPendingNotification={addPendingNotification}
+                      onRemovePendingNotification={removePendingNotification}
+                      createdRecordId={createdRecordId}
                     />
                   )}
                   {errors[col.name] && (

@@ -14,7 +14,8 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Eye
+  Eye,
+  Users
 } from "lucide-react";
 import useEditModeStore from "@/stores/editModeStore";
 import DynamicRecordFormDialog from "../records/DynamicRecordFormDialog";
@@ -45,6 +46,8 @@ import GenericCRUDTable from "../common/GenericCRUDTable";
 import { FileTableCell } from "../common/FileDisplay";
 import useUserPermissions from "@/hooks/useUserPermissions";
 import ProtectedSection from "../common/ProtectedSection";
+import AssignedUsersCell from "./AssignedUsersCell";
+import { hasAssignedUsersInTable, getAssignedUsersStatsForTable } from "@/services/recordAssignedUsersService";
 
 export default function LogicalTableDataView({ tableId, refresh, colName, constFilter, hiddenColumns }) {
   const { isEditingMode } = useEditModeStore();
@@ -92,6 +95,10 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   const [activeSort, setActiveSort] = useState(null);
   const [activeFilters, setActiveFilters] = useState([]);
   const [columnVisibility, setColumnVisibility] = useState({});
+
+  // Assigned users state
+  const [hasAssignedUsers, setHasAssignedUsers] = useState(false);
+  const [assignedUsersStats, setAssignedUsersStats] = useState(null);
 
   // View management state
   const [selectedView, setSelectedView] = useState(null);
@@ -193,6 +200,33 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   }
   }, [views, columns, selectedView]);
 
+  // Verificar si hay usuarios asignados en la tabla
+  useEffect(() => {
+    const checkAssignedUsers = async () => {
+      if (!tableId) return;
+      
+      try {
+        console.log('Checking assigned users for table:', tableId);
+        const hasUsers = await hasAssignedUsersInTable(tableId);
+        console.log('hasUsers result:', hasUsers);
+        setHasAssignedUsers(hasUsers);
+        
+        if (hasUsers) {
+          const stats = await getAssignedUsersStatsForTable(tableId);
+          console.log('stats result:', stats);
+          setAssignedUsersStats(stats);
+        } else {
+          setAssignedUsersStats(null);
+        }
+      } catch (error) {
+        console.error('Error checking assigned users:', error);
+        setHasAssignedUsers(false);
+      }
+    };
+
+    checkAssignedUsers();
+  }, [tableId, localRefreshFlag]);
+
   const handleDeleteRecord = async (record) => {
     setDeleteConfirmRecord(record);
   };
@@ -213,34 +247,87 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     setDeleteConfirmRecord(null);
   };
 
-  const tableColumns = columns
-    .filter((col) => columnVisibility[col.name] !== false &&
-    !(hiddenColumns || []).includes(col.name))
-    .map((col) => ({
-      key: col.name,
-      header: col.name,
-      width: col.data_type === "int" ? "80px" : "auto",
-        render: (value, row) => {
-          const cellValue = row.record_data ? row.record_data[col.name] : row[col.name];
-          
-          // Renderizar archivos de manera especial
-          if (col.data_type === "file" || col.data_type === "file_array") {
+  const tableColumns = useMemo(() => {
+    let cols = columns
+      .filter((col) => columnVisibility[col.name] !== false &&
+      !(hiddenColumns || []).includes(col.name))
+      .map((col) => ({
+        key: col.name,
+        header: col.name,
+        width: col.data_type === "int" ? "80px" : "auto",
+          render: (value, row) => {
+            const cellValue = row.record_data ? row.record_data[col.name] : row[col.name];
+            
+            // Renderizar archivos de manera especial
+            if (col.data_type === "file" || col.data_type === "file_array") {
+              return (
+                <FileTableCell 
+                  value={cellValue} 
+                  multiple={col.data_type === "file_array"} 
+                />
+              );
+            }
+            
+            // Renderizar usuarios asignados
+            if (col.data_type === "assigned_users") {
+              return (
+                <AssignedUsersCell
+                  value={cellValue}
+                  onChange={() => {
+                    // El componente AssignedUsersCell maneja la actualización directamente
+                    // Solo triggeamos un refresh para actualizar la UI
+                    setLocalRefreshFlag(prev => !prev);
+                  }}
+                  tableId={tableId}
+                  recordId={row.id}
+                  isEditing={isEditingMode}
+                  className="assigned-users-cell"
+                />
+              );
+            }
+            
+            // Renderizar otros tipos de datos
             return (
-              <FileTableCell 
-                value={cellValue} 
-                multiple={col.data_type === "file_array"} 
-              />
+              <span className="text-sm">
+                {cellValue || "-"}
+              </span>
             );
-          }
-          
-          // Renderizar otros tipos de datos
+          },
+      }));
+
+    // Agregar columna de usuarios asignados si hay usuarios asignados en la tabla
+    if (hasAssignedUsers && !cols.some(col => col.key === 'assigned_users')) {
+      console.log('Adding assigned users column, hasAssignedUsers:', hasAssignedUsers);
+      cols.push({
+        key: 'assigned_users',
+        header: 'Usuarios Asignados',
+        width: '200px',
+        render: (value, row) => {
           return (
-            <span className="text-sm">
-              {cellValue || "-"}
-            </span>
+            <AssignedUsersCell
+              value={[]} // Se cargarán desde el backend
+              onChange={() => {
+                // Trigger refresh para actualizar la UI
+                setLocalRefreshFlag(prev => !prev);
+              }}
+              tableId={tableId}
+              recordId={row.id}
+              isEditing={isEditingMode}
+              className="assigned-users-cell"
+            />
           );
         },
-    }));
+      });
+    } else {
+      console.log('Not adding assigned users column:', {
+        hasAssignedUsers,
+        hasAssignedUsersColumn: cols.some(col => col.key === 'assigned_users')
+      });
+    }
+
+    console.log('Final columns:', cols.map(c => c.key));
+    return cols;
+  }, [columns, columnVisibility, hiddenColumns, hasAssignedUsers, tableId, isEditingMode]);
 
   // Add column management actions to table headers when edit mode changes
   const tableColumnsWithActions = useMemo(() => {
@@ -741,6 +828,8 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
           >
             <Eye className="w-5 h-5" />
           </Button>
+          
+         
           {canCreate && (
             <Button
               onClick={() => setShowAddRecordDialog(true)}
