@@ -22,6 +22,8 @@ const DATA_TYPES = [
   { label: "Selección", value: "select" },
   { label: "Archivo", value: "file" },
   { label: "Múltiples archivos", value: "file_array" },
+  { label: "Usuario", value: "user" },
+  { label: "Usuarios Asignados", value: "assigned_users" },
   { label: "JSON", value: "json" },
   { label: "UUID", value: "uuid" },
 ];
