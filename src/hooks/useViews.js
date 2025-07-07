@@ -28,17 +28,14 @@ export function useViews(tableId) {
 
   // Cargar vistas de una tabla
   const loadViews = useCallback(async () => {
-    console.log("cave: LOADEDS VIEWS")
     if (!tableId) return;
 
     setLoadingViews(true);
     setError(null);
     try {
       const data = await getViewsByTable(tableId);
-      console.log("cave: data", data, "de" , tableId)
       setViews(data);
     } catch (err) {
-      console.log("cave: error de carga", err)
       setError(err.message || "Error loading views");
     } finally {
       setLoadingViews(false);
@@ -75,7 +72,6 @@ export function useViews(tableId) {
   const handleCreateView = useCallback(
     async (viewData) => {
       try {
-        console.log("cave: crea en el use", viewData);
         const newView = await createView(viewData);
         await loadViews();
         return newView;
@@ -125,6 +121,7 @@ export function useViews(tableId) {
   // Agregar columna a vista
   const handleAddColumnToView = useCallback(
     async (columnData) => {
+      console.log("cave: inside use llega ", columnData)
       try {
         const newColumn = await addColumnToView(columnData);
         if (columnData.view_id) {

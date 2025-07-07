@@ -26,6 +26,7 @@ export default function FilterDialog({
   onAddFilter,
   columnVisibility,
   setColumnVisibility,
+  showFilters = false,
 }) {
   
   return (
@@ -35,7 +36,9 @@ export default function FilterDialog({
           <DialogTitle>Mostrar u ocultar columnas</DialogTitle>
         </DialogHeader>
 
-        {/* FILTROS 
+        {/* FILTROS */}
+        {showFilters && (
+          
         <div className="flex flex-col gap-4 mb-6 border-b pb-6">
           <h4 className="text-sm font-semibold">Agregar Filtro</h4>
 
@@ -99,7 +102,9 @@ export default function FilterDialog({
           >
             Agregar filtro
           </Button>
-        </div> */}
+        </div> 
+
+            )}
 
         {/* Column visibility (opcional) */}
         {columnVisibility && setColumnVisibility && (

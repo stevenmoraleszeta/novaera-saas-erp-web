@@ -23,7 +23,6 @@ const mapViewToBackend = (frontendView) => ({
 // Crear una vista
 export async function createView(viewData) {
   const payload = mapViewToBackend(viewData);
-  console.log("cave: crea en el service payload", payload);
   const response = await axios.post("/views", payload);
   return response.data;
 }
@@ -33,7 +32,6 @@ export async function getViewsByTable(tableId) {
   const response = await axios.get(`/views`, {
     params: { table_id: tableId },
   });
-     console.log("cave: INTENTA JALAR RESP, ", response.data);
   return response.data.map(mapViewFromBackend);
 }
 

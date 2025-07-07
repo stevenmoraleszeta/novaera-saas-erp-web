@@ -249,22 +249,26 @@ export default function GenericCRUDTable({
           onRowClick={handleEdit}
         />
       </div>
-      {renderForm && isEditingMode &&
-        renderForm({
-          mode: formMode,
-          item: selectedItem,
-          open: formOpen,
-          onClose: () => setFormOpen(false),
-          onSubmit: (formData) => {
-            if (formMode === "create") {
-              onCreate?.(formData);
-            } else {
-              const itemId = selectedItem?.[rowIdKey];
-              onUpdate?.(itemId, formData);
-            }
-            setFormOpen(false);
-          },
-        })}
+        {renderForm && isEditingMode &&
+          renderForm({
+            mode: formMode,
+            item: selectedItem,
+            open: formOpen,
+            onClose: () => setFormOpen(false),
+            onSubmit: (formData) => {
+              if (formMode === "create") {
+                onCreate?.(formData);
+              } else {
+                const itemId = selectedItem?.[rowIdKey];
+                onUpdate?.(itemId, formData);
+              }
+              setFormOpen(false);
+            },
+            onDelete: (id) => {
+              onDelete?.(id);
+              setFormOpen(false);
+            },
+          })}
 
       <FilterDialog
         open={showFilterDialog}
@@ -274,6 +278,7 @@ export default function GenericCRUDTable({
         filterConditions={filterConditions}
         setFilterDraft={setFilterDraft}
         onAddFilter={handleAddFilter}
+        showFilters = {true}
       />
 
       <SortDialog
