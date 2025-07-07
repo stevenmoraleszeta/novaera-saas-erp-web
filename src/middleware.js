@@ -51,12 +51,12 @@ export function middleware(request) {
   }
 
   // If user is not authenticated and tries to access protected routes, redirect to login
-  if (isProtectedRoute && !token) {
-    console.log(
-      `🔍 Middleware: Unauthenticated user accessing protected route, redirecting to /login`
-    );
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
+  // if (isProtectedRoute && !token) {
+  //   console.log(
+  //     `🔍 Middleware: Unauthenticated user accessing protected route, redirecting to /login`
+  //   );
+  //   return NextResponse.redirect(new URL("/login", request.url));
+  // }
 
   console.log(`🔍 Middleware: Allowing access to ${pathname}`);
   return NextResponse.next();
