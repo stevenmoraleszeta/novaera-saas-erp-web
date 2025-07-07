@@ -255,10 +255,15 @@ export default function DynamicRecordFormDialog({
 
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/30 flex items-start justify-center pt-30 px-8">
-      <div className={`bg-white rounded-lg shadow-lg ${foreignModalOpen ? "w-[900px]" : "w-[1150px]"} min-h-[80vh] overflow-y-auto p-4 relative z-10  `}>
-      <div className="flex justify-between items-center mb-4">
+return (
+  <div className="fixed inset-0 z-50 bg-black/30 flex items-start justify-center pt-30 px-8">
+    <div
+      className={`bg-white rounded-lg shadow-lg ${
+        foreignModalOpen ? "w-[900px]" : "w-[1150px]"
+      } relative z-10 min-h-[80vh] max-h-[90vh] flex flex-col overflow-hidden`}
+    >
+      {/* Header */}
+      <div className="flex justify-between items-center p-4 border-b">
         <h2 className="text-2xl font-bold">
           {mode === "create" ? "Nuevo Registro" : "Editar Registro"}
         </h2>
@@ -270,6 +275,9 @@ export default function DynamicRecordFormDialog({
           <X className="w-6 h-6" />
         </button>
       </div>
+
+      {/* Scrollable form */}
+      <div className="overflow-y-auto px-4 py-2 flex-1">
         {columns.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <Plus className="w-12 h-12 mx-auto mb-3 text-gray-300" />
@@ -282,16 +290,35 @@ export default function DynamicRecordFormDialog({
               if (foreignForm && col.name === "original_record_id") return null;
               return (
                 <div key={col.column_id} className="space-y-2">
-                  <Label htmlFor={`field-${col.name}`}>{col.name}{col.is_required && <Badge className="ml-1 text-xs text-destructive bg-transparent">*Requerido</Badge>}</Label>
+                  <Label htmlFor={`field-${col.name}`}>
+                    {col.name}
+                    {col.is_required && (
+                      <Badge className="ml-1 text-xs text-destructive bg-transparent">
+                        *Requerido
+                      </Badge>
+                    )}
+                  </Label>
                   {col.data_type === "foreign" ? (
-                    <Button type="button" onClick={() => handleOpenForeignModal(col)}>Abrir tabla</Button>
+                    <Button
+                      type="button"
+                      onClick={() => handleOpenForeignModal(col)}
+                    >
+                      Abrir tabla
+                    </Button>
                   ) : (
                     <FieldRenderer
                       colName={colName?.foreign_column_name}
                       id={`field-${col.name}`}
                       column={col}
                       value={values[col.name]}
-                      onChange={(e) => handleChange(col.name, e.target.type === "checkbox" ? e.target.checked : e.target.value)}
+                      onChange={(e) =>
+                        handleChange(
+                          col.name,
+                          e.target.type === "checkbox"
+                            ? e.target.checked
+                            : e.target.value
+                        )
+                      }
                       error={errors[col.name]}
                       tableId={tableId}
                       recordId={record?.id}
@@ -317,42 +344,69 @@ export default function DynamicRecordFormDialog({
                 <AlertDescription>{submitError}</AlertDescription>
               </Alert>
             )}
-            <div className="flex gap-2 pt-4 border-t">
-              <Button type="submit" disabled={loading} className="flex-1 max-w-40">
-                {loading ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" /> Guardando...</> : <>Guardar</>}
-              </Button>
-              {mode === "edit" && onDelete && (
-                <Button type="button" variant="outline" onClick={() => onDelete(record)} disabled={loading} className="flex-1 max-w-40">Eliminar</Button>
-              )}
-            </div>
           </form>
         )}
       </div>
 
-      {foreignModalOpen && (
-        <div className="bg-white rounded-lg shadow-lg w-[900px] min-h-[80vh] overflow-y-auto p-4 ml-4 relative z-20">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">
-              {foreignModalColumn ? `Registros relacionados de ${foreignModalColumn.foreign_table_name || 'Tabla intermedia'}` : 'Registros relacionados'}
-            </h2>
-             <button
+      {/* Footer con botones */}
+      <div className="border-t p-4 flex gap-2 justify-start">
+        <Button type="submit" onClick={handleSubmit} disabled={loading}>
+          {loading ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+              Guardando...
+            </>
+          ) : (
+            <>Guardar</>
+          )}
+        </Button>
+        {mode === "edit" && onDelete && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onDelete(record)}
+            disabled={loading}
+          >
+            Eliminar
+          </Button>
+        )}
+      </div>
+    </div>
+
+    {/* Modal de tabla relacionada */}
+    {foreignModalOpen && (
+      <div className="bg-white rounded-lg shadow-lg w-[900px] min-h-[80vh] overflow-y-auto p-4 ml-4 relative z-20">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold">
+            {foreignModalColumn
+              ? `Registros relacionados de ${
+                  foreignModalColumn.foreign_table_name || "Tabla intermedia"
+                }`
+              : "Registros relacionados"}
+          </h2>
+          <button
             onClick={() => setForeignModalOpen(false)}
             className="text-gray-500 hover:text-gray-700"
             aria-label="Cerrar modal relacionado"
           >
             <X className="w-6 h-6" />
           </button>
-          </div>
-          {foreignModalColumn && intermediateTableId && (
-            <LogicalTableDataView
-              tableId={intermediateTableId}
-              colName={columnName}
-              constFilter={{ column: "original_record_id", condition: "equals", value: columnName?.column_id ?? "" }}
-              hiddenColumns={["original_record_id"]}
-            />
-          )}
         </div>
-      )}
-    </div>
-  );
+        {foreignModalColumn && intermediateTableId && (
+          <LogicalTableDataView
+            tableId={intermediateTableId}
+            colName={columnName}
+            constFilter={{
+              column: "original_record_id",
+              condition: "equals",
+              value: columnName?.column_id ?? "",
+            }}
+            hiddenColumns={["original_record_id"]}
+          />
+        )}
+      </div>
+    )}
+  </div>
+);
+
 }
