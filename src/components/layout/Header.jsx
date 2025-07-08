@@ -39,12 +39,12 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Desactivar modo edición cuando cambie la ruta
+  // Solo desactivar modo edición si sales de la vista principal
   useEffect(() => {
-    if (isEditingMode) {
+    if (isEditingMode && pathname !== "/") {
       resetEditMode();
     }
-  }, [pathname, resetEditMode]); // Removido isEditingMode de las dependencias
+  }, [pathname, resetEditMode, isEditingMode]);
 
   const handleNavigation = (path) => {
     router.push(path);

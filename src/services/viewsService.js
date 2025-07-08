@@ -65,7 +65,6 @@ export async function updateView(id, updatedData) {
 // Actualizar columna de vista
 export async function updateViewColumn(id, updatedData) {
   const response = await axios.put(`/views/columns/${id}`, updatedData);
-  console.log("kino tries:", response )
   return response.data;
 }
 

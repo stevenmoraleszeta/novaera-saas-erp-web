@@ -47,38 +47,7 @@ export default function ModulesPage() {
     formError: null,
   });
 
-  const [hydrating, setHydrating] = useState(true);
-
   const router = useRouter();
-
-  useEffect(() => {
-    // Espera a que UserInitializer intente hidratar el usuario
-    if (user) {
-      setHydrating(false);
-    } else {
-      // Espera 1 segundo para permitir la hidratación desde el backend
-      const timeout = setTimeout(() => setHydrating(false), 1000);
-      return () => clearTimeout(timeout);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (!hydrating && !user) {
-      console.log("[PROTECCION] No user en store, redirigiendo a /login");
-      // Prueba petición manual a /auth/me para ver si responde correctamente
-      fetch("/api/auth/me", { credentials: "include" })
-        .then(async (res) => {
-          const data = await res.json();
-          console.log("[PROTECCION] Respuesta /auth/me:", data);
-        })
-        .catch((err) => {
-          console.log("[PROTECCION] Error al consultar /auth/me:", err);
-        });
-      router.replace("/login");
-    } else {
-      console.log("[PROTECCION] Usuario en store:", user);
-    }
-  }, [hydrating, user, router]);
 
   const handleDeleteClick = (module) => {
     setModuleToDelete(module);
@@ -147,21 +116,6 @@ export default function ModulesPage() {
       }));
     }
   };
-
-  if (hydrating) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <span className="text-lg text-gray-500">Cargando usuario...</span>
-      </div>
-    );
-  }
-
-  // FORZAR mostrar la vista principal aunque no haya usuario en el store
-  // Esto ignora la protección de ruta temporalmente para depuración
-  // Elimina este if para restaurar la protección
-  // if (!user) {
-  //   return null;
-  // }
 
   return (
     <div className="max-w-6xl mx-auto">

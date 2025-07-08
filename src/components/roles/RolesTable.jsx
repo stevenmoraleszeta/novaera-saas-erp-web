@@ -173,7 +173,6 @@ export default function RolesTable({
                   {renderSortIcon('name')}
                 </div>
               </th>
-              {!isEditingMode && <th className="actions-column">Acciones</th>}
             </tr>
           </thead>
           <tbody>
@@ -211,22 +210,6 @@ export default function RolesTable({
                     </div>
                   </div>
                 </td>
-                {!isEditingMode && (
-                  <td className="role-actions">
-                    <div className="actions-group">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onViewPermissions && onViewPermissions(role);
-                        }}
-                        className={`action-button view ${isRoleSelectedForPermissions(role) ? 'selected' : ''}`}
-                        title="Ver permisos"
-                      >
-                        <Shield className="w-4 h-4 mr-1" /> Permisos
-                      </button>
-                    </div>
-                  </td>
-                )}
               </tr>
             ))}
           </tbody>

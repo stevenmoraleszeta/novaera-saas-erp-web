@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import SelectionField from "./SelectionField";
 import { Label } from "@/components/ui/label";
 import { getLogicalTableRecords } from "@/services/logicalTableService";
 import Modal from "./Modal";
@@ -43,7 +44,11 @@ export default function FieldRenderer({
   useEffect(() => {
     async function loadOptions() {
       try {
-        if (column.data_type === "select" || (column.is_foreign_key && column.foreign_table_id && column.foreign_column_name)) {
+        // Solo cargar opciones si hay una tabla foránea válida
+        if ((column.data_type === "select" || column.is_foreign_key) && 
+            column.foreign_table_id && 
+            column.foreign_table_id !== null && 
+            column.foreign_column_name) {
           const records = await getLogicalTableRecords(column.foreign_table_id);
           let opts;
           if(!colName){
@@ -71,8 +76,22 @@ export default function FieldRenderer({
   }, [column]);
 
 
-    // Llave foránea: mostrar opciones desde tabla relacionada
-   if (column.data_type === "select" || (column.is_foreign_key && column.foreign_table_id && column.foreign_column_name)) {
+    // Tipo selección: usar SelectionField que maneja opciones personalizadas y de tabla
+    if (column.data_type === "select") {
+      return (
+        <SelectionField
+          columnId={column.column_id}
+          value={value}
+          onChange={(val) => onChange({ target: { value: val === "none" ? "" : val } })}
+          required={column.is_required}
+          label={column.name}
+          placeholder={`Selecciona ${column.name}`}
+        />
+      );
+    }
+
+    // Llave foránea: mostrar opciones desde tabla relacionada (mantener lógica existente)
+    if (column.is_foreign_key && column.foreign_table_id && column.foreign_column_name) {
       return (
         <Select
           value={value?.toString() || "none"}

@@ -348,8 +348,8 @@ export default function AssignedUsersCell({
         .user-avatar {
           width: 1.5rem;
           height: 1.5rem;
-          background: linear-gradient(135deg, #7ed957, #6bb946);
-          color: white;
+          background: linear-gradient(135deg, #f3f4f6, #d1d5db); /* gris claro a gris */
+          color: #374151; /* gris oscuro para la letra */
           border-radius: 50%;
           display: flex;
           align-items: center;
@@ -362,8 +362,8 @@ export default function AssignedUsersCell({
         .user-avatar-small {
           width: 1.25rem;
           height: 1.25rem;
-          background: linear-gradient(135deg, #7ed957, #6bb946);
-          color: white;
+          background: linear-gradient(135deg, #f3f4f6, #d1d5db);
+          color: #374151;
           border-radius: 50%;
           display: flex;
           align-items: center;

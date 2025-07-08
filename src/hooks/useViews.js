@@ -29,7 +29,7 @@ export function useViews(tableId) {
   // Cargar vistas de una tabla
   const loadViews = useCallback(async () => {
     if (!tableId) return;
-
+    console.log("wet loadViews")
     setLoadingViews(true);
     setError(null);
     try {
@@ -51,6 +51,7 @@ export function useViews(tableId) {
       try {
         const data = await getColumnsByView(viewId);
         setColumns((prev) => ({ ...prev, [viewId]: data }));
+        console.log("wet aqui si,", data)
         return data; // <-- devuélvelo
       } catch (err) {
         setError(err.message || "Error loading columns");
@@ -62,12 +63,17 @@ export function useViews(tableId) {
 
   // Get columns for a specific view
   const getColumnsForView = useCallback(
-    (viewId) => {
-      return columns[viewId] || [];
+    async (viewId) => {
+      try {
+        const data = await getColumnsByView(viewId);
+        return data;
+      } catch (err) {
+        console.error("Error al obtener columnas para la vista:", err);
+        return [];
+      }
     },
-    [columns]
+    []
   );
-
   // Crear una nueva vista
   const handleCreateView = useCallback(
     async (viewData) => {

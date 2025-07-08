@@ -25,6 +25,8 @@ import { X, Save, Trash2 } from "lucide-react";
 import useUserStore from "@/stores/userStore";
 import { useForeignKeyOptions } from "@/hooks/useForeignKeyOptions";
 import ColumnTypeSelector from "./ColumnTypeSelector";
+import SelectionTypeSelector from "./SelectionTypeSelector";
+import CustomOptionsManager from "./CustomOptionsManager";
 import { getOrCreateJoinTable } from "@/services/tablesService";
 
 export default function ColumnForm({
@@ -61,6 +63,10 @@ export default function ColumnForm({
     column_position: lastPosition,
   });
 
+  // Estados para opciones personalizadas
+  const [selectionType, setSelectionType] = useState("table");
+  const [customOptions, setCustomOptions] = useState([]);
+
   useEffect(() => {
     setFormError(null);
 
@@ -69,6 +75,19 @@ export default function ColumnForm({
         ...prev,
         ...initialData,
       }));
+      
+      // Si tiene opciones personalizadas, cargarlas
+      if (initialData.custom_options && initialData.custom_options.length > 0) {
+        // Convertir formato si viene del backend con { value, label }
+        const options = Array.isArray(initialData.custom_options[0]) ? 
+          initialData.custom_options : 
+          initialData.custom_options.map(opt => typeof opt === 'string' ? opt : opt.label || opt.value);
+        setCustomOptions(options);
+        setSelectionType("custom");
+      } else {
+        setSelectionType("table");
+        setCustomOptions([]);
+      }
     } else if (mode === "create") {
       setFormData({
         name: "",
@@ -84,6 +103,8 @@ export default function ColumnForm({
         created_by: user?.id || null,
         column_position: lastPosition,
       });
+      setSelectionType("table");
+      setCustomOptions([]);
     }
   }, [initialData, open, mode, tableId, user?.id, lastPosition]);
 
@@ -117,6 +138,12 @@ export default function ColumnForm({
       handleChange("foreign_column_name", "");
       handleChange("relation_type", "");
     }
+
+    // Si no es tipo selección, resetear opciones personalizadas
+    if (value !== "select") {
+      setCustomOptions([]);
+      setSelectionType("table");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -125,6 +152,22 @@ export default function ColumnForm({
       setFormError("El nombre de la columna es obligatorio.");
       return;
     }
+
+    // Validar opciones personalizadas para tipo selección
+    if (formData.data_type === "select" && selectionType === "custom") {
+      if (customOptions.length === 0) {
+        setFormError("Debe agregar al menos una opción personalizada para columnas de tipo selección.");
+        return;
+      }
+      
+      // Validar que todas las opciones tengan contenido
+      const invalidOptions = customOptions.some(option => !option.trim());
+      if (invalidOptions) {
+        setFormError("Todas las opciones deben tener contenido.");
+        return;
+      }
+    }
+
     try {
       setFormError(null);
 
@@ -141,9 +184,15 @@ export default function ColumnForm({
       const columnData = {
         ...formData,
         is_foreign_key: formData.data_type === "foreign",
-        foreign_table_id: (formData.data_type === "foreign" || formData.data_type === "select") ? formData.foreign_table_id : null,
-        foreign_column_name: (formData.data_type === "foreign" || formData.data_type === "select") ? formData.foreign_column_name : null,
+        foreign_table_id: (formData.data_type === "foreign" || (formData.data_type === "select" && selectionType === "table")) ? formData.foreign_table_id : null,
+        foreign_column_name: (formData.data_type === "foreign" || (formData.data_type === "select" && selectionType === "table")) ? formData.foreign_column_name : null,
       };
+
+      // Agregar opciones personalizadas si es tipo selección con opciones custom
+      if (formData.data_type === "select" && selectionType === "custom") {
+        columnData.custom_options = customOptions;
+        console.log("Sending custom options:", customOptions);
+      }
 
       // Para tipos de archivo, asegurar que no tengan configuraciones de foreign key
       if (formData.data_type === "file" || formData.data_type === "file_array") {
@@ -152,7 +201,6 @@ export default function ColumnForm({
         columnData.foreign_column_name = null;
         columnData.relation_type = "";
       }
-
 
       await onSubmit(columnData);
     } catch (err) {
@@ -259,49 +307,73 @@ export default function ColumnForm({
               </div>
             )}
 
-            {/* --- NUEVO: Lógica separada para tipo select --- */}
+            {/* --- NUEVO: Lógica para tipo select con opciones personalizadas --- */}
             {formData.data_type === "select" && (
-              <div className="space-y-2">
-                <Label>Tabla de origen (para select)</Label>
-                <Select
-                  value={formData.foreign_table_id?.toString() || ""}
-                  onValueChange={(value) => handleChange("foreign_table_id", Number(value))}
+              <div className="space-y-4">
+                {/* Selector de tipo de selección */}
+                <SelectionTypeSelector
+                  value={selectionType}
+                  onChange={setSelectionType}
                   disabled={loading}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una tabla" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tables
-                      .filter((table) => !table.name.startsWith('mid_'))
-                      .map((table) => (
-                        <SelectItem key={table.id} value={table.id.toString()}>
-                          {table.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            {formData.data_type === "select" && formData.foreign_table_id && (
-              <div className="space-y-2">
-                <Label>Campo a mostrar (para select)</Label>
-                <Select
-                  value={formData.foreign_column_name || ""}
-                  onValueChange={(value) => handleChange("foreign_column_name", value)}
-                  disabled={loading}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona campo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(columnsByTable[formData.foreign_table_id] || []).map((col) => (
-                      <SelectItem key={col.name} value={col.name}>
-                        {col.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                />
+
+                {/* Si es tipo tabla, mostrar selectores de tabla */}
+                {selectionType === "table" && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Tabla de origen</Label>
+                      <Select
+                        value={formData.foreign_table_id?.toString() || ""}
+                        onValueChange={(value) => handleChange("foreign_table_id", Number(value))}
+                        disabled={loading}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona una tabla" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {tables
+                            .filter((table) => !table.name.startsWith('mid_'))
+                            .map((table) => (
+                              <SelectItem key={table.id} value={table.id.toString()}>
+                                {table.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {formData.foreign_table_id && (
+                      <div className="space-y-2">
+                        <Label>Campo a mostrar</Label>
+                        <Select
+                          value={formData.foreign_column_name || ""}
+                          onValueChange={(value) => handleChange("foreign_column_name", value)}
+                          disabled={loading}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona campo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(columnsByTable[formData.foreign_table_id] || []).map((col) => (
+                              <SelectItem key={col.name} value={col.name}>
+                                {col.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Si es tipo custom, mostrar gestor de opciones */}
+                {selectionType === "custom" && (
+                  <CustomOptionsManager
+                    options={customOptions}
+                    onChange={setCustomOptions}
+                    disabled={loading}
+                  />
+                )}
               </div>
             )}
 
