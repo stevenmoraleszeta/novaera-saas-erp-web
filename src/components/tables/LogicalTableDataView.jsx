@@ -123,6 +123,8 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   
   const { handleCreate, handleUpdatePosition, handleDelete } = useColumns(null);
 
+  const [showColumnVisibilityDialog, setShowColumnVisibilityDialog] = useState(false);
+
   constFilter = constFilter || null;
 
   const filterConditions = [
@@ -813,6 +815,15 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
           >
             <ArrowUpDown className="w-5 h-5" />
           </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="w-9 h-9"
+            onClick={() => setShowColumnVisibilityDialog(true)}
+          >
+            <Eye className="w-5 h-5" />
+          </Button>
           <div className="flex items-center gap-2">
             <SearchBar
               onSearch={setSearchTerm}
@@ -820,6 +831,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
               placeholder="Buscar..."
             />
           </div>
+          {/* 
           <Button
             variant="ghost"
             size="icon"
@@ -828,6 +840,9 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
           >
             <Eye className="w-5 h-5" />
           </Button>
+          
+          */}
+
           
          
           {canCreate && (
@@ -1488,6 +1503,100 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
             />
           </DialogContent>
         </Dialog>
+
+        <Dialog open={showColumnVisibilityDialog} onOpenChange={setShowColumnVisibilityDialog}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Columnas visibles</DialogTitle>
+            </DialogHeader>
+
+            <GenericCRUDTable
+              title="Columnas visibles"
+              data={columns.map((col) => ({
+                ...col,
+                visible: columnVisibility[col.name] !== false, // default true
+              }))}
+              columns={[
+                {
+                  key: "name",
+                  column_id: "name",
+                  header: "Columna",
+                  name: "name",
+                },
+                {
+                  key: "visible",
+                  column_id: "visible",
+                  header: "¿Visible?",
+                  name: "visible",
+                  render: (val) => (val ? "Sí" : "No"),
+                },
+              ]}
+              getRowKey={(col) => col.name}
+              rowIdKey="name"
+              onUpdate={(_, updatedCol) => {
+                setColumnVisibility((prev) => ({
+                  ...prev,
+                  [updatedCol.name]: updatedCol.visible,
+                }));
+
+                // Actualiza en la vista si hay una seleccionada
+                if (selectedView) {
+                  handleUpdateViewColumn(
+                    columns.find((c) => c.name === updatedCol.name)?.column_id,
+                    {
+                      visible: updatedCol.visible,
+                      view_id: selectedView.id,
+                    }
+                  );
+                }
+              }}
+              renderForm={({ mode, item, open, onClose, onSubmit }) => {
+                const [formData, setFormData] = useState({
+                  name: item?.name || "",
+                  visible: item?.visible ?? true,
+                });
+
+                useEffect(() => {
+                  if (open && item) {
+                    setFormData({
+                      name: item.name,
+                      visible: item.visible,
+                    });
+                  }
+                }, [open, item]);
+
+                return (
+                  <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Visibilidad de columna</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <Label>Columna</Label>
+                        <Input value={formData.name} disabled />
+                        <Label>¿Visible?</Label>
+                        <select
+                          value={formData.visible ? "true" : "false"}
+                          onChange={(e) =>
+                            setFormData({ ...formData, visible: e.target.value === "true" })
+                          }
+                          className="w-full border px-2 py-1"
+                        >
+                          <option value="true">Sí</option>
+                          <option value="false">No</option>
+                        </select>
+                      </div>
+                      <DialogFooter className="pt-4">
+                        <Button onClick={() => onSubmit(formData)}>Guardar</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                );
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+
 
     </div>
   );
