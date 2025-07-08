@@ -15,12 +15,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import LogicalTableDataView from "@/components/tables/LogicalTableDataView";
 import axios from "@/lib/axios";
-<<<<<<< HEAD
 import scheduledNotificationsService from '@/services/scheduledNotificationsService';
 import { setAssignedUsersForRecord } from '@/services/recordAssignedUsersService';
-=======
-import { X } from "lucide-react";
->>>>>>> 9b919ea4c39b646320a940fb03a71926d2f645e3
 
 export default function DynamicRecordFormDialog({
   open = false,
@@ -44,7 +40,6 @@ export default function DynamicRecordFormDialog({
   const [intermediateTableId, setIntermediateTableId] = useState(null);
   const [columnName, setcolumnName] = useState(null);
   const [tables, setTables] = useState([]);
-<<<<<<< HEAD
   const [pendingNotifications, setPendingNotifications] = useState([]);
   const [createdRecordId, setCreatedRecordId] = useState(null);
   
@@ -54,8 +49,6 @@ export default function DynamicRecordFormDialog({
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const modalRef = useRef(null);
   const dragHandleRef = useRef(null);
-=======
->>>>>>> 9b919ea4c39b646320a940fb03a71926d2f645e3
 
   useEffect(() => {
     if (!tableId || !open) return;
@@ -207,7 +200,6 @@ export default function DynamicRecordFormDialog({
     setIntermediateTableId(interTable ? interTable.id : null);
   };
 
-<<<<<<< HEAD
   // Funciones para manejar notificaciones pendientes
   const addPendingNotification = useCallback((columnId, targetDate, title, message, notifyBeforeDays, assignedUsers) => {
     setPendingNotifications(prev => [...prev, {
@@ -227,7 +219,6 @@ export default function DynamicRecordFormDialog({
   // Funciones para manejar el drag
   const handleMouseDown = useCallback((e) => {
     if (!dragHandleRef.current?.contains(e.target)) return;
-    
     setIsDragging(true);
     const rect = modalRef.current?.getBoundingClientRect();
     if (rect) {
@@ -240,14 +231,11 @@ export default function DynamicRecordFormDialog({
 
   const handleMouseMove = useCallback((e) => {
     if (!isDragging) return;
-    
     const newX = e.clientX - dragOffset.x;
     const newY = e.clientY - dragOffset.y;
-    
     // Limitar el movimiento dentro de la ventana
     const maxX = window.innerWidth - (modalRef.current?.offsetWidth || 0);
     const maxY = window.innerHeight - (modalRef.current?.offsetHeight || 0);
-    
     setPosition({
       x: Math.max(0, Math.min(newX, maxX)),
       y: Math.max(0, Math.min(newY, maxY))
@@ -264,7 +252,6 @@ export default function DynamicRecordFormDialog({
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
       document.body.style.userSelect = 'none';
-      
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
@@ -283,170 +270,54 @@ export default function DynamicRecordFormDialog({
 
   if (!open) return null;
 
-return (
-  <div className="fixed inset-0 z-50 bg-black/30 overflow-hidden">
-    <div className="absolute inset-0">
-      <div 
-        ref={modalRef}
-        className={`bg-white rounded-lg shadow-lg ${
-          foreignModalOpen ? "w-full max-w-lg sm:max-w-2xl md:max-w-4xl" : "w-full max-w-2xl sm:max-w-4xl md:max-w-6xl"
-        } flex flex-col max-h-[calc(100vh-4rem)] ${isDragging ? 'cursor-move shadow-2xl' : 'shadow-lg'} transition-shadow duration-200`}
-        style={{
-          position: 'absolute',
-          left: position.x || '50%',
-          top: position.y || '2rem',
-          transform: position.x === 0 && position.y === 0 ? 'translateX(-50%)' : 'none',
-          minHeight: '300px',
-          maxHeight: 'calc(100vh - 4rem)'
-        }}
-        onMouseDown={handleMouseDown}
-      >
-        {/* Header - Siempre visible y fijo */}
-        <div 
-          ref={dragHandleRef}
-          className="flex justify-between items-center p-3 sm:p-4 border-b bg-gray-50 rounded-t-lg cursor-move flex-shrink-0 hover:bg-gray-100 transition-colors duration-200"
-=======
-  if (!open) return null;
-
-return (
-    <div className="fixed inset-0 z-50 bg-black/30 flex items-start justify-center px-4 py-28">
-      <div
-        className={`bg-white rounded-lg shadow-lg ${
-          foreignModalOpen ? "w-[90vw] max-w-[900px]" : "w-[95vw] max-w-[1150px]"
-        } relative z-10 flex flex-col overflow-hidden h-[80vh]`}
-      >
-      {/* Header */}
-      <div className="flex justify-between items-center p-4 border-b">
-        <h2 className="text-2xl font-bold">
-          {mode === "create" ? "Nuevo Registro" : "Editar Registro"}
-        </h2>
-        <button
-          onClick={() => onOpenChange(false)}
-          className="text-gray-500 hover:text-gray-700"
-          aria-label="Cerrar modal"
->>>>>>> 9b919ea4c39b646320a940fb03a71926d2f645e3
+  return (
+    <div className="fixed inset-0 z-50 bg-black/30 overflow-hidden">
+      <div className="absolute inset-0">
+        <div
+          ref={modalRef}
+          className={`bg-white rounded-lg shadow-lg ${
+            foreignModalOpen ? "w-full max-w-lg sm:max-w-2xl md:max-w-4xl" : "w-full max-w-2xl sm:max-w-4xl md:max-w-6xl"
+          } flex flex-col max-h-[calc(100vh-4rem)] ${isDragging ? 'cursor-move shadow-2xl' : 'shadow-lg'} transition-shadow duration-200`}
+          style={{
+            position: 'absolute',
+            left: position.x || '50%',
+            top: position.y || '2rem',
+            transform: position.x === 0 && position.y === 0 ? 'translateX(-50%)' : 'none',
+            minHeight: '300px',
+            maxHeight: 'calc(100vh - 4rem)'
+          }}
+          onMouseDown={handleMouseDown}
         >
-          <div className="flex items-center gap-2">
-            <GripVertical className="w-4 h-4 text-gray-400" />
-            <h2 className="text-lg sm:text-xl font-bold">
-              {mode === "create" ? "Nuevo Registro" : "Editar Registro"}
-            </h2>
-            <span className="text-xs text-gray-400 hidden sm:inline">(Arrastra para mover)</span>
-          </div>
-<<<<<<< HEAD
-=======
-        ) : (
-          <form onSubmit={handleSubmit} noValidate className="space-y-6">
-            {columns.map((col) => {
-              if (foreignForm && col.name === "original_record_id") return null;
-              return (
-                <div key={col.column_id} className="space-y-2">
-                  <Label htmlFor={`field-${col.name}`}>
-                    {col.name}
-                    {col.is_required && (
-                      <Badge className="ml-1 text-xs text-destructive bg-transparent">
-                        *Requerido
-                      </Badge>
-                    )}
-                  </Label>
-                  {col.data_type === "foreign" ? (
-                    <Button
-                      type="button"
-                      onClick={() => handleOpenForeignModal(col)}
-                    >
-                      Abrir tabla
-                    </Button>
-                  ) : (
-                    <FieldRenderer
-                      colName={colName?.foreign_column_name}
-                      id={`field-${col.name}`}
-                      column={col}
-                      value={values[col.name]}
-                      onChange={(e) =>
-                        handleChange(
-                          col.name,
-                          e.target.type === "checkbox"
-                            ? e.target.checked
-                            : e.target.value
-                        )
-                      }
-                      error={errors[col.name]}
-                    />
-                  )}
-                  {errors[col.name] && (
-                    <div className="text-sm text-red-600 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      {errors[col.name]}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-            {submitError && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{submitError}</AlertDescription>
-              </Alert>
-            )}
-          </form>
-        )}
-      </div>
-
-      {/* Footer con botones */}
-      <div className="border-t p-4 flex gap-2 justify-start">
-        <Button type="submit" onClick={handleSubmit} disabled={loading}>
-          {loading ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-              Guardando...
-            </>
-          ) : (
-            <>Guardar</>
-          )}
-        </Button>
-        {mode === "edit" && onDelete && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onDelete(record)}
-            disabled={loading}
+          {/* Header - Siempre visible y fijo */}
+          <div
+            ref={dragHandleRef}
+            className="flex justify-between items-center p-3 sm:p-4 border-b bg-gray-50 rounded-t-lg cursor-move flex-shrink-0 hover:bg-gray-100 transition-colors duration-200"
           >
-            Eliminar
-          </Button>
-        )}
-      </div>
-    </div>
-
-    {/* Modal de tabla relacionada */}
-    {foreignModalOpen && (
-      <div className="bg-white rounded-lg shadow-lg w-[900px] min-h-[80vh] overflow-y-auto p-4 ml-4 relative z-20">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">
-            {foreignModalColumn
-              ? `Registros relacionados de ${
-                  foreignModalColumn.foreign_table_name || "Tabla intermedia"
-                }`
-              : "Registros relacionados"}
-          </h2>
->>>>>>> 9b919ea4c39b646320a940fb03a71926d2f645e3
-          <button
-            onClick={() => onOpenChange(false)}
-            className="text-gray-500 hover:text-gray-700 p-1 rounded-md hover:bg-gray-200 transition-colors flex-shrink-0"
-            aria-label="Cerrar modal"
-          >
-            <X className="w-5 h-5 sm:w-6 sm:h-6" />
-          </button>
-        </div>
-
-        {/* Contenido con scroll - Entre header y footer */}
-        <div className="overflow-y-auto px-3 sm:px-6 py-4 flex-1 min-h-0">
-          {columns.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Plus className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              <h4 className="font-medium mb-2">No hay columnas definidas</h4>
-              <p className="text-sm">Esta tabla no tiene columnas configuradas</p>
+            <div className="flex items-center gap-2">
+              <GripVertical className="w-4 h-4 text-gray-400" />
+              <h2 className="text-lg sm:text-xl font-bold">
+                {mode === "create" ? "Nuevo Registro" : "Editar Registro"}
+              </h2>
+              <span className="text-xs text-gray-400 hidden sm:inline">(Arrastra para mover)</span>
             </div>
-          ) : (
+            <button
+              onClick={() => onOpenChange(false)}
+              className="text-gray-500 hover:text-gray-700 p-1 rounded-md hover:bg-gray-200 transition-colors flex-shrink-0"
+              aria-label="Cerrar modal"
+            >
+              <X className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+          </div>
+
+          {/* Contenido con scroll - Entre header y footer */}
+          <div className="overflow-y-auto px-3 sm:px-6 py-4 flex-1 min-h-0">
+            {columns.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Plus className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <h4 className="font-medium mb-2">No hay columnas definidas</h4>
+                <p className="text-sm">Esta tabla no tiene columnas configuradas</p>
+              </div>
+            ) : (
               <form onSubmit={handleSubmit} noValidate className="space-y-6">
                 {columns.map((col) => {
                   if (foreignForm && col.name === "original_record_id") return null;
@@ -512,10 +383,10 @@ return (
 
           {/* Footer con botones - Siempre visible y fijo */}
           <div className="border-t p-3 sm:p-4 bg-gray-50 rounded-b-lg flex flex-col sm:flex-row gap-2 sm:gap-3 justify-end flex-shrink-0">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => onOpenChange(false)} 
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
               disabled={loading}
               className="w-full sm:w-auto"
             >
@@ -532,9 +403,9 @@ return (
                 Eliminar
               </Button>
             )}
-            <Button 
-              type="submit" 
-              onClick={handleSubmit} 
+            <Button
+              type="submit"
+              onClick={handleSubmit}
               disabled={loading}
               className="w-full sm:w-auto"
             >
