@@ -54,9 +54,11 @@ export async function getColumns() {
 
 // Crear una nueva columna
 export async function createColumn(column) {
+  console.log('createColumn service called with:', column);
   //const payload = mapColumnToBackend(column);
   //console.log("payload", payload);
   const res = await axios.post('/columns', column);
+  console.log('createColumn service response:', res.data);
   return mapColumnFromBackend(res.data);
 }
 

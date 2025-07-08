@@ -100,6 +100,49 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
     }
   };
 
+  // Invierte todos los permisos de una columna
+  const toggleColumn = (permissionType) => {
+    setPermissions(prev => {
+      const allChecked = tables.every(table => prev[table.id]?.[permissionType]);
+      const updated = { ...prev };
+      tables.forEach(table => {
+        updated[table.id] = {
+          ...updated[table.id],
+          [permissionType]: !allChecked
+        };
+      });
+      return updated;
+    });
+  };
+
+  // Invierte todos los permisos de una fila (tabla)
+  const toggleRow = (tableId) => {
+    setPermissions(prev => {
+      const allChecked = Object.values(prev[tableId] || {}).every(Boolean);
+      const updated = { ...prev };
+      updated[tableId] = Object.fromEntries(
+        Object.entries(prev[tableId] || {}).map(([perm, val]) => [perm, !allChecked])
+      );
+      return updated;
+    });
+  };
+
+  // Invierte todos los permisos de la matriz
+  const toggleAll = () => {
+    const allChecked = tables.every(table =>
+      Object.values(permissions[table.id] || {}).every(Boolean)
+    );
+    setPermissions(prev => {
+      const updated = { ...prev };
+      tables.forEach(table => {
+        updated[table.id] = Object.fromEntries(
+          Object.entries(prev[table.id] || {}).map(([perm, val]) => [perm, !allChecked])
+        );
+      });
+      return updated;
+    });
+  };
+
   if (!selectedRole) {
     return (
       <Card>
@@ -129,14 +172,24 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
           <CardTitle className="text-lg">
             Permisos para el rol: <Badge variant="outline">{selectedRole.name}</Badge>
           </CardTitle>
-          <Button 
-            onClick={savePermissions} 
-            disabled={saving}
-            className="flex items-center gap-2"
-          >
-            <Save className="h-4 w-4" />
-            {saving ? 'Guardando...' : 'Guardar Permisos'}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={toggleAll}
+              className="flex items-center gap-2"
+            >
+              Seleccionar/Deseleccionar todo
+            </Button>
+            <Button 
+              onClick={savePermissions} 
+              disabled={saving}
+              className="flex items-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              {saving ? 'Guardando...' : 'Guardar Permisos'}
+            </Button>
+          </div>
         </div>
         {error && (
           <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
@@ -149,19 +202,47 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
           <table className="w-full border-collapse border border-gray-200">
             <thead>
               <tr className="bg-gray-50">
-                <th className="border border-gray-200 px-4 py-2 text-left font-medium">Tabla</th>
-                <th className="border border-gray-200 px-4 py-2 text-center font-medium">Crear</th>
-                <th className="border border-gray-200 px-4 py-2 text-center font-medium">Leer</th>
-                <th className="border border-gray-200 px-4 py-2 text-center font-medium">Actualizar</th>
-                <th className="border border-gray-200 px-4 py-2 text-center font-medium">Eliminar</th>
+                <th className="border border-gray-200 px-4 py-2 text-left font-medium"></th>
+                <th
+                  className="border border-gray-200 px-4 py-2 text-center font-medium cursor-pointer select-none hover:bg-gray-100"
+                  onClick={() => toggleColumn('can_create')}
+                  title="Invertir columna Crear"
+                >
+                  Crear
+                </th>
+                <th
+                  className="border border-gray-200 px-4 py-2 text-center font-medium cursor-pointer select-none hover:bg-gray-100"
+                  onClick={() => toggleColumn('can_read')}
+                  title="Invertir columna Leer"
+                >
+                  Leer
+                </th>
+                <th
+                  className="border border-gray-200 px-4 py-2 text-center font-medium cursor-pointer select-none hover:bg-gray-100"
+                  onClick={() => toggleColumn('can_update')}
+                  title="Invertir columna Actualizar"
+                >
+                  Actualizar
+                </th>
+                <th
+                  className="border border-gray-200 px-4 py-2 text-center font-medium cursor-pointer select-none hover:bg-gray-100"
+                  onClick={() => toggleColumn('can_delete')}
+                  title="Invertir columna Eliminar"
+                >
+                  Eliminar
+                </th>
               </tr>
             </thead>
             <tbody>
               {tables.map(table => (
                 <tr key={table.id} className="hover:bg-gray-50">
-                  <td className="border border-gray-200 px-4 py-2">
+                  <td
+                    className="border border-gray-200 px-4 py-2 cursor-pointer select-none hover:bg-gray-100 font-medium"
+                    onClick={() => toggleRow(table.id)}
+                    title="Invertir fila de esta tabla"
+                  >
                     <div>
-                      <div className="font-medium">{table.name}</div>
+                      <div>{table.name}</div>
                       {table.description && (
                         <div className="text-sm text-gray-500">{table.description}</div>
                       )}
