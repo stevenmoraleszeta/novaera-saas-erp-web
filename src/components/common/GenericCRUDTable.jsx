@@ -47,7 +47,6 @@ export default function GenericCRUDTable({
   };
 
   const handleEdit = (item) => {
-  if (!isEditingMode) return;
   setFormMode("edit");
   setSelectedItem(item);  
   setFormOpen(true);
@@ -249,7 +248,7 @@ export default function GenericCRUDTable({
           onRowClick={handleEdit}
         />
       </div>
-        {renderForm && isEditingMode &&
+        {renderForm  &&
           renderForm({
             mode: formMode,
             item: selectedItem,
