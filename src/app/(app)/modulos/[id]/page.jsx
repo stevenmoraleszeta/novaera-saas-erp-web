@@ -14,8 +14,8 @@ import { useLogicalTables } from "@/hooks/useLogicalTables";
 import LogicalTablesSidebar from "@/components/tables/LogicalTablesSidebar";
 import LogicalTableDetails from "@/components/tables/LogicalTableDetails";
 import LogicalTableModal from "@/components/tables/LogicalTableModal";
-import { Package } from "lucide-react";
-import useEditModeStore from "@/stores/editModeStore";
+import { Package, Edit3 } from "lucide-react";
+import { useEditMode } from "@/hooks/useEditMode";
 import UserLinkDialog from "@/components/users/UserLinkDialog";
 import { useColumns } from "@/hooks/useColumns";
 import useUserStore from "@/stores/userStore";
@@ -26,6 +26,10 @@ import PermissionDenied from "@/components/common/PermissionDenied";
 
 export default function ModuleDetailPage() {
   const { modules, getById } = useModules();
+  const { isEditingMode, isHydrated } = useEditMode();
+
+  // Debug: Log del modo edición en la página del módulo
+  console.log("🔧 ModuleDetailPage - Modo edición:", isEditingMode, "Hidratado:", isHydrated);
 
   const { id } = useParams();
   const [module, setModule] = useState(null);
@@ -49,7 +53,6 @@ export default function ModuleDetailPage() {
   const { getAllTables, getTableById, createOrUpdateTable, deleteTable } =
     useLogicalTables(id);
 
-  const { isEditingMode } = useEditModeStore();
   const { user } = useUserStore();
 
   const [showUserLinkDialog, setShowUserLinkDialog] = useState(false);
@@ -283,6 +286,7 @@ export default function ModuleDetailPage() {
 
   return (
     <div>
+      {/* Indicador de modo edición para debugging */}
       {/* Main Content: Only first logical table's data view */}
       <div className="flex-1 overflow-hidden">
         {tablesLoading ? (

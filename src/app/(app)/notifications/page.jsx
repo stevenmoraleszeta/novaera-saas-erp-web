@@ -18,10 +18,11 @@ const NotificacionesPage = () => {
     const fetchAll = async () => {
       setLoading(true);
       try {
-        // Solo obtener notificaciones programadas (todas, no solo las no leídas)
-        const res = await scheduledNotificationsService.getNotificationsByUser(userId);
-        setNotifications(res.data || []);
-      } catch {
+        // Usar getAllUserNotifications() que usa la ruta /user/{userId}/combined
+        const res = await scheduledNotificationsService.getAllUserNotifications(userId);
+        setNotifications(res.data || res || []);
+      } catch (error) {
+        console.error('Error al cargar notificaciones:', error);
         setNotifications([]);
       }
       setLoading(false);
@@ -63,7 +64,7 @@ const NotificacionesPage = () => {
                       <span className="ml-1 text-xs text-gray-500">[{n.table_name}]</span>
                       <button
                         className="ml-1 text-xs text-blue-600 hover:underline"
-                        onClick={() => router.push(`/tablas/${n.table_id}`)}
+                        onClick={() => router.push(`/modulos/${n.table_id}`)}
                       >
                         Ver tabla
                       </button>

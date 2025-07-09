@@ -1,6 +1,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import useTabStore from "@/stores/tabStore";
+import { useEditMode } from "@/hooks/useEditMode";
 import ModuleCard from "./ModuleCard";
 import AddModuleCard from "./AddModuleCard";
 import Loader from "@/components/common/Loader";
@@ -17,10 +18,13 @@ export default function ModuleList({
   onEdit,
   onDelete,
   onAdd,
-  isEditingMode = true,
 }) {
   const router = useRouter();
   const { addModuleTab } = useTabStore();
+  const { isEditingMode, isHydrated } = useEditMode();
+
+  // Debug: Log del modo edición en ModuleList
+  console.log("🔧 ModuleList - Modo edición:", isEditingMode, "Hidratado:", isHydrated);
 
   const handleModuleClick = (module) => {
     if (isEditingMode) {

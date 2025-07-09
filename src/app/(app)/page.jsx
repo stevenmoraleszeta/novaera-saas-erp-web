@@ -6,7 +6,7 @@ import ModuleList from "@/components/modules/ModuleList";
 import Alert from "@/components/common/Alert";
 import ModuleForm from "@/components/modules/ModuleForm";
 import useUserStore from "@/stores/userStore";
-import useEditModeStore from "@/stores/editModeStore";
+import { useEditMode } from "@/hooks/useEditMode";
 import DeleteConfirmationModal from "@/components/common/DeleteConfirmationModal";
 import { Badge } from "@/components/ui/badge";
 import { Edit3 } from "lucide-react";
@@ -36,9 +36,12 @@ export default function ModulesPage() {
   } = useModules();
 
   const { user } = useUserStore();
-  const { isEditingMode } = useEditModeStore();
+  const { isEditingMode, isHydrated } = useEditMode();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [moduleToDelete, setModuleToDelete] = useState(null);
+
+  // Debug: Log del modo edición
+  console.log("🔧 ModulesPage - Modo edición:", isEditingMode, "Hidratado:", isHydrated);
 
   const [modalState, setModalState] = React.useState({
     showModal: false,
@@ -138,7 +141,6 @@ export default function ModulesPage() {
         totalItems={totalModules}
         itemsPerPage={itemsPerPage}
         onPageChange={handlePageChange}
-        isEditingMode={isEditingMode}
       />
 
       <ModuleForm
