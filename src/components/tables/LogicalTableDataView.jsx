@@ -15,7 +15,6 @@ import {
   ArrowUp,
   ArrowDown,
   Eye,
-  Users
 } from "lucide-react";
 import useEditModeStore from "@/stores/editModeStore";
 import DynamicRecordFormDialog from "../records/DynamicRecordFormDialog";
@@ -51,9 +50,15 @@ import { hasAssignedUsersInTable, getAssignedUsersStatsForTable } from "@/servic
 
 import DialogsContainer from "@/components/tables/LogicalTableDataView/DialogsContainer";
 
+import { crearTablaUsuarios, sincronizarTablaUsuarios } from "@/services/usuariosTableManager";
+import { sincronizarTablaRoles } from "@/services/rolesTableManager";
+import { useUsers } from '@/hooks/useUsers';
+import { useRoles } from '@/hooks/useRoles';
+
+
 export default function LogicalTableDataView({ tableId, refresh, colName, constFilter, hiddenColumns }) {
   const { isEditingMode } = useEditModeStore();
-  const { getTableById, handleUpdatePositionRecord } = useLogicalTables(null);
+  const { getTableById, handleUpdatePositionRecord, createOrUpdateTable } = useLogicalTables(null);
   const {
     views,
     columns: viewColumns,
@@ -129,6 +134,9 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
 
   const [orderedViewColumnNames, setOrderedViewColumnNames] = useState([]);
 
+   const { users } = useUsers();
+   const { roles } = useRoles();
+
   constFilter = constFilter || null;
 
   const filterConditions = [
@@ -151,6 +159,38 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
       setColumnVisibility(initialVisibility);
     }
   }, [columns]);
+
+    useEffect(() => {
+    const fetchData = async () => {
+      if (users.length > 0) {
+        await crearTablaUsuarios({
+          usuarios: users,
+          moduleId: null,
+          userId: null,
+          createOrUpdateTable,
+          handleCreate,
+        });
+         await sincronizarTablaUsuarios({
+          usuarios: users,
+        });
+
+      }
+    };
+
+
+    fetchData();
+  }, [users]);
+
+    useEffect(() => {
+    if (roles.length > 0) {
+      sincronizarTablaRoles({
+        roles,
+        userId: null,
+        createOrUpdateTable,
+        handleCreate,
+      });
+    }
+  }, [roles]);
 
   useEffect(() => {
       if(selectedView){
