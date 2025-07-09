@@ -21,6 +21,7 @@ export default function GenericCRUDTable({
   renderForm,
   useFilter = true,
   onOrderChange,
+  onOrderColumnChange
 }) {
 
   const [formOpen, setFormOpen] = useState(false);
@@ -244,6 +245,7 @@ export default function GenericCRUDTable({
           data={filteredData}
           getRowKey={getRowKey}
           onOrderChange={onOrderChange}
+          onOrderColumnChange = {onOrderColumnChange}
           pagination={true}
           onRowClick={handleEdit}
         />

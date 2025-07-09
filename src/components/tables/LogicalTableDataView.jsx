@@ -67,6 +67,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     handleAddColumnToView,
     handleDeleteViewColumn,
     handleUpdatePosition: handleUpdateViewPosition,
+    handleUpdateViewColumnPosition
   } = useViews(tableId);
 
   // Hook para verificar permisos del usuario
@@ -125,6 +126,8 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   const { handleCreate, handleUpdatePosition, handleDelete } = useColumns(null);
 
   const [showColumnVisibilityDialog, setShowColumnVisibilityDialog] = useState(false);
+
+  const [orderedViewColumnNames, setOrderedViewColumnNames] = useState([]);
 
   constFilter = constFilter || null;
 
@@ -337,21 +340,29 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   }, [columns, columnVisibility, hiddenColumns, hasAssignedUsers, tableId, isEditingMode]);
 
   // Add column management actions to table headers when edit mode changes
-  const tableColumnsWithActions = useMemo(() => {
-    return tableColumns.map((col) => {
-      if (isEditingMode) {
-        return {
-          ...col,
-          header: (
-            <div className="flex items-center justify-between group">
-              <span>{col.header}</span>
-            </div>
-          ),
-        };
+    const tableColumnsWithActions = useMemo(() => {
+      let sortedCols = [...tableColumns];
+
+      if (orderedViewColumnNames.length > 0) {
+        sortedCols = orderedViewColumnNames
+          .map((name) => sortedCols.find((col) => col.key === name))
+          .filter(Boolean); // eliminar posibles nulos
       }
-      return col;
-    });
-  }, [isEditingMode, tableColumns, columns]);
+
+      return sortedCols.map((col) => {
+        if (isEditingMode) {
+          return {
+            ...col,
+            header: (
+              <div className="flex items-center justify-between group">
+                <span>{col.header}</span>
+              </div>
+            ),
+          };
+        }
+        return col;
+      });
+    }, [isEditingMode, tableColumns, orderedViewColumnNames]);
 
   
 
@@ -536,7 +547,6 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   // View management functions
   const handleSelectView = async (view) => {
     if (!view) {
-      // Clear view - reset to default state
       setSelectedView(null);
       setActiveSort(null);
       setActiveFilters([]);
@@ -545,7 +555,6 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     }
     setSelectedView(view);
 
-    // Apply view sort configuration
     if (view.sortBy && view.sortDirection) {
       const sortCol = columns.find(col => col.column_id === view.sortBy);
       setActiveSort({
@@ -554,91 +563,89 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
       });
     }
 
-    // Load and apply view columns configuration
     try {
-        const viewCols = await loadColumns(view.id); // <-- usamos el resultado directamente
+      const viewCols = await loadColumns(view.id);
 
-        const newColumnVisibility = {};
-        const newFilters = [];
+      const visibilityMap = {};
+      const filters = [];
+      const orderedColumnNames = [];
 
-        viewCols.forEach((viewCol) => {
-          console.log("wet WHAT IS IT: ", viewCol)
-          const column = columns.find(
-            (col) => col.column_id === viewCol.column_id
-          );
-          if (column) {
-            newColumnVisibility[column.name] = viewCol.visible !== false;
-            console.log("wet The new column vis for :", column.name, " is ",  viewCol.visible)
+      // Primero extraer posición (view_columns sin filtro real)
+      const positionEntries = viewCols
+        .filter(vc => !vc.filter_condition && !vc.filter_value)
+        .sort((a, b) => (a.position_num ?? 0) - (b.position_num ?? 0));
 
-            if (
-              viewCol.filter_condition &&
-              (
-                viewCol.filter_condition === "is_null" ||
-                viewCol.filter_condition === "is_not_null" ||
-                (viewCol.filter_value !== null &&
-                  viewCol.filter_value !== undefined &&
-                  viewCol.filter_value !== "")
-              )
-            ) {
-              newFilters.push({
-                id: viewCol.id,
-                column: column.name,
-                condition: viewCol.filter_condition,
-                value: viewCol.filter_value,
-              });
-            }
-          }
-        });
-
-        setColumnVisibility(newColumnVisibility);
-        setActiveFilters(newFilters);
-      } catch (err) {
-        console.error("Error loading view configuration:", err);
-      }
-  };
-
-  const handleCreateViewLocal = async (viewData) => {
-    try {
-      const sortColumn = columns.find(col => col.name === activeSort?.column)
-      // First, create the view with basic info (name, sort settings)
-      const newView = await handleCreateView({
-        ...viewData,
-        tableId,
-        sort_by: sortColumn?.column_id || null,
-        sort_direction: activeSort?.direction || null,
-        position_num: activeFilters.length
-        
-      });
-
-      // Then, add each column to the view with its configuration
-      // This includes visibility and filter settings for each column
-      const viewColumns = columns.map((col) => {
-        // Find if this column has an active filter
-        const activeFilter = activeFilters.find((f) => f.column === col.name);
-
-        return {
-          view_id: newView.message.view_id,
-          column_id: col.column_id,
-          visible: columnVisibility[col.name] !== false,
-          filter_condition: activeFilter?.condition || null,
-          filter_value: activeFilter?.value || null,
-        };
-      });
-
-      // Add each column configuration to the view
-      // This is where filters are actually stored - as column properties
-      for (const viewCol of viewColumns) {
-        await handleAddColumnToView(viewCol);
+      for (const vc of positionEntries) {
+        const col = columns.find(c => c.column_id === vc.column_id);
+        if (col) orderedColumnNames.push(col.name);
       }
 
-      setShowViewDialog(false);
-      setViewFormMode("create");
-      setSelectedView(null);
+      // Luego aplicar visibilidad y filtros
+      for (const vc of viewCols) {
+        const col = columns.find((c) => c.column_id === vc.column_id);
+        if (!col) continue;
+
+        visibilityMap[col.name] = vc.visible !== false;
+
+        if (vc.filter_condition && (
+          vc.filter_condition === "is_null" ||
+          vc.filter_condition === "is_not_null" ||
+          (vc.filter_value !== null && vc.filter_value !== undefined && vc.filter_value !== "")
+        )) {
+          filters.push({
+            id: vc.id,
+            column: col.name,
+            condition: vc.filter_condition,
+            value: vc.filter_value,
+          });
+        }
+      }
+
+      setColumnVisibility(visibilityMap);
+      setActiveFilters(filters);
+      setOrderedViewColumnNames(orderedColumnNames); // <- nuevo estado
     } catch (err) {
-      console.error("Error creating view:", err);
-      throw err;
+      console.error("Error loading view configuration:", err);
     }
   };
+
+
+    const handleCreateViewLocal = async (viewData) => {
+      try {
+        const sortColumn = columns.find(col => col.name === activeSort?.column);
+
+        const newView = await handleCreateView({
+          ...viewData,
+          tableId,
+          sort_by: sortColumn?.column_id || null,
+          sort_direction: activeSort?.direction || null,
+          position_num: activeFilters.length,
+        });
+
+        const viewId = newView.message.view_id;
+
+        // SOLO crear registros puros de posición con visible=true
+        for (let i = 0; i < columns.length; i++) {
+          const col = columns[i];
+          await handleAddColumnToView({
+            view_id: viewId,
+            column_id: col.column_id,
+            visible: true,
+            filter_condition: null,
+            filter_value: null,
+            position_num: i + 1,
+          });
+        }
+
+        setShowViewDialog(false);
+        setViewFormMode("create");
+        setSelectedView(null);
+      } catch (err) {
+        console.error("Error creating view:", err);
+        throw err;
+      }
+    };
+
 
   const handleUpdateViewLocal = async (viewId, viewData) => {
     try {
@@ -869,6 +876,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         {activeSort && activeSort.column && activeFilters.length > 0 && (
           <div className="w-px h-4 bg-black mx-2" />
         )}
+        {/*  TEXTO QUE INDICA QUE FILTRO ESTA ACTIVO
         {activeFilters.map((f, idx) => (
           <span
             key={idx}
@@ -884,6 +892,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
               : ""}
           </span>
         ))}
+          */}
         
       </div>
       <div
@@ -920,6 +929,38 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
                   console.error("Error al reordenar registros:", err);
                 }
               }}
+            onOrderColumnChange={async (reorderedColumnNames) => {
+              try {
+
+                const allViewColumns = await getColumnsForView(selectedView.id);
+                // 1. Obtener todos los view_columns de la vista actual que son solo de orden
+                const viewColumnsForOrder = allViewColumns.filter(
+                  (vc) =>
+                    vc.filter_condition === null &&
+                    vc.filter_value === null
+                );
+
+                // 2. Hacer el reordenamiento por nombre
+                for (let i = 0; i < reorderedColumnNames.length; i++) {
+                  const colName = reorderedColumnNames[i];
+                  const col = columns.find((c) => c.name === colName);
+                  if (!col) continue;
+
+                  const viewCol = viewColumnsForOrder.find(
+                    (vc) => vc.column_id === col.column_id
+                  );
+
+                  if (viewCol) {
+                    await handleUpdateViewColumnPosition(viewCol.id, i + 1);
+                  }
+                }
+
+                setLocalRefreshFlag((prev) => !prev); // Refrescar después de aplicar todos los cambios
+              } catch (err) {
+                console.error("Error al reordenar columnas:", err);
+              }
+            }}
+
             getRowKey={(row) => row.id}
             onCreate={canCreate ? () => setShowAddRecordDialog(true) : undefined}
             onUpdate={canUpdate ? (id, updatedData) => {
