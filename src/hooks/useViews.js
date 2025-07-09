@@ -9,6 +9,7 @@ import {
   updateViewColumn,
   deleteViewColumn,
   updateViewPosition,
+  updateViewColumnPosition
 } from "@/services/viewsService";
 
 export function useViews(tableId) {
@@ -29,7 +30,6 @@ export function useViews(tableId) {
   // Cargar vistas de una tabla
   const loadViews = useCallback(async () => {
     if (!tableId) return;
-    console.log("wet loadViews")
     setLoadingViews(true);
     setError(null);
     try {
@@ -51,7 +51,6 @@ export function useViews(tableId) {
       try {
         const data = await getColumnsByView(viewId);
         setColumns((prev) => ({ ...prev, [viewId]: data }));
-        console.log("wet aqui si,", data)
         return data; // <-- devuélvelo
       } catch (err) {
         setError(err.message || "Error loading columns");
@@ -127,7 +126,6 @@ export function useViews(tableId) {
   // Agregar columna a vista
   const handleAddColumnToView = useCallback(
     async (columnData) => {
-      console.log("cave: inside use llega ", columnData)
       try {
         const newColumn = await addColumnToView(columnData);
         if (columnData.view_id) {
@@ -175,11 +173,23 @@ export function useViews(tableId) {
     [loadColumns]
   );
 
-    const handleUpdatePosition = async (viewId, newPosition) => {
+  const handleUpdatePosition = async (viewId, newPosition) => {
     try {
       setError(null);
       setSuccess(null);
       await updateViewPosition(viewId, newPosition);
+      setSuccess('Posición actualizada correctamente');
+    } catch (err) {
+      console.error('Error actualizando posición:', err);
+      setError(err?.response?.data?.error || 'Error al actualizar la posición');
+    }
+  };
+
+  const handleUpdateViewColumnPosition = async (viewId, newPosition) => {
+    try {
+      setError(null);
+      setSuccess(null);
+      await updateViewColumnPosition(viewId, newPosition);
       setSuccess('Posición actualizada correctamente');
     } catch (err) {
       console.error('Error actualizando posición:', err);
@@ -203,5 +213,6 @@ export function useViews(tableId) {
     handleUpdateViewColumn,
     handleDeleteViewColumn,
     handleUpdatePosition,
+    handleUpdateViewColumnPosition
   };
 }

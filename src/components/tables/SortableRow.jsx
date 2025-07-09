@@ -30,13 +30,17 @@ if(idRow){
     transform,
     transition,
     isDragging,
-  } = useSortable({ id });
+  } = useSortable({
+    id,
+    data: { type: "row" },
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     ...(isDragging && { opacity: 0.5 }),
   };
+  
 
   return (
     <TableRow

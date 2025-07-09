@@ -492,8 +492,7 @@ const { handleUpdatePosition, handleDelete } = useColumns(null);
                         visible: visible,
                         filter_condition: newFilter?.condition || null,
                         filter_value: newFilter?.value || null,
-                      };
-                      
+                      }; 
                       handleAddColumnToView(filterToAdd);
                     }}
                     onUpdate={(_, updatedFilter) => {
@@ -669,6 +668,7 @@ const { handleUpdatePosition, handleDelete } = useColumns(null);
                             await handleUpdateViewColumn(matchingViewColumn.id, {
                                 visible: updatedCol.visible,
                                 view_id: selectedView.id,
+                                position_num: matchingViewColumn.position_num
                             });
                             } else {
                                 let filterToAdd = {
@@ -678,7 +678,7 @@ const { handleUpdatePosition, handleDelete } = useColumns(null);
                                     filter_condition:  null,
                                     filter_value: null,
                                 };
-                                 handleAddColumnToView(filterToAdd);
+                              handleAddColumnToView(filterToAdd);
                             }
                         })();
                         }

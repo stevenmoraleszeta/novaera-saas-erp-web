@@ -62,7 +62,7 @@ export function useLogicalTables(moduleId) {
       }
   };
 
-        const handleUpdatePositionRecord = async (recordId, newPosition) => {
+      const handleUpdatePositionRecord = async (recordId, newPosition) => {
         try {
           setError(null);
           setSuccess(null);

@@ -80,3 +80,10 @@ export async function updateViewPosition(view_id, newPosition) {
   });
   return res.data.message; // o lo que devuelva el backend
 }
+
+export async function updateViewColumnPosition(view_id, newPosition) {
+  const res = await axios.patch(`/views/${view_id}/update_view_columns`, {
+    position: newPosition,
+  });
+  return res.data.message; // o lo que devuelva el backend
+}
