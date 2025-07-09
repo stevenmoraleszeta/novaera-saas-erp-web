@@ -22,8 +22,10 @@ const NotificationDropdown = () => {
       try {
         // Solo obtener notificaciones programadas del usuario (ya filtradas como no leídas)
         const res = await scheduledNotificationsService.getUserScheduledNotifications();
-        setNotifications(res.data || []);
+        console.log('Notificaciones dropdown:', res);
+        setNotifications(res.data || res || []);
       } catch (e) {
+        console.error('Error cargando notificaciones dropdown:', e);
         setNotifications([]);
       }
       setLoading(false);

@@ -25,8 +25,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import useUserStore from "../../stores/userStore";
-import useEditModeStore from "../../stores/editModeStore";
 import useTabStore from "../../stores/tabStore";
+import { useEditMode } from "../../hooks/useEditMode";
 import NotificationDropdown from "../navbar/NotificationDropdown";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
@@ -34,20 +34,29 @@ import { logout as authServiceLogout } from "@/services/authService";
 
 export default function Header() {
   const { user, clearUser } = useUserStore();
-  const { isEditingMode, toggleEditMode, resetEditMode } = useEditModeStore();
+  const { isEditingMode, toggleEditMode, resetEditMode, isHydrated } = useEditMode();
   const { clearTabs } = useTabStore();
   const router = useRouter();
   const pathname = usePathname();
 
-  // Solo desactivar modo edición si sales de la vista principal
+  // Debug: Log del modo edición en el header
+  console.log("🔧 Header - Modo edición:", isEditingMode, "Hidratado:", isHydrated);
+
+  // Desactivar modo edición al cambiar de página
   useEffect(() => {
-    if (isEditingMode && pathname !== "/") {
+    if (isEditingMode) {
       resetEditMode();
     }
-  }, [pathname, resetEditMode, isEditingMode]);
+  }, [pathname, resetEditMode]);
 
   const handleNavigation = (path) => {
     router.push(path);
+  };
+
+  const handleToggleEditMode = () => {
+    console.log("🔧 Toggle modo edición - Estado actual:", isEditingMode);
+    toggleEditMode();
+    console.log("🔧 Toggle modo edición - Después del toggle");
   };
 
   const handleLogout = async () => {
@@ -83,7 +92,7 @@ export default function Header() {
               <Button
                 variant={isEditingMode ? "default" : "ghost"}
                 size="icon"
-                onClick={toggleEditMode}
+                onClick={handleToggleEditMode}
                 className={isEditingMode ? "bg-black" : ""}
               >
                 <Edit3 className="w-5 h-5" />
