@@ -160,7 +160,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     }
   }, [columns]);
 
-    useEffect(() => {
+  useEffect(() => {
     const fetchData = async () => {
       if (users.length > 0) {
         await crearTablaUsuarios({
@@ -512,7 +512,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   const handleCreateColumn = async (columnData) => {
     try {
       //await createColumn(columnData);
-      await handleCreate({ ...columnData, table_id: tableId });
+      const nuevaColumna = await handleCreate({ ...columnData, table_id: tableId });
       // Refresh columns by refetching table structure
       const cols = await getLogicalTableStructure(tableId);
       setColumns(cols);
@@ -520,6 +520,19 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
       setColumnFormMode("create");
       setSelectedColumn(null);
       setLocalRefreshFlag((prev) => !prev);
+      for (const vista of views) {
+        //console.log("psg: CREANDO LA WEA NUEVA PARA LA VISTA", vista, "con data",nuevaColumna.sp_crear_columna )
+        await handleAddColumnToView({
+          view_id: vista.id,
+          column_id: nuevaColumna.sp_crear_columna,
+          visible: true,
+          filter_condition: null,
+          filter_value: null,
+          position_num: null, 
+        });
+      }
+
+
     } catch (err) {
       console.error("Error creating column:", err);
       throw err;
@@ -680,6 +693,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         setShowViewDialog(false);
         setViewFormMode("create");
         setSelectedView(null);
+        setLocalRefreshFlag((prev) => !prev);
       } catch (err) {
         console.error("Error creating view:", err);
         throw err;
@@ -730,6 +744,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
       setShowViewDialog(false);
       setViewFormMode("create");
       setSelectedView(null);
+      setLocalRefreshFlag((prev) => !prev);
     } catch (err) {
       console.error("Error updating view:", err);
       throw err;
@@ -748,6 +763,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
       }
       setShowViewDeleteDialog(false);
       setViewToDelete(null);
+      setLocalRefreshFlag((prev) => !prev);
     } catch (err) {
       console.error("Error deleting view:", err);
       throw err;

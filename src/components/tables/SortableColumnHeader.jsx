@@ -1,7 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { TableHead } from "@/components/ui/table";
-import { GripVertical } from "lucide-react";
 import { useRef } from "react";
 import useEditModeStore from "@/stores/editModeStore";
 
@@ -10,11 +9,8 @@ export default function SortableColumnHeader({
   columnWidths,
   resizingColumn,
   handleResizeStart,
-  isDraggingEnabled,
-  setIsDraggingEnabled,
 }) {
-  const timeoutRef = useRef(null);
-
+  const { isEditingMode } = useEditModeStore(); // 🟢 esto controla si se puede mover
   const {
     attributes,
     listeners,
@@ -24,10 +20,8 @@ export default function SortableColumnHeader({
   } = useSortable({
     id: column.key,
     data: { type: "column" },
-    disabled: !isDraggingEnabled,
+    disabled: !isEditingMode, // 🟢 ahora se habilita solo cuando isEditingMode está activo
   });
-
-  const { isEditingMode } = useEditModeStore();
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -37,33 +31,16 @@ export default function SortableColumnHeader({
     position: "relative",
   };
 
-  const handleMouseDown = () => {
-    if(isEditingMode){
-      timeoutRef.current = setTimeout(() => {
-        setIsDraggingEnabled(true);
-      }, 1000); // ⏱️ espera 1 segundo
-      }
-
-  };
-
-  const handleMouseUp = () => {
-    clearTimeout(timeoutRef.current);
-  };
-
   return (
     <TableHead
       ref={setNodeRef}
-      {...(isDraggingEnabled ? attributes : {})}
-      {...(isDraggingEnabled ? listeners : {})}
+      {...(isEditingMode ? attributes : {})}
+      {...(isEditingMode ? listeners : {})}
       style={style}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      className={`cursor-pointer hover:bg-gray-50 select-none ${
-        isDraggingEnabled ? "bg-black/30" : ""
-      }`}
+      className={`cursor-pointer select-none ${isEditingMode ? "cursor-grab hover:bg-[#f0f0f0]" : "cursor-default"}`}
+
     >
-      <div className="flex items-center justify-between pr-2 cursor-grab">
+      <div className="flex items-center justify-between pr-2">
         <span className="truncate">{column.header}</span>
       </div>
 
