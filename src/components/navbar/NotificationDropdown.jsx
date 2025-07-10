@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Bell } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import scheduledNotificationsService from '@/services/scheduledNotificationsService';
 import useUserStore from '@/stores/userStore';
 import { useRouter } from 'next/navigation';
@@ -51,9 +52,11 @@ const NotificationDropdown = () => {
 
   return (
     <div className="relative">
-      <button
-        className="relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-muted p-0"
+      <Button
+        variant={open ? "default" : "ghost"}
+        size="icon"
         onClick={() => setOpen(!open)}
+        className={`relative ${open ? "bg-black" : ""}`}
         aria-label="Ver notificaciones"
       >
         <Bell className="w-5 h-5" />
@@ -62,7 +65,7 @@ const NotificationDropdown = () => {
             {unreadNotifications.length}
           </span>
         )}
-      </button>
+      </Button>
       {open && (
         <div className="absolute right-0 top-12 w-80 bg-white border border-gray-200 rounded-md shadow-lg z-50">
           <div className="p-2 border-b font-semibold flex justify-between items-center">
@@ -88,7 +91,7 @@ const NotificationDropdown = () => {
                             className="ml-1 text-xs text-blue-600 hover:underline"
                             onClick={() => {
                               setOpen(false);
-                              router.push(`/tablas/${n.table_id}`);
+                              router.push(`/modulos/${n.table_id}`);
                             }}
                           >
                             Ver tabla

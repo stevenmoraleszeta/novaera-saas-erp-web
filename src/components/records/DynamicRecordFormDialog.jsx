@@ -10,10 +10,12 @@ import {
 import FieldRenderer from "../common/FieldRenderer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, AlertCircle } from "lucide-react";
+import { Plus, AlertCircle, Users } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import LogicalTableDataView from "@/components/tables/LogicalTableDataView";
+import AssignedUsersCell from "@/components/tables/AssignedUsersCell";
+import { getAssignedUsersByRecord } from "@/services/recordAssignedUsersService";
 import axios from "@/lib/axios";
 import { X } from "lucide-react";
 
@@ -39,6 +41,11 @@ export default function DynamicRecordFormDialog({
   const [intermediateTableId, setIntermediateTableId] = useState(null);
   const [columnName, setcolumnName] = useState(null);
   const [tables, setTables] = useState([]);
+
+  // Estados para usuarios asignados
+  const [hasNotificationColumns, setHasNotificationColumns] = useState(false);
+  const [showAssignedUsersModal, setShowAssignedUsersModal] = useState(false);
+  const [assignedUsers, setAssignedUsers] = useState([]);
 
   useEffect(() => {
     if (!tableId || !open) return;
@@ -95,6 +102,22 @@ export default function DynamicRecordFormDialog({
       }
     })();
   }, []);
+
+  // Detectar columnas de notificaciones y cargar usuarios asignados
+  useEffect(() => {
+    if (columns.length > 0) {
+      // Verificar si la tabla tiene columnas de fecha (funcionalidad de notificaciones)
+      const hasDateColumns = columns.some(col => 
+        ['date', 'datetime', 'timestamp'].includes(col.data_type)
+      );
+      setHasNotificationColumns(hasDateColumns);
+      
+      // Si estamos editando un registro y la tabla tiene notificaciones, cargar usuarios asignados
+      if (hasDateColumns && mode === "edit" && record?.id) {
+        loadAssignedUsers();
+      }
+    }
+  }, [columns, mode, record]);
 
   function castValueByDataType(type, value) {
     if (value === null || value === undefined) return value;
@@ -190,6 +213,33 @@ export default function DynamicRecordFormDialog({
     setIntermediateTableId(interTable ? interTable.id : null);
   };
 
+  // Detectar columnas de notificaciones y cargar usuarios asignados
+  useEffect(() => {
+    if (columns.length > 0) {
+      // Verificar si la tabla tiene columnas de fecha (funcionalidad de notificaciones)
+      const hasDateColumns = columns.some(col => 
+        ['date', 'datetime', 'timestamp'].includes(col.data_type)
+      );
+      setHasNotificationColumns(hasDateColumns);
+      
+      // Si estamos editando un registro y la tabla tiene notificaciones, cargar usuarios asignados
+      if (hasDateColumns && mode === "edit" && record?.id) {
+        loadAssignedUsers();
+      }
+    }
+  }, [columns, mode, record]);
+  
+  // Función para cargar usuarios asignados
+  const loadAssignedUsers = async () => {
+    try {
+      const users = await getAssignedUsersByRecord(record.id);
+      setAssignedUsers(users || []);
+    } catch (error) {
+      console.error('Error loading assigned users:', error);
+      setAssignedUsers([]);
+    }
+  };
+
   if (!open) return null;
 
 return (
@@ -279,25 +329,41 @@ return (
       </div>
 
       {/* Footer con botones */}
-      <div className="border-t p-4 flex gap-2 justify-start">
-        <Button type="submit" onClick={handleSubmit} disabled={loading}>
-          {loading ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-              Guardando...
-            </>
-          ) : (
-            <>Guardar</>
+      <div className="border-t p-4 flex gap-2 justify-between">
+        <div className="flex gap-2">
+          <Button type="submit" onClick={handleSubmit} disabled={loading}>
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                Guardando...
+              </>
+            ) : (
+              <>Guardar</>
+            )}
+          </Button>
+          {mode === "edit" && onDelete && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onDelete(record)}
+              disabled={loading}
+            >
+              Eliminar
+            </Button>
           )}
-        </Button>
-        {mode === "edit" && onDelete && (
+        </div>
+        
+        {/* Botón de usuarios asignados - solo si es modo edición y hay notificaciones */}
+        {mode === "edit" && hasNotificationColumns && record?.id && (
           <Button
             type="button"
             variant="outline"
-            onClick={() => onDelete(record)}
+            onClick={() => setShowAssignedUsersModal(true)}
             disabled={loading}
+            className="flex items-center gap-2"
           >
-            Eliminar
+            <Users className="w-4 h-4" />
+            Usuarios Asignados ({assignedUsers.length})
           </Button>
         )}
       </div>
@@ -332,8 +398,58 @@ return (
               value: columnName?.column_id ?? "",
             }}
             hiddenColumns={["original_record_id"]}
+            forcePermissions={{
+              can_create: true,
+              can_read: true,
+              can_update: true,
+              can_delete: true
+            }}
           />
         )}
+      </div>
+    )}
+
+    {/* Modal de usuarios asignados */}
+    {showAssignedUsersModal && mode === "edit" && record?.id && (
+      <div className="fixed inset-0 z-60 bg-black/50 flex items-center justify-center px-4">
+        <div className="bg-white rounded-lg shadow-lg w-[600px] max-h-[80vh] overflow-hidden">
+          <div className="flex justify-between items-center p-4 border-b">
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Usuarios Asignados por Notificaciones
+            </h2>
+            <button
+              onClick={() => setShowAssignedUsersModal(false)}
+              className="text-gray-500 hover:text-gray-700"
+              aria-label="Cerrar modal de usuarios"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          
+          <div className="p-4 overflow-y-auto max-h-[60vh]">
+            <AssignedUsersCell
+              value={assignedUsers}
+              onChange={() => {
+                // Recargar usuarios asignados después de cambios
+                loadAssignedUsers();
+              }}
+              tableId={tableId}
+              recordId={record.id}
+              isEditing={true}
+              className="w-full"
+            />
+          </div>
+          
+          <div className="border-t p-4 flex justify-end">
+            <Button 
+              onClick={() => setShowAssignedUsersModal(false)}
+              variant="outline"
+            >
+              Cerrar
+            </Button>
+          </div>
+        </div>
       </div>
     )}
   </div>

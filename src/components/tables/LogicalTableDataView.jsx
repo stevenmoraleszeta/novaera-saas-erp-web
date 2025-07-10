@@ -56,7 +56,7 @@ import { useUsers } from '@/hooks/useUsers';
 import { useRoles } from '@/hooks/useRoles';
 
 
-export default function LogicalTableDataView({ tableId, refresh, colName, constFilter, hiddenColumns }) {
+export default function LogicalTableDataView({ tableId, refresh, colName, constFilter, hiddenColumns, forcePermissions }) {
   const { isEditingMode } = useEditModeStore();
   const { getTableById, handleUpdatePositionRecord, createOrUpdateTable } = useLogicalTables(null);
   const {
@@ -77,6 +77,12 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
 
   // Hook para verificar permisos del usuario
   const { permissions, loading: permissionsLoading, canCreate, canRead, canUpdate, canDelete } = useUserPermissions(tableId);
+
+  // Usar forcePermissions si están disponibles, sino usar los permisos del usuario
+  const effectiveCanCreate = forcePermissions?.can_create ?? canCreate;
+  const effectiveCanRead = forcePermissions?.can_read ?? canRead;
+  const effectiveCanUpdate = forcePermissions?.can_update ?? canUpdate;
+  const effectiveCanDelete = forcePermissions?.can_delete ?? canDelete;
 
   const [columns, setColumns] = useState([]);
   const [records, setRecords] = useState([]);
@@ -106,6 +112,9 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   // Assigned users state
   const [hasAssignedUsers, setHasAssignedUsers] = useState(false);
   const [assignedUsersStats, setAssignedUsersStats] = useState(null);
+  
+  // Notifications functionality state
+  const [hasNotificationColumns, setHasNotificationColumns] = useState(false);
 
   // View management state
   const [selectedView, setSelectedView] = useState(null);
@@ -277,6 +286,14 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     checkAssignedUsers();
   }, [tableId, localRefreshFlag]);
 
+  // Verificar si la tabla tiene columnas de fecha (funcionalidad de notificaciones)
+  useEffect(() => {
+    const hasDateColumns = columns.some(col => 
+      ['date', 'datetime', 'timestamp'].includes(col.data_type)
+    );
+    setHasNotificationColumns(hasDateColumns);
+  }, [columns]);
+
   const handleDeleteRecord = async (record) => {
     setDeleteConfirmRecord(record);
   };
@@ -318,8 +335,8 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
               );
             }
             
-            // Renderizar usuarios asignados
-            if (col.data_type === "assigned_users") {
+            // Renderizar usuarios asignados solo si la tabla NO tiene funcionalidad de notificaciones
+            if (col.data_type === "assigned_users" && !hasNotificationColumns) {
               return (
                 <AssignedUsersCell
                   value={cellValue}
@@ -336,6 +353,11 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
               );
             }
             
+            // Si es una columna de usuarios asignados en una tabla con notificaciones, no renderizar nada
+            if (col.data_type === "assigned_users" && hasNotificationColumns) {
+              return null;
+            }
+            
             // Renderizar otros tipos de datos
             return (
               <span className="text-sm">
@@ -345,9 +367,9 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
           },
       }));
 
-    // Agregar columna de usuarios asignados si hay usuarios asignados en la tabla
-    if (hasAssignedUsers && !cols.some(col => col.key === 'assigned_users')) {
-      console.log('Adding assigned users column, hasAssignedUsers:', hasAssignedUsers);
+    // Agregar columna de usuarios asignados solo si hay usuarios asignados en la tabla Y la tabla NO tiene funcionalidad de notificaciones
+    if (hasAssignedUsers && !hasNotificationColumns && !cols.some(col => col.key === 'assigned_users')) {
+      console.log('Adding assigned users column, hasAssignedUsers:', hasAssignedUsers, 'hasNotificationColumns:', hasNotificationColumns);
       cols.push({
         key: 'assigned_users',
         header: 'Usuarios Asignados',
@@ -371,13 +393,14 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     } else {
       console.log('Not adding assigned users column:', {
         hasAssignedUsers,
+        hasNotificationColumns,
         hasAssignedUsersColumn: cols.some(col => col.key === 'assigned_users')
       });
     }
 
     console.log('Final columns:', cols.map(c => c.key));
     return cols;
-  }, [columns, columnVisibility, hiddenColumns, hasAssignedUsers, tableId, isEditingMode]);
+  }, [columns, columnVisibility, hiddenColumns, hasAssignedUsers, hasNotificationColumns, tableId, isEditingMode]);
 
   // Add column management actions to table headers when edit mode changes
     const tableColumnsWithActions = useMemo(() => {
@@ -901,7 +924,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
               placeholder="Buscar..."
             />
           </div>
-          {canCreate && (
+          {effectiveCanCreate && (
             <Button
               onClick={() => setShowAddRecordDialog(true)}
               size="lg"
@@ -1018,18 +1041,18 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
             }}
 
             getRowKey={(row) => row.id}
-            onCreate={canCreate ? () => setShowAddRecordDialog(true) : undefined}
-            onUpdate={canUpdate ? (id, updatedData) => {
+            onCreate={effectiveCanCreate ? () => setShowAddRecordDialog(true) : undefined}
+            onUpdate={effectiveCanUpdate ? (id, updatedData) => {
               setRecordToEdit({ ...updatedData, id });
               setShowEditRecordDialog(true);
             } : undefined}
-            onDelete={canDelete ? handleDeleteRecord : undefined}
+            onDelete={effectiveCanDelete ? handleDeleteRecord : undefined}
             rowIdKey="id"
             permissions={{
-              canCreate,
-              canRead,
-              canUpdate,
-              canDelete
+              canCreate: effectiveCanCreate,
+              canRead: effectiveCanRead,
+              canUpdate: effectiveCanUpdate,
+              canDelete: effectiveCanDelete
             }}
               renderForm={({ mode, item, open, onClose, onSubmit }) => (
                   <DynamicRecordFormDialog
@@ -1043,7 +1066,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
                     tableId={tableId}
                     record={item}
                     mode={mode}
-                    onDelete={canDelete ? handleDeleteRecord : undefined}
+                    onDelete={effectiveCanDelete ? handleDeleteRecord : undefined}
                     onSubmitSuccess={async (createdOrUpdatedRecord) => {
                       if (mode === "create") {
                         const userColumn = columns.find((col) => col.data_type === "user");
