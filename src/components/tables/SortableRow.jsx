@@ -49,8 +49,8 @@ if(idRow){
       {...attributes}
       onClick={() => onRowClick?.(row)}
       className={`${
-        onRowClick ? "cursor-pointer hover:bg-gray-50" : ""
-      } ${rowIndex % 2 === 0 ? "bg-white" : "bg-[#F6F3F3]"}`}
+        onRowClick ? "cursor-pointer hover:bg-[#f0f0f0]" : ""
+      } ${rowIndex % 2 === 0 ? "bg-[#FFFFFF]" : "bg-[#f7f3f2]"}`}
     >
       {/* Handle de drag a la izquierda */}
       <TableCell className="w-4 px-2 cursor-grab text-gray-400 select-none">

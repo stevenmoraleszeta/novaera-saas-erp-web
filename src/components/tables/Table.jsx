@@ -220,6 +220,7 @@ export default function Table({
                       key={getRowKey(row)}
                       id={getRowKey(row)}
                       idRow={getRowKey(row)}
+                      rowIndex = {index}
                       row={row}
                       onRowClick={onRowClick}
                       visibleColumnsList={visibleColumnsList}

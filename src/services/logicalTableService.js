@@ -71,9 +71,17 @@ export async function deleteLogicalTableRecord(recordId) {
   return data;
 }
 
+
+
 export async function updateRecordPosition(recordId, newPosition) {
   const res = await axios.patch(`/records/${recordId}/update_records`, {
     position: newPosition,
   });
   return res.data.message; // o lo que devuelva el backend
 }
+
+export async function getRecordsByTableId (tableId) {
+  const res = await axios.get(`/records/table/${tableId}`);
+  return res.data; // o lo que devuelva el backend
+}
+
