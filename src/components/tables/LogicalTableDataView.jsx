@@ -895,6 +895,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
             <span className="text-3xl font-bold text-gray-900">
               {tableMeta?.name || "Nombre Tabla"}
             </span>
+            {isEditingMode && (
             <button
               onClick={() => {
                 setNewTableName(tableMeta?.name || "");
@@ -905,6 +906,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
             >
               <Edit3 className="w-5 h-5" />
             </button>
+             )}
           </>
         )}
       </div>
