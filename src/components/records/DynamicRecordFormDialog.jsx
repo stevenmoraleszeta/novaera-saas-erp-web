@@ -195,7 +195,6 @@ export default function DynamicRecordFormDialog({
       }
       onOpenChange?.(false);
     } catch (err) {
-      console.log("chat: ERROR:", err);
       setSubmitError(err?.response?.data?.message || "Error al guardar el registro");
     } finally {
       setLoading(false);
