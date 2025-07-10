@@ -5,12 +5,11 @@ import {
   updateModule,
   deleteModule,
   getModuleById,
+  updateModulePosition,
 } from "@/services/moduleService";
 import { useLogicalTables } from "@/hooks/useLogicalTables";
 import { useColumns } from "@/hooks/useColumns";
 import useUserStore from "@/stores/userStore";
-
-
 
 export function useModules(initialParams = {}) {
   const [modules, setModules] = useState([]);
@@ -21,17 +20,17 @@ export function useModules(initialParams = {}) {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [error, setError] = useState(null);
-  const [succes, setSucces] = useState(null);
+  const [success, setSuccess] = useState(null);
 
-    const { user } = useUserStore();
+  const { user } = useUserStore();
 
-    
+
   const {
-      createOrUpdateTable
-    } = useLogicalTables();
+    createOrUpdateTable
+  } = useLogicalTables();
   const {
-      handleCreate
-    } = useColumns();
+    handleCreate
+  } = useColumns();
 
   const loadModules = useCallback(
     async (params = {}) => {
@@ -73,39 +72,39 @@ export function useModules(initialParams = {}) {
     loadModules({ page });
   };
 
-    const handleCreateModule = async (data) => {
-      try {
-        const newModule = await createModule(data);
+  const handleCreateModule = async (data) => {
+    try {
+      const newModule = await createModule(data);
 
-        const datatable = await createOrUpdateTable({
-          name: data.name,
-          description: data.description,
-          module_id: newModule.message.module_id,
-        });
+      const datatable = await createOrUpdateTable({
+        name: data.name,
+        description: data.description,
+        module_id: newModule.message.module_id,
+      });
 
-        const datacolumn = await handleCreate({
-            name: "Nombre",
-            data_type: "string",
-            is_required: false,
-            is_foreign_key: false,
-            relation_type: "",
-            foreign_table_id: null,
-            foreign_column_name: "",
-            foreign_column_id: "",
-            validations: "",
-            table_id: datatable,
-            created_by: user?.id || null,
-            column_position: 0,
-        })
+      const datacolumn = await handleCreate({
+        name: "Nombre",
+        data_type: "string",
+        is_required: false,
+        is_foreign_key: false,
+        relation_type: "",
+        foreign_table_id: null,
+        foreign_column_name: "",
+        foreign_column_id: "",
+        validations: "",
+        table_id: datatable,
+        created_by: user?.id || null,
+        column_position: 0,
+      })
 
 
-        await loadModules();
-        return newModule;
+      await loadModules();
+      return newModule;
 
-      } catch (error) {
-        console.error(" Error en handleCreateModule:", error);
-      }
-    };
+    } catch (error) {
+      console.error(" Error en handleCreateModule:", error);
+    }
+  };
 
   const handleUpdateModule = async (id, data) => {
     const updatedModule = await updateModule(id, data);
@@ -117,7 +116,7 @@ export function useModules(initialParams = {}) {
     try {
       setError(null);
       await deleteModule(id);
-      setSucces("Usuario eliminado correctamente");
+      setSucces("Modulo eliminado correctamente");
       loadModules();
     } catch (err) {
       console.error("Error deleting module:", err);
@@ -138,6 +137,20 @@ export function useModules(initialParams = {}) {
       throw err;
     }
   }, []);
+
+  const handleUpdatePosition = async (id, newPosition) => {
+    try {
+      setError(null);
+      setSuccess(null);
+      console.log('chat: NEWPO, ', id, newPosition);
+      await updateModulePosition(id, newPosition);
+      setSuccess('Posición actualizada correctamente');
+      loadModules();
+    } catch (err) {
+      console.error('Error actualizando posición:', err);
+      setError(err?.response?.data?.error || 'Error al actualizar la posición');
+    }
+  };
 
   const clearMessages = useCallback(() => {
     setError(null);
@@ -161,5 +174,6 @@ export function useModules(initialParams = {}) {
     handleDeleteModule,
     getById,
     clearMessages,
+    handleUpdatePosition,
   };
 }

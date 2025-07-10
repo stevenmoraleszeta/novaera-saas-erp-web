@@ -20,10 +20,10 @@ export function useColumns(tableId) {
   const [search, setSearch] = useState('');
   const { user } = useUserStore();
 
-    const {
-      createOrUpdateTable,
-      getTableById
-    } = useLogicalTables();
+  const {
+    createOrUpdateTable,
+    getTableById
+  } = useLogicalTables();
 
   const fetchColumns = useCallback(async () => {
     if (!tableId) return;
@@ -32,8 +32,8 @@ export function useColumns(tableId) {
       const response = await getColumnsByTable(tableId);
       const filtered = search
         ? response.filter(col =>
-            col.name.toLowerCase().includes(search.toLowerCase())
-          )
+          col.name.toLowerCase().includes(search.toLowerCase())
+        )
         : response;
 
       setColumns(filtered);
@@ -56,13 +56,14 @@ export function useColumns(tableId) {
       const createdColumn = await createColumn(columnData);
       setSuccess("Columna creada");
       fetchColumns();
+      return createdColumn;
     } catch (err) {
       console.error("Error creating column:", err);
       setError(err?.response?.data?.error || "Error al crear columna");
     }
   };
 
-  
+
 
   const handleUpdate = async (columnId, columnData) => {
     try {
@@ -108,19 +109,20 @@ export function useColumns(tableId) {
       return false;
     }
   };
-      const handleUpdatePosition = async (columnId, newPosition) => {
-      try {
-        setError(null);
-        setSuccess(null);
-        console.log('chat: NEWPO, ', columnId, newPosition );
-        await updateColumnPosition(columnId, newPosition);
-        setSuccess('Posición actualizada correctamente');
-        fetchColumns(); // O lo que uses para recargar la lista
-      } catch (err) {
-        console.error('Error actualizando posición:', err);
-        setError(err?.response?.data?.error || 'Error al actualizar la posición');
-      }
-    };
+
+  const handleUpdatePosition = async (columnId, newPosition) => {
+    try {
+      setError(null);
+      setSuccess(null);
+      console.log('chat: NEWPO, ', columnId, newPosition);
+      await updateColumnPosition(columnId, newPosition);
+      setSuccess('Posición actualizada correctamente');
+      fetchColumns();
+    } catch (err) {
+      console.error('Error actualizando posición:', err);
+      setError(err?.response?.data?.error || 'Error al actualizar la posición');
+    }
+  };
 
   const clearMessages = () => {
     setError(null);

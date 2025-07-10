@@ -46,10 +46,11 @@ export default function ModuleCard({ module, onClick, isEditingMode = false }) {
     !iconMap[module.iconUrl];
 
   return (
-    <Card
-      onClick={handleCardClick}
-      className="aspect-square flex items-center justify-center p-6 bg-white dark:bg-gray-800 rounded-2xl cursor-pointer w-full"
-    >
+      <Card
+        onClick={handleCardClick}
+        className={`aspect-square flex items-center justify-center p-6 bg-white dark:bg-gray-800 rounded-2xl w-full cursor-pointer
+          ${isEditingMode ? "cursor-grab hover:bg-[#f0f0f0]" : ""}`}
+      >
       <CardContent className="p-0 flex items-center justify-center">
         {/* 1. Si hay iconUrl válida, mostrarla */}
         {LucideIcon && !imageError ? (

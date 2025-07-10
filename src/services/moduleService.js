@@ -9,6 +9,7 @@ const mapModuleFromBackend = (backendModule) => {
     iconUrl: backendModule.icon_url,
     createdBy: backendModule.created_by,
     createdAt: backendModule.created_at || backendModule.createdAt,
+    position_num: backendModule.position_num,
     ...backendModule,
   };
 };
@@ -20,6 +21,7 @@ const mapModuleToBackend = (frontendModule) => {
     description: frontendModule.description,
     icon_url: frontendModule.icon,
     created_by: frontendModule.createdBy,
+    position_num: frontendModule.position_num
   };
 };
 
@@ -104,4 +106,11 @@ export async function deleteModule(id) {
     console.error("Error deleting module:", error.message);
     throw error;
   }
+}
+
+export async function updateModulePosition(id, newPosition) {
+  const res = await axios.patch(`/modules/${id}/update_modules`, {
+    position: newPosition,
+  });
+  return res.data.message;
 }
