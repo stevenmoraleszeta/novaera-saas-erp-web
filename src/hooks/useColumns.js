@@ -57,7 +57,6 @@ export function useColumns(tableId) {
       setSuccess("Columna creada");
       fetchColumns();
     } catch (err) {
-      console.log("creation: peto", err)
       console.error("Error creating column:", err);
       setError(err?.response?.data?.error || "Error al crear columna");
     }
