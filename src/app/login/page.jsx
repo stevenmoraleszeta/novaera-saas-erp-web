@@ -69,7 +69,8 @@ export default function LoginPage() {
       }
     } catch (err) {
       console.error("❌ Login error:", err);
-      setLocalError(err.message || "Error al intentar iniciar sesión");
+      setLocalError(err.response.data.error
+ || "Error al intentar iniciar sesión");
     } finally {
       setSubmitting(false);
     }

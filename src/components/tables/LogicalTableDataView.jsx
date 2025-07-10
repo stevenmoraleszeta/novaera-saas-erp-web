@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import {
   getLogicalTableStructure,
   getLogicalTableRecords,
@@ -154,6 +154,8 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   const { users } = useUsers();
   const { roles } = useRoles();
 
+  const creatingGeneralViewRef = useRef(false);
+
   constFilter = constFilter || null;
 
   const filterConditions = [
@@ -166,6 +168,55 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     { value: "is_null", label: "Es nulo" },
     { value: "is_not_null", label: "No es nulo" },
   ];
+
+
+useEffect(() => {
+  // Evita ejecución múltiple
+  if (
+    creatingGeneralViewRef.current ||
+    views.length > 0 ||
+    !tableId ||
+    columns.length === 0
+  ) {
+    return;
+  }
+
+  creatingGeneralViewRef.current = true;
+
+  const createDefaultView = async () => {
+    try {
+      const newView = await handleCreateView({
+        tableId,
+        name: "Vista General",
+        sort_by: null,
+        sort_direction: null,
+      });
+
+      const viewId = newView.message.view_id;
+
+      for (let i = 0; i < columns.length; i++) {
+        const col = columns[i];
+        await handleAddColumnToView({
+          view_id: viewId,
+          column_id: col.column_id,
+          visible: true,
+          filter_condition: null,
+          filter_value: null,
+          position_num: i + 1,
+        });
+      }
+
+      setLocalRefreshFlag((prev) => !prev);
+    } catch (err) {
+      console.error("Error creando la vista por defecto:", err);
+    } finally {
+      creatingGeneralViewRef.current = false;
+    }
+  };
+
+  createDefaultView();
+}, [views, tableId, columns]);
+
 
   useEffect(() => {
     if (columns.length > 0) {
@@ -896,17 +947,17 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
               {tableMeta?.name || "Nombre Tabla"}
             </span>
             {isEditingMode && (
-            <button
-              onClick={() => {
-                setNewTableName(tableMeta?.name || "");
-                setIsEditingName(true);
-              }}
-              className="text-gray-500 hover:text-gray-800"
-              title="Editar nombre"
-            >
-              <Edit3 className="w-5 h-5" />
-            </button>
-             )}
+              <button
+                onClick={() => {
+                  setNewTableName(tableMeta?.name || "");
+                  setIsEditingName(true);
+                }}
+                className="text-gray-500 hover:text-gray-800"
+                title="Editar nombre"
+              >
+                <Edit3 className="w-5 h-5" />
+              </button>
+            )}
           </>
         )}
       </div>
