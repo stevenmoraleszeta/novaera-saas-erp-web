@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -66,6 +66,15 @@ export default function ColumnForm({
   // Estados para opciones personalizadas
   const [selectionType, setSelectionType] = useState("table");
   const [customOptions, setCustomOptions] = useState([]);
+
+  // filter for tables/no include foreing tables (" - ")
+  const filteredTables = useMemo(() => {
+    if (!tables) return [];
+    return tables.filter(
+      (table) =>
+        !table.name.startsWith("mid_") && !table.name.includes(" - ")
+    );
+  }, [tables]);
 
   useEffect(() => {
     setFormError(null);
@@ -271,14 +280,12 @@ export default function ColumnForm({
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona una tabla" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {tables
-                      .filter((table) => !table.name.startsWith('mid_'))
-                      .map((table) => (
-                        <SelectItem key={table.id} value={table.id.toString()}>
+                  <SelectContent className="max-h-[250px">
+                    {filteredTables.map((table) => (
+                      <SelectItem key={table.id} value={table.id.toString()}>
                           {table.name}
-                        </SelectItem>
-                      ))}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -330,14 +337,12 @@ export default function ColumnForm({
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona una tabla" />
                         </SelectTrigger>
-                        <SelectContent>
-                          {tables
-                            .filter((table) => !table.name.startsWith('mid_'))
-                            .map((table) => (
-                              <SelectItem key={table.id} value={table.id.toString()}>
+                        <SelectContent className="max-h-[250px]">
+                          {filteredTables.map((table) => (
+                            <SelectItem key={table.id} value={table.id.toString()}>
                                 {table.name}
-                              </SelectItem>
-                            ))}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
