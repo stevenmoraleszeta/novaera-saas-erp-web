@@ -8,10 +8,29 @@ import {
   X,
   Home,
   Loader2,
+  Lock,
+  Unlock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import useTabStore from "@/stores/tabStore";
 import { useRouter, usePathname } from "next/navigation";
+
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  horizontalListSortingStrategy,
+} from "@dnd-kit/sortable";
+
+import { restrictToHorizontalAxis } from "@dnd-kit/modifiers";
+
+import SortableTab from "./SortableTab"; // Ajusta la ruta si es necesario
 
 export default function TabBar() {
   const {
@@ -21,9 +40,16 @@ export default function TabBar() {
     closeTab,
     loadingTab,
     setLoadingTab,
+    reorderTabs,
+    togglePinTab,
   } = useTabStore();
   const router = useRouter();
   const pathname = usePathname();
+
+  // Divide tabs
+  const fixedTabs = tabs.filter(tab => tab.isFixed);
+  const movableTabs = tabs.filter(tab => !tab.isFixed);
+
 
   useEffect(() => {
     if (loadingTab) {
@@ -71,6 +97,34 @@ export default function TabBar() {
     return <LayoutGrid className="w-4 h-4" />;
   };
 
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5, // evita arrastres accidentales
+      },
+    })
+  );
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = tabs.findIndex((t) => t.id === active.id);
+    const newIndex = tabs.findIndex((t) => t.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = [...tabs];
+    const [movedTab] = reordered.splice(oldIndex, 1);
+    reordered.splice(newIndex, 0, movedTab);
+
+    const newOrderIds = reordered.map((tab) => tab.id);
+    reorderTabs(newOrderIds); // <- del store
+  };
+
+
+
   const activeIndex = tabs.findIndex((tab) => tab.id === activeTab);
 
   return (
@@ -96,40 +150,27 @@ export default function TabBar() {
         </Button>
       </div>
       <div className="flex-grow flex items-center overflow-x-auto no-scrollbar">
-        {tabs.map((tab) => (
-          <div
-            key={tab.id}
-            onClick={() => handleTabClick(tab.id)}
-            className={`flex items-center px-4 py-2 cursor-pointer border-b-2 min-w-0 flex-shrink-0 ${
-              activeTab === tab.id
-                ? "border-black bg-white dark:bg-gray-700"
-                : "border-transparent hover:bg-gray-200 dark:hover:bg-gray-700"
-            } ${tab.isFixed ? "bg-gray-100 dark:bg-gray-700" : ""}`}
-          >
-            <span className="mr-2 flex-shrink-0">{getTabIcon(tab)}</span>
-            <span
-              className={`text-sm truncate max-w-32 ${
-                tab.isFixed ? "font-medium" : ""
-              }`}
-            >
-              {tab.name}
-            </span>
-            {/* Only show close button for non-fixed tabs */}
-            {!tab.isFixed && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="ml-2 w-5 h-5 flex-shrink-0"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  closeTab(tab.id, router);
-                }}
-              >
-                <X className="w-3 h-3" />
-              </Button>
-            )}
-          </div>
-        ))}
+        
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+          modifiers={[restrictToHorizontalAxis]}
+        >
+          <SortableContext items={tabs.map((tab) => tab.id)} strategy={horizontalListSortingStrategy}>
+            {tabs.map((tab) => (
+              <SortableTab
+                key={tab.id}
+                tab={tab}
+                activeTab={activeTab}
+                onClick={handleTabClick}
+                onClose={closeTab}
+                icon={getTabIcon(tab)}
+                onTogglePin={togglePinTab}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
       </div>
     </div>
   );

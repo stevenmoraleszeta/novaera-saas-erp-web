@@ -116,7 +116,7 @@ export function useModules(initialParams = {}) {
     try {
       setError(null);
       await deleteModule(id);
-      setSucces("Modulo eliminado correctamente");
+      setSuccess("Modulo eliminado correctamente");
       loadModules();
     } catch (err) {
       console.error("Error deleting module:", err);
