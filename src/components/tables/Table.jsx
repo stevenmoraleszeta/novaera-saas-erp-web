@@ -24,6 +24,9 @@ import {
   verticalListSortingStrategy,
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
+
+import { restrictToHorizontalAxis, restrictToVerticalAxis } from "@dnd-kit/modifiers";
+
 import SortableRow from "./SortableRow";
 import SortableColumnHeader from "./SortableColumnHeader";
 
@@ -104,43 +107,49 @@ export default function Table({
     document.body.style.cursor = "";
   }, []);
 
-  
 
-    const handleDragStart = (event) => {
-      const id = event.active.id;
 
-      if (orderedColumns.includes(id)) {
-        setDragType("column");
-      } else if (internalData.some(row => getRowKey(row) === id)) {
-        setDragType("row");
-      }
-    };
+  const handleDragStart = (event) => {
+    const id = event.active.id;
 
-    const handleDragEnd = ({ active, over }) => {
-      if (!over || active.id === over.id) {
-        setIsDraggingEnabled(false);
-        return;
-      }
+    if (orderedColumns.includes(id)) {
+      setDragType("column");
+    } else if (internalData.some(row => getRowKey(row) === id)) {
+      setDragType("row");
+    }
+  };
 
-      if (dragType === "column") {
-        const oldIndex = orderedColumns.indexOf(active.id);
-        const newIndex = orderedColumns.indexOf(over.id);
-        const newOrder = arrayMove(orderedColumns, oldIndex, newIndex);
-        setOrderedColumns(newOrder);
-        onOrderColumnChange?.(newOrder);
-      }
+  const handleDragEnd = ({ active, over }) => {
+    if (!over || active.id === over.id) {
+      setIsDraggingEnabled(false);
+      return;
+    }
 
-      if (dragType === "row") {
-        const oldIndex = internalData.findIndex(item => getRowKey(item) === active.id);
-        const newIndex = internalData.findIndex(item => getRowKey(item) === over.id);
-        const newOrder = arrayMove(internalData, oldIndex, newIndex);
-        setInternalData(newOrder);
-        onOrderChange?.(newOrder);
-      }
+    if (dragType === "column") {
+      const oldIndex = orderedColumns.indexOf(active.id);
+      const newIndex = orderedColumns.indexOf(over.id);
+      const newOrder = arrayMove(orderedColumns, oldIndex, newIndex);
+      setOrderedColumns(newOrder);
+      onOrderColumnChange?.(newOrder);
+    }
 
-      setIsDraggingEnabled(false); // 🔴 aquí desactivas el modo drag
-      setDragType(null);
-    };
+    if (dragType === "row") {
+      const oldIndex = internalData.findIndex(item => getRowKey(item) === active.id);
+      const newIndex = internalData.findIndex(item => getRowKey(item) === over.id);
+      const newOrder = arrayMove(internalData, oldIndex, newIndex);
+      setInternalData(newOrder);
+      onOrderChange?.(newOrder);
+    }
+
+    setIsDraggingEnabled(false);
+    setDragType(null);
+  };
+
+  const getModifiers = () => {
+    if (dragType === "column") return [restrictToHorizontalAxis];
+    if (dragType === "row") return [restrictToVerticalAxis];
+    return [];
+  };
 
 
 
@@ -157,15 +166,15 @@ export default function Table({
   }, [columns]);
 
 
-    const handleColumnDragEnd = ({ active, over }) => {
-      if (!over || active.id === over.id) return;
+  const handleColumnDragEnd = ({ active, over }) => {
+    if (!over || active.id === over.id) return;
 
-      const oldIndex = orderedColumns.indexOf(active.id);
-      const newIndex = orderedColumns.indexOf(over.id);
+    const oldIndex = orderedColumns.indexOf(active.id);
+    const newIndex = orderedColumns.indexOf(over.id);
 
-      const newOrder = arrayMove(orderedColumns, oldIndex, newIndex);
-      setOrderedColumns(newOrder);
-    };
+    const newOrder = arrayMove(orderedColumns, oldIndex, newIndex);
+    setOrderedColumns(newOrder);
+  };
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -175,19 +184,20 @@ export default function Table({
           collisionDetection={closestCenter}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
+          modifiers={getModifiers()}
         >
           <SortableContext
-              items={
-                dragType === "column"
-                  ? orderedColumns
-                  : internalData.map((item) => getRowKey(item))
-              }
-              strategy={
-                dragType === "column"
-                  ? horizontalListSortingStrategy
-                  : verticalListSortingStrategy
-              }
-            >
+            items={
+              dragType === "column"
+                ? orderedColumns
+                : internalData.map((item) => getRowKey(item))
+            }
+            strategy={
+              dragType === "column"
+                ? horizontalListSortingStrategy
+                : verticalListSortingStrategy
+            }
+          >
             {/* 💡 Table layout MUST NOT include DndContext directly */}
             <TableUI>
               <TableHeader>
@@ -195,7 +205,7 @@ export default function Table({
                   <TableHead className="w-6">&nbsp;</TableHead>
                   {orderedColumns.map((key) => {
                     const column = columns.find((c) => c.key === key);
-                    
+
                     if (!column || !visibleColumns[column.key]) return null;
                     return (
                       <SortableColumnHeader
@@ -220,7 +230,7 @@ export default function Table({
                       key={getRowKey(row)}
                       id={getRowKey(row)}
                       idRow={getRowKey(row)}
-                      rowIndex = {index}
+                      rowIndex={index}
                       row={row}
                       onRowClick={onRowClick}
                       visibleColumnsList={visibleColumnsList}
