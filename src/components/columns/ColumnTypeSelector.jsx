@@ -40,12 +40,13 @@ export default function ColumnTypeSelector({
       <Label className="text-sm font-medium text-gray-700">
         {label} {required && <span className="text-red-500">*</span>}
       </Label>
+      
 
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger className="w-full h-11 focus:border-black focus:ring-blue-500/20 transition-colors">
           <SelectValue placeholder="Seleccione un tipo de dato" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent collisionPadding={100} sideOffset={2}>
           {DATA_TYPES.map((type) => (
             <SelectItem key={type.value} value={type.value}>
               {type.label}

@@ -280,7 +280,7 @@ export default function ColumnForm({
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona una tabla" />
                   </SelectTrigger>
-                  <SelectContent className="max-h-[250px">
+                  <SelectContent sideOffset={5} collisionPadding={100}>
                     {filteredTables.map((table) => (
                       <SelectItem key={table.id} value={table.id.toString()}>
                           {table.name}
@@ -303,7 +303,7 @@ export default function ColumnForm({
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona columna foránea" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent sideOffset={5} collisionPadding={100}>
                     {(columnsByTable[formData.foreign_table_id] || []).map((col) => (
                       <SelectItem key={col.name} value={col.name}>
                         {col.name}
