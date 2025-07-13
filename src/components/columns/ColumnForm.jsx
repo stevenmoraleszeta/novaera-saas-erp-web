@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -54,9 +54,9 @@ export default function ColumnForm({
     is_required: false,
     is_foreign_key: false,
     relation_type: "",
-    foreign_table_id: 0,
+    foreign_table_id: null,
     foreign_column_name: "",
-    foreign_column_id: "",
+    foreign_column_id: null,
     validations: "",
     table_id: tableId,
     created_by: user?.id || null,
@@ -66,6 +66,15 @@ export default function ColumnForm({
   // Estados para opciones personalizadas
   const [selectionType, setSelectionType] = useState("table");
   const [customOptions, setCustomOptions] = useState([]);
+
+  // filter for tables/no include foreing tables (" - ")
+  const filteredTables = useMemo(() => {
+    if (!tables) return [];
+    return tables.filter(
+      (table) =>
+        !table.name.startsWith("mid_") && !table.name.includes(" - ")
+    );
+  }, [tables]);
 
   useEffect(() => {
     setFormError(null);
@@ -95,9 +104,9 @@ export default function ColumnForm({
         is_required: false,
         is_foreign_key: false,
         relation_type: "",
-        foreign_table_id: 0,
+        foreign_table_id: null,
         foreign_column_name: "",
-        foreign_column_id: "",
+        foreign_column_id: null,
         validations: "",
         table_id: tableId,
         created_by: user?.id || null,
@@ -127,15 +136,18 @@ export default function ColumnForm({
       handleChange("is_foreign_key", true);
     } else {
       handleChange("is_foreign_key", false);
-      handleChange("foreign_table_id", 0);
+      handleChange("foreign_table_id", null);
+      handleChange("foreign_column_name", "");
+      handleChange("foreign_column_id", null);
       handleChange("relation_type", "");
     }
     
     // Para tipos de archivo, limpiar configuraciones de foreign key
     if (value === "file" || value === "file_array") {
       handleChange("is_foreign_key", false);
-      handleChange("foreign_table_id", 0);
+      handleChange("foreign_table_id", null);
       handleChange("foreign_column_name", "");
+      handleChange("foreign_column_id", null);
       handleChange("relation_type", "");
     }
 
@@ -176,7 +188,7 @@ export default function ColumnForm({
         formData.foreign_table_id &&
         formData.table_id
       ) {
-        console.log("data = ", formData)
+        // console.log("data = ", formData)
         await getOrCreateJoinTable(formData.table_id, formData.foreign_table_id, formData.foreign_column_name);
       }
 
@@ -199,6 +211,7 @@ export default function ColumnForm({
         columnData.is_foreign_key = false;
         columnData.foreign_table_id = null;
         columnData.foreign_column_name = null;
+        columnData.foreign_column_id = null;
         columnData.relation_type = "";
       }
 
@@ -264,21 +277,19 @@ export default function ColumnForm({
               <div className="space-y-2">
                 <Label>Tabla Foránea</Label>
                 <Select
-                  value={formData.foreign_table_id?.toString() || ""}
-                  onValueChange={(value) => handleChange("foreign_table_id", Number(value))}
+                  value={formData.foreign_table_id !== null ? formData.foreign_table_id.toString() : ""}
+                  onValueChange={(value) => handleChange("foreign_table_id", value ? Number(value) : null)}
                   disabled={loading}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona una tabla" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {tables
-                      .filter((table) => !table.name.startsWith('mid_'))
-                      .map((table) => (
-                        <SelectItem key={table.id} value={table.id.toString()}>
+                  <SelectContent sideOffset={5} collisionPadding={100}>
+                    {filteredTables.map((table) => (
+                      <SelectItem key={table.id} value={table.id.toString()}>
                           {table.name}
-                        </SelectItem>
-                      ))}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -296,7 +307,7 @@ export default function ColumnForm({
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona columna foránea" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent sideOffset={5} collisionPadding={100}>
                     {(columnsByTable[formData.foreign_table_id] || []).map((col) => (
                       <SelectItem key={col.name} value={col.name}>
                         {col.name}
@@ -321,23 +332,20 @@ export default function ColumnForm({
                 {selectionType === "table" && (
                   <>
                     <div className="space-y-2">
-                      <Label>Tabla de origen</Label>
-                      <Select
-                        value={formData.foreign_table_id?.toString() || ""}
-                        onValueChange={(value) => handleChange("foreign_table_id", Number(value))}
-                        disabled={loading}
-                      >
+                      <Label>Tabla de origen</Label>                        <Select
+                          value={formData.foreign_table_id && formData.foreign_table_id > 0 ? formData.foreign_table_id.toString() : ""}
+                          onValueChange={(value) => handleChange("foreign_table_id", value ? Number(value) : null)}
+                          disabled={loading}
+                        >
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona una tabla" />
                         </SelectTrigger>
-                        <SelectContent>
-                          {tables
-                            .filter((table) => !table.name.startsWith('mid_'))
-                            .map((table) => (
-                              <SelectItem key={table.id} value={table.id.toString()}>
+                        <SelectContent className="max-h-[250px]">
+                          {filteredTables.map((table) => (
+                            <SelectItem key={table.id} value={table.id.toString()}>
                                 {table.name}
-                              </SelectItem>
-                            ))}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>

@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/popover";
 import EmojiPicker from "emoji-picker-react";
 
-import { X, Save, Trash2, Smile, ChevronDown } from "lucide-react";
+import { X, Save, Trash2, Smile, ChevronDown, AlertTriangle } from "lucide-react";
 
 export default function ModuleForm({
   open = false,
@@ -41,26 +41,38 @@ export default function ModuleForm({
     icon: "",
   });
 
+  const [validationError, setValidationError] = useState(null);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
 
   useEffect(() => {
-    if (initialData) {
-      setFormData({
-        name: initialData.name || "",
-        description: initialData.description || "",
-        icon: initialData.icon || "",
-      });
-    } else {
-      setFormData({
-        name: "",
-        description: "",
-        icon: "",
-      });
+    if(open){
+      if (initialData) {
+        setFormData({
+          name: initialData.name || "",
+          description: initialData.description || "",
+          icon: initialData.icon || "",
+        });
+      } else {
+        setFormData({
+          name: "",
+          description: "",
+          icon: "",
+        });
+      }
+      setValidationError(null);
     }
   }, [initialData, open]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setValidationError(null);
+
+    // Validation for previos icon selection...
+    if (!formData.icon){
+      setValidationError("Por favor, selecciona un ícono para el módulo");
+      return;
+    }
+
     if (onSubmit) {
       onSubmit({ ...formData, createdBy: user.id });
     }
@@ -71,11 +83,15 @@ export default function ModuleForm({
       ...prev,
       [field]: value,
     }));
+    if (field === 'icon' && value){
+      setValidationError(null);
+    }
   };
 
   const handleEmojiSelect = (emojiObject) => {
     handleChange("icon", emojiObject.emoji);
     setEmojiPickerOpen(false);
+    setValidationError(null);
   };
 
   const handleDelete = () => {
@@ -177,6 +193,13 @@ export default function ModuleForm({
                   </Button>
                 )}
               </div>
+              {/* Validation Message for without icon */}
+                {validationError && (
+                 <div className="flex items-center gap-2 text-sm text-red-600">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span>{validationError}</span>
+                 </div>
+              )}
             </div>
 
             {/* Error Display */}

@@ -49,20 +49,23 @@ export default function FieldRenderer({
             column.foreign_table_id && 
             column.foreign_table_id !== null && 
             column.foreign_column_name) {
+          console.log('Cargando opciones para foreign key:', {
+            foreign_table_id: column.foreign_table_id,
+            foreign_column_name: column.foreign_column_name,
+            column_name: column.name
+          });
+          
           const records = await getLogicalTableRecords(column.foreign_table_id);
-          let opts;
-          if(!colName){
-          opts = records.map((record) => ({
-            value: record.record_data[column.foreign_column_name],
-            label: record.record_data[column.foreign_column_name],
+          
+          // Usar colName si está disponible, sino usar foreign_column_name
+          const displayColumn = colName || column.foreign_column_name;
+          
+          const opts = records.map((record) => ({
+            value: record.id, // Usar el ID del registro como valor
+            label: record.record_data[displayColumn], // Mostrar la columna especificada
           }));
-          } else {
-          opts = records.map((record) => ({
-            value: record.record_data[colName],
-            label: record.record_data[colName],
-          }));
-          }
 
+          console.log('Opciones cargadas:', opts);
           setForeignOptions(opts);
         } else if (column.data_type === "user") {
           await loadUsers();
@@ -73,10 +76,30 @@ export default function FieldRenderer({
     }
 
     loadOptions();
-  }, [column]);
+  }, [column, colName]);
 
 
-    // Tipo selección: usar SelectionField que maneja opciones personalizadas y de tabla
+    // Llave foránea: usar SelectionField que maneja tanto opciones personalizadas como de tabla foránea
+    if (column.data_type === "select" && column.is_foreign_key && column.foreign_table_id && column.foreign_column_name) {
+      console.log('Rendering foreign key select field:', {
+        columnId: column.column_id,
+        foreign_table_id: column.foreign_table_id,
+        foreign_column_name: column.foreign_column_name
+      });
+      
+      return (
+        <SelectionField
+          columnId={column.column_id}
+          value={value}
+          onChange={(val) => onChange({ target: { value: val === "none" ? "" : val } })}
+          required={column.is_required}
+          label={column.name}
+          placeholder={`Selecciona ${column.name}`}
+        />
+      );
+    }
+
+    // Tipo selección sin foreign key: usar SelectionField para opciones personalizadas
     if (column.data_type === "select") {
       return (
         <SelectionField
@@ -90,8 +113,9 @@ export default function FieldRenderer({
       );
     }
 
-    // Llave foránea: mostrar opciones desde tabla relacionada (mantener lógica existente)
+    // Llave foránea legacy: usar Select manual (mantener como fallback)
     if (column.is_foreign_key && column.foreign_table_id && column.foreign_column_name) {
+      console.log('Rendering legacy foreign key field - this should not be used for new intermediate tables');
       return (
         <Select
           value={value?.toString() || "none"}
