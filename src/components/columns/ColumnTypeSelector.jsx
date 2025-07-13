@@ -1,13 +1,23 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import { Check, ChevronsUpDown } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 
 const DATA_TYPES = [
@@ -35,26 +45,81 @@ export default function ColumnTypeSelector({
   label = "",
   required = false,
 }) {
+  const [open, setOpen] = useState(false);
+
   return (
     <div className="space-y-2">
       <Label className="text-sm font-medium text-gray-700">
         {label} {required && <span className="text-red-500">*</span>}
       </Label>
       
+      <Popover open={open} onOpenChange={setOpen} modal={true}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between h-11"
+          >
+            {value
+              ? DATA_TYPES.find((type) => type.value === value)?.label
+              : "Seleccione un tipo de dato..."}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent 
+            className="w-[--radix-popover-trigger-width] p-0" 
+            side="bottom" 
+            align="start"
+            collisionPadding={{ top: 100, bottom: 100 }}
+        >
+          <Command
+            filter={(value, search) => {
+              const item = DATA_TYPES.find(d => d.value === value);
+              const label = item?.label || '';
+              const normalizeText = (text) => 
+                text
+                  .normalize("NFD")
+                  .replace(/[\u0300-\u036f]/g, "")
+                  .toLowerCase();
 
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="w-full h-11 focus:border-black focus:ring-blue-500/20 transition-colors">
-          <SelectValue placeholder="Seleccione un tipo de dato" />
-        </SelectTrigger>
-        <SelectContent collisionPadding={100} sideOffset={2}>
-          {DATA_TYPES.map((type) => (
-            <SelectItem key={type.value} value={type.value}>
-              {type.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+              const normalizedLabel = normalizeText(label);
+              const normalizedSearch = normalizeText(search);
 
+              if (normalizedLabel.includes(normalizedSearch)) {
+                return 1; 
+              }
+              return 0; 
+            }}
+          >
+            
+            <CommandList className="max-h-[var(--radix-popover-content-available-height)]">
+              <CommandInput placeholder="Buscar tipo de dato..." />
+            <CommandEmpty>No se encontró el tipo de dato.</CommandEmpty>
+              <CommandGroup>
+                {DATA_TYPES.map((type) => (
+                  <CommandItem
+                    key={type.value}
+                    value={type.value}
+                    onSelect={(currentValue) => {
+                      onChange(currentValue === value ? "" : currentValue);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === type.value ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {type.label} 
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
       {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
     </div>
   );
