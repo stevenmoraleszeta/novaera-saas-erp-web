@@ -221,56 +221,48 @@ const useTabStore = create(
       },
 
       // Close tab
-      closeTab: (tabId, router) => {
+      closeTab: async (tabId, router) => {
         const { tabs, setActiveTab, setLoadingTab } = get();
 
-        // Don't allow closing the home tab
         if (tabId === "home") return;
 
+        const currentIndex = tabs.findIndex((tab) => tab.id === tabId);
         const remainingTabs = tabs.filter((tab) => tab.id !== tabId);
 
-        // Always ensure home tab is present
         if (!remainingTabs.find((tab) => tab.id === "home")) {
           remainingTabs.unshift(HOME_TAB);
         }
 
         set({ tabs: remainingTabs });
-
-        // Persist to localStorage
-        //const moduleTabs = remainingTabs.filter((tab) => !tab.isFixed);
-        //setStoredTabs(remainingTabs);
         setStoredTabs(remainingTabs.filter((tab) => tab.id !== "home"));
 
-
-        // If closing active tab, navigate to the previous tab
+        // Si se cerró el tab activo
         if (get().activeTab === tabId) {
-          const currentIndex = tabs.findIndex((tab) => tab.id === tabId);
+          const nextTab =
+            remainingTabs[currentIndex - 1] ||
+            remainingTabs[currentIndex] ||
+            HOME_TAB;
 
-          // Find the next tab to activate
-          let nextTab;
-          if (currentIndex > 0) {
-            // Go to the previous tab
-            nextTab = remainingTabs[currentIndex - 1];
-          } else {
-            // If it's the first tab (after home), go to home
-            nextTab = remainingTabs[0];
-          }
-
-          // Ensure we have a valid tab
-          if (!nextTab) {
-            nextTab = HOME_TAB;
-          }
-
-          // Set the active tab
-          setLoadingTab(nextTab.id);
+          setLoadingTab(nextTab.id); // mostrar "cargando"
           setActiveTab(nextTab.id);
+          console.log("djo opa", router, nextTab.path)
 
-          // Navigate to the tab's path if router is provided
           if (router && nextTab.path) {
-            router.push(nextTab.path);
+            console.log("djo ENTRA AL IF")
+            try {
+              console.log("djo ENTRA AL IF")
+              await router.push(nextTab.path); // asegurarse de que navega
+            } catch (err) {
+              console.error("Error navegando al siguiente tab:", err);
+            }
           }
+
+          // Limpiar loading después de un pequeño delay (opcional)
+          setTimeout(() => set({ loadingTab: null }), 300);
         }
       },
+
+
 
       // Clear all tabs (for logout/login)
       clearTabs: () => {
