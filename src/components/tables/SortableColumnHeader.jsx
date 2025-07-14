@@ -9,6 +9,7 @@ export default function SortableColumnHeader({
   columnWidths,
   resizingColumn,
   handleResizeStart,
+  isDraggableColumnEnabled = false
 }) {
   const { isEditingMode } = useEditModeStore(); // 🟢 esto controla si se puede mover
   const {
@@ -17,18 +18,23 @@ export default function SortableColumnHeader({
     setNodeRef,
     transform,
     transition,
+    isDragging,
   } = useSortable({
     id: column.key,
     data: { type: "column" },
-    disabled: !isEditingMode, // 🟢 ahora se habilita solo cuando isEditingMode está activo
+    disabled: !(isEditingMode && isDraggableColumnEnabled)
   });
+
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     width: columnWidths[column.key],
-    minWidth: "100px",
+    minWidth: columnWidths[column.key],
+    maxWidth: columnWidths[column.key],
     position: "relative",
+    opacity: isDragging ? 0 : 1, // 👈 Oculta la columna original si se está arrastrando
+    zIndex: isDragging ? 0 : 1,
   };
 
   return (
@@ -45,11 +51,10 @@ export default function SortableColumnHeader({
       </div>
 
       <div
-        className={`absolute right-0 top-0 bottom-0 w-2 cursor-col-resize ${
-          resizingColumn === column.key
-            ? "bg-black"
-            : "bg-transparent hover:bg-gray-300"
-        }`}
+        className={`absolute right-0 top-0 bottom-0 w-2 cursor-col-resize ${resizingColumn === column.key
+          ? "bg-black"
+          : "bg-transparent hover:bg-gray-300"
+          }`}
         onMouseDown={(e) => handleResizeStart(e, column.key)}
         style={{ zIndex: 10 }}
       >

@@ -58,7 +58,8 @@ const setStoredActiveTab = (activeTab) => {
 // Clean up invalid tabs (e.g., tabs that reference non-existent modules)
 const cleanupInvalidTabs = (tabs) => {
   return tabs.filter((tab) => {
-    if (tab.isFixed || tab.isHome) return true; // conservar tabs pineados y home
+    if (tab.id === "home") return false;
+    if (tab.isFixed) return true;
     return tab.path && tab.name && tab.path.startsWith("/modulos/");
   });
 };
@@ -87,7 +88,8 @@ const useTabStore = create(
 
         // Persistir tabs sin los fijos (como ya lo haces)
         //const moduleTabs = updatedTabs.filter((tab) => !tab.isFixed);
-        setStoredTabs(updatedTabs);
+        //setStoredTabs(updatedTabs);
+        setStoredTabs(updatedTabs.filter((tab) => tab.id !== "home"));
       },
 
       reorderTabs: (newOrderIds) => {
@@ -108,7 +110,9 @@ const useTabStore = create(
         set({ tabs: newTabsOrder });
 
         // Guarda en localStorage solo los no pineados
-        setStoredTabs(reorderedMovableTabs);
+        //setStoredTabs(reorderedMovableTabs);
+        setStoredTabs(reorderedMovableTabs.filter((tab) => tab.id !== "home"));
+
       },
 
       setLoadingTab: (tabId) => set({ loadingTab: tabId }),
@@ -118,14 +122,13 @@ const useTabStore = create(
         const storedTabs = getStoredTabs();
         const storedActiveTab = getStoredActiveTab();
 
-        // Limpia y remueve tabs inválidos
         const cleanedTabs = cleanupInvalidTabs(storedTabs);
 
-        // Elimina cualquier 'home' para evitar duplicados
-        const cleanedTabsWithoutHome = cleanedTabs.filter(t => t.id !== HOME_TAB.id);
+        // Asegura que HOME_TAB no esté duplicado
+        const withoutHome = cleanedTabs.filter((tab) => tab.id !== "home");
 
-        // Siempre poner home al inicio
-        const allTabs = [HOME_TAB, ...cleanedTabsWithoutHome];
+        // Agrega HOME_TAB manualmente y al inicio
+        const allTabs = [HOME_TAB, ...withoutHome];
 
         // Define active tab si existe y es válido
         let newActiveTab = "home";
@@ -182,7 +185,8 @@ const useTabStore = create(
 
         // Persist to localStorage
         //const moduleTabs = newTabs.filter((tab) => !tab.isFixed);
-        setStoredTabs(newTabs);
+        //setStoredTabs(newTabs);
+        setStoredTabs(newTabs.filter((tab) => tab.id !== "home"));
 
         return newTab.id;
       },
@@ -211,6 +215,7 @@ const useTabStore = create(
         // Persist to localStorage
         //const moduleTabs = newTabs.filter((tab) => !tab.isFixed);
         setStoredTabs(newTabs);
+        setStoredTabs(newTabs.filter((tab) => tab.id !== "home"));
 
         return newTab.id;
       },
@@ -233,7 +238,9 @@ const useTabStore = create(
 
         // Persist to localStorage
         //const moduleTabs = remainingTabs.filter((tab) => !tab.isFixed);
-        setStoredTabs(remainingTabs);
+        //setStoredTabs(remainingTabs);
+        setStoredTabs(remainingTabs.filter((tab) => tab.id !== "home"));
+
 
         // If closing active tab, navigate to the previous tab
         if (get().activeTab === tabId) {
@@ -313,7 +320,7 @@ const useTabStore = create(
     {
       name: "tab-storage",
       partialize: (state) => ({
-        tabs: state.tabs,
+        tabs: state.tabs.filter((tab) => tab.id !== "home"),
         activeTab: state.activeTab,
       }),
     }

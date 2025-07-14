@@ -202,6 +202,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
             filter_condition: null,
             filter_value: null,
             position_num: i + 1,
+            width_px: 200
           });
         }
         setLocalRefreshFlag((prev) => !prev);
@@ -588,14 +589,14 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
       setSelectedColumn(null);
       setLocalRefreshFlag((prev) => !prev);
       for (const vista of views) {
-        //console.log("psg: CREANDO LA WEA NUEVA PARA LA VISTA", vista, "con data",nuevaColumna.sp_crear_columna )
         await handleAddColumnToView({
           view_id: vista.id,
           column_id: nuevaColumna.sp_crear_columna,
           visible: true,
           filter_condition: null,
           filter_value: null,
-          position_num: null, 
+          position_num: null,
+          width_px: null
         });
       }
 
@@ -754,6 +755,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
             filter_condition: null,
             filter_value: null,
             position_num: i + 1,
+            width_px: 200
           });
         }
 
@@ -1099,9 +1101,12 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         <div className="h-full overflow-auto">
           <GenericCRUDTable
             title={tableMeta?.name || "Tabla"}
+            selectedView = {selectedView}
             data={filteredRecords}
             useFilter = {false}
             columns={tableColumnsWithActions}
+            rawColumns = {columns}
+            isDraggableColumnEnabled = {true}
             onOrderChange={async (reorderedRecords) => {
                 try {
                   for (let i = 0; i < reorderedRecords.length; i++) {
