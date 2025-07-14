@@ -102,7 +102,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   const [searchTerm, setSearchTerm] = useState("");
   const [showSortDialog, setShowSortDialog] = useState(false);
   const [showFilterDialog, setShowFilterDialog] = useState(false);
-    useState(false);
+  useState(false);
   const [showColumnFormDialog, setShowColumnFormDialog] = useState(false);
   const [sortConfig, setSortConfig] = useState(null);
   const [filterDraft, setFilterDraft] = useState({
@@ -117,7 +117,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   // Assigned users state
   const [hasAssignedUsers, setHasAssignedUsers] = useState(false);
   const [assignedUsersStats, setAssignedUsersStats] = useState(null);
-  
+
   // Notifications functionality state
   const [hasNotificationColumns, setHasNotificationColumns] = useState(false);
 
@@ -141,15 +141,15 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   const [showManageColumnsDialog, setShowManageColumnsDialog] = useState(false);
 
   const [showFilterManager, setShowFilterManager] = useState(false);
-  
+
   const { handleCreate, handleUpdatePosition, handleDelete } = useColumns(null);
 
   const [showColumnVisibilityDialog, setShowColumnVisibilityDialog] = useState(false);
 
   const [orderedViewColumnNames, setOrderedViewColumnNames] = useState([]);
 
-   const { users } = useUsers();
-   const { roles } = useRoles();
+  const { users } = useUsers();
+  const { roles } = useRoles();
 
   constFilter = constFilter || null;
 
@@ -224,7 +224,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
           createOrUpdateTable,
           handleCreate,
         });
-         await sincronizarTablaUsuarios({
+        await sincronizarTablaUsuarios({
           usuarios: users,
         });
 
@@ -235,7 +235,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     fetchData();
   }, [users]);
 
-    useEffect(() => {
+  useEffect(() => {
     if (roles.length > 0) {
       sincronizarTablaRoles({
         roles,
@@ -247,7 +247,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   }, [roles]);
 
   useEffect(() => {
-      if(selectedView){
+    if (selectedView) {
       handleSelectView(selectedView)
     }
     const fetchData = async () => {
@@ -257,7 +257,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         setLoading(false);
         return;
       }
-            loadViews();
+      loadViews();
       setLoading(true);
       try {
         const cols = await getLogicalTableStructure(tableId);
@@ -281,7 +281,6 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
       }
     };
 
-    
     fetchData();
   }, [tableId, page, pageSize, refresh, localRefreshFlag]);
 
@@ -299,22 +298,22 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   }, [tableId, getTableById]);
 
   useEffect(() => {
-  if (!selectedView && views.length > 0 && columns.length > 0) {
-    handleSelectView(views[0]);
-  }
+    if (!selectedView && views.length > 0 && columns.length > 0) {
+      handleSelectView(views[0]);
+    }
   }, [views, columns, selectedView]);
 
   // Verificar si hay usuarios asignados en la tabla
   useEffect(() => {
     const checkAssignedUsers = async () => {
       if (!tableId) return;
-      
+
       try {
         console.log('Checking assigned users for table:', tableId);
         const hasUsers = await hasAssignedUsersInTable(tableId);
         console.log('hasUsers result:', hasUsers);
         setHasAssignedUsers(hasUsers);
-        
+
         if (hasUsers) {
           const stats = await getAssignedUsersStatsForTable(tableId);
           console.log('stats result:', stats);
@@ -333,7 +332,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
 
   // Verificar si la tabla tiene columnas de fecha (funcionalidad de notificaciones)
   useEffect(() => {
-    const hasDateColumns = columns.some(col => 
+    const hasDateColumns = columns.some(col =>
       ['date', 'datetime', 'timestamp'].includes(col.data_type)
     );
     setHasNotificationColumns(hasDateColumns);
@@ -362,54 +361,54 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   const tableColumns = useMemo(() => {
     let cols = columns
       .filter((col) => columnVisibility[col.name] !== false &&
-      !(hiddenColumns || []).includes(col.name))
+        !(hiddenColumns || []).includes(col.name))
       .map((col) => ({
         key: col.name,
         header: col.name,
         width: col.data_type === "int" ? "80px" : "auto",
-          render: (value, row) => {
-            const cellValue = row.record_data ? row.record_data[col.name] : row[col.name];
-            
-            // Renderizar archivos de manera especial
-            if (col.data_type === "file" || col.data_type === "file_array") {
-              return (
-                <FileTableCell 
-                  value={cellValue} 
-                  multiple={col.data_type === "file_array"} 
-                />
-              );
-            }
-            
-            // Renderizar usuarios asignados solo si la tabla NO tiene funcionalidad de notificaciones
-            if (col.data_type === "assigned_users" && !hasNotificationColumns) {
-              return (
-                <AssignedUsersCell
-                  value={cellValue}
-                  onChange={() => {
-                    // El componente AssignedUsersCell maneja la actualización directamente
-                    // Solo triggeamos un refresh para actualizar la UI
-                    setLocalRefreshFlag(prev => !prev);
-                  }}
-                  tableId={tableId}
-                  recordId={row.id}
-                  isEditing={isEditingMode}
-                  className="assigned-users-cell"
-                />
-              );
-            }
-            
-            // Si es una columna de usuarios asignados en una tabla con notificaciones, no renderizar nada
-            if (col.data_type === "assigned_users" && hasNotificationColumns) {
-              return null;
-            }
-            
-            // Renderizar otros tipos de datos
+        render: (value, row) => {
+          const cellValue = row.record_data ? row.record_data[col.name] : row[col.name];
+
+          // Renderizar archivos de manera especial
+          if (col.data_type === "file" || col.data_type === "file_array") {
             return (
-              <span className="text-sm">
-                {cellValue || "-"}
-              </span>
+              <FileTableCell
+                value={cellValue}
+                multiple={col.data_type === "file_array"}
+              />
             );
-          },
+          }
+
+          // Renderizar usuarios asignados solo si la tabla NO tiene funcionalidad de notificaciones
+          if (col.data_type === "assigned_users" && !hasNotificationColumns) {
+            return (
+              <AssignedUsersCell
+                value={cellValue}
+                onChange={() => {
+                  // El componente AssignedUsersCell maneja la actualización directamente
+                  // Solo triggeamos un refresh para actualizar la UI
+                  setLocalRefreshFlag(prev => !prev);
+                }}
+                tableId={tableId}
+                recordId={row.id}
+                isEditing={isEditingMode}
+                className="assigned-users-cell"
+              />
+            );
+          }
+
+          // Si es una columna de usuarios asignados en una tabla con notificaciones, no renderizar nada
+          if (col.data_type === "assigned_users" && hasNotificationColumns) {
+            return null;
+          }
+
+          // Renderizar otros tipos de datos
+          return (
+            <span className="text-sm">
+              {cellValue || "-"}
+            </span>
+          );
+        },
       }));
 
     // Agregar columna de usuarios asignados solo si hay usuarios asignados en la tabla Y la tabla NO tiene funcionalidad de notificaciones
@@ -448,31 +447,31 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   }, [columns, columnVisibility, hiddenColumns, hasAssignedUsers, hasNotificationColumns, tableId, isEditingMode]);
 
   // Add column management actions to table headers when edit mode changes
-    const tableColumnsWithActions = useMemo(() => {
-      let sortedCols = [...tableColumns];
+  const tableColumnsWithActions = useMemo(() => {
+    let sortedCols = [...tableColumns];
 
-      if (orderedViewColumnNames.length > 0) {
-        sortedCols = orderedViewColumnNames
-          .map((name) => sortedCols.find((col) => col.key === name))
-          .filter(Boolean); // eliminar posibles nulos
+    if (orderedViewColumnNames.length > 0) {
+      sortedCols = orderedViewColumnNames
+        .map((name) => sortedCols.find((col) => col.key === name))
+        .filter(Boolean); // eliminar posibles nulos
+    }
+
+    return sortedCols.map((col) => {
+      if (isEditingMode) {
+        return {
+          ...col,
+          header: (
+            <div className="flex items-center justify-between group">
+              <span>{col.header}</span>
+            </div>
+          ),
+        };
       }
+      return col;
+    });
+  }, [isEditingMode, tableColumns, orderedViewColumnNames]);
 
-      return sortedCols.map((col) => {
-        if (isEditingMode) {
-          return {
-            ...col,
-            header: (
-              <div className="flex items-center justify-between group">
-                <span>{col.header}</span>
-              </div>
-            ),
-          };
-        }
-        return col;
-      });
-    }, [isEditingMode, tableColumns, orderedViewColumnNames]);
 
-  
 
   let processedRecords = [...records];
 
@@ -549,11 +548,11 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   }
   const filteredRecords = searchTerm
     ? processedRecords.filter((row) =>
-        Object.values(row.record_data || row)
-          .join(" ")
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase())
-      )
+      Object.values(row.record_data || row)
+        .join(" ")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
+    )
     : processedRecords;
 
   const handleAddFilter = () => {
@@ -570,9 +569,30 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     setShowFilterDialog(false);
   };
 
+  useEffect(() => {
+    // Aquí puedes poner la lógica que dependa del nuevo valor de activeSort
+  }, [activeSort]);
+
   const handleSetSort = () => {
     if (!sortConfig?.column || !sortConfig?.direction) return;
-    setActiveSort(sortConfig);
+
+    const matchingCol = columns.find((col) => col.name === sortConfig.column);
+    const columnId = matchingCol?.column_id ?? null;
+
+    handleUpdateView(selectedView.id, {
+      selectedView,
+      name: selectedView.name,
+      sort_by: columnId,
+      sort_direction: sortConfig.direction,
+      position_num: selectedView.position_num,
+    });
+
+    setActiveSort({
+      column: sortConfig.column || null,
+      direction: sortConfig.direction,
+    });
+
+    //setLocalRefreshFlag((prev) => !prev);
     setShowSortDialog(false);
   };
 
@@ -682,6 +702,8 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         column: sortCol?.name || null,
         direction: view.sortDirection,
       });
+    } else {
+      setActiveSort(null)
     }
 
     try {
@@ -731,43 +753,44 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   };
 
 
-    const handleCreateViewLocal = async (viewData) => {
-      try {
-        const sortColumn = columns.find(col => col.name === activeSort?.column);
+  const handleCreateViewLocal = async (viewData) => {
+    try {
+      console.log("djo: VIEWDATA", viewData, tableId)
+      const sortColumn = columns.find(col => col.name === activeSort?.column);
 
-        const newView = await handleCreateView({
-          ...viewData,
-          tableId,
-          sort_by: sortColumn?.column_id || null,
-          sort_direction: activeSort?.direction || null,
-          position_num: activeFilters.length,
+      const newView = await handleCreateView({
+        ...viewData,
+        tableId,
+        sort_by: sortColumn?.column_id || null,
+        sort_direction: activeSort?.direction || null,
+        position_num: activeFilters.length,
+      });
+
+      const viewId = newView.message.view_id;
+
+      // SOLO crear registros puros de posición con visible=true
+      for (let i = 0; i < columns.length; i++) {
+        const col = columns[i];
+        await handleAddColumnToView({
+          view_id: viewId,
+          column_id: col.column_id,
+          visible: true,
+          filter_condition: null,
+          filter_value: null,
+          position_num: i + 1,
+          width_px: 200
         });
-
-        const viewId = newView.message.view_id;
-
-        // SOLO crear registros puros de posición con visible=true
-        for (let i = 0; i < columns.length; i++) {
-          const col = columns[i];
-          await handleAddColumnToView({
-            view_id: viewId,
-            column_id: col.column_id,
-            visible: true,
-            filter_condition: null,
-            filter_value: null,
-            position_num: i + 1,
-            width_px: 200
-          });
-        }
-
-        setShowViewDialog(false);
-        setViewFormMode("create");
-        setSelectedView(null);
-        setLocalRefreshFlag((prev) => !prev);
-      } catch (err) {
-        console.error("Error creating view:", err);
-        throw err;
       }
-    };
+
+      setShowViewDialog(false);
+      setViewFormMode("create");
+      setSelectedView(null);
+      setLocalRefreshFlag((prev) => !prev);
+    } catch (err) {
+      console.error("Error creating view:", err);
+      throw err;
+    }
+  };
 
 
   const handleUpdateViewLocal = async (viewId, viewData) => {
@@ -782,15 +805,16 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
       });
 
       // Get current view columns to delete them
-      const currentViewColumns = getColumnsForView(viewId);
+      //const currentViewColumns = getColumnsForView(viewId);
 
       // Remove all existing column configurations from the view
-      for (const viewCol of currentViewColumns) {
-        await handleDeleteViewColumn(viewCol.id, viewId);
-      }
+      //for (const viewCol of currentViewColumns) {
+      //await handleDeleteViewColumn(viewCol.id, viewId);
+      //}
 
       // Create new column configurations with current settings
       // This includes visibility and filter settings for each column
+      /*
       const viewColumns = columns.map((col) => {
         // Find if this column has an active filter
         const activeFilter = activeFilters.find((f) => f.column === col.name);
@@ -802,13 +826,13 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
           filter_condition: activeFilter?.condition || null,
           filter_value: activeFilter?.value || null,
         };
-      });
+      }); */
 
       // Add each column configuration to the view
       // This is where filters are actually stored - as column properties
-      for (const viewCol of viewColumns) {
-        await handleAddColumnToView(viewCol);
-      }
+      //for (const viewCol of viewColumns) {
+      //  await handleAddColumnToView(viewCol);
+      //}
 
       setShowViewDialog(false);
       setViewFormMode("create");
@@ -947,18 +971,17 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         <div className="flex items-center gap-6">
           <div className="flex gap-2">
 
-          {/* Default view (no filters/sort) */}
+            {/* Default view (no filters/sort) */}
             {views.length === 0 && (
-            <button
-              className={`px-4 py-1 font-semibold text-sm border ${
-                !selectedView
+              <button
+                className={`px-4 py-1 font-semibold text-sm border ${!selectedView
                   ? "bg-black text-white shadow border-black"
                   : "bg-gray-200 text-gray-800 border-gray-300"
-              }`}
-              onClick={() => handleSelectView(null)}
-            >
-              Vista General
-            </button>
+                  }`}
+                onClick={() => handleSelectView(null)}
+              >
+                Vista General
+              </button>
 
             )}
 
@@ -967,10 +990,9 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
               <div key={view.id} className="relative">
                 <button
                   className={`text-sm font-bold rounded transition-colors border-[3px]
-                    ${
-                      selectedView?.id === view.id
-                        ? "bg-black/30 text-black border-black"
-                        : "bg-transparent text-black border-black"
+                    ${selectedView?.id === view.id
+                      ? "bg-black/30 text-black border-black"
+                      : "bg-transparent text-black border-black"
                     }`}
                   style={{
                     paddingTop: "5px",
@@ -1078,13 +1100,13 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
           </span>
         ))}
           */}
-        
+
       </div>
       <div
         className="flex-1 overflow-hidden bg-white relative"
         style={{ borderRadius: 0 }}
       >
-          {isEditingMode && (
+        {isEditingMode && (
           <div className="absolute top-0 right-0 mt-1 mr-2 z-10">
             <Button
               size="icon"
@@ -1095,19 +1117,19 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
               <Edit3 className="w-4 h-4" />
             </Button>
           </div>
-           )}
+        )}
 
         {columns.length > 0 && (
-        <div className="h-full overflow-auto">
-          <GenericCRUDTable
-            title={tableMeta?.name || "Tabla"}
-            selectedView = {selectedView}
-            data={filteredRecords}
-            useFilter = {false}
-            columns={tableColumnsWithActions}
-            rawColumns = {columns}
-            isDraggableColumnEnabled = {true}
-            onOrderChange={async (reorderedRecords) => {
+          <div className="h-full overflow-auto">
+            <GenericCRUDTable
+              title={tableMeta?.name || "Tabla"}
+              selectedView={selectedView}
+              data={filteredRecords}
+              useFilter={false}
+              columns={tableColumnsWithActions}
+              rawColumns={columns}
+              isDraggableColumnEnabled={true}
+              onOrderChange={async (reorderedRecords) => {
                 try {
                   for (let i = 0; i < reorderedRecords.length; i++) {
                     await handleUpdatePositionRecord(reorderedRecords[i].id, i + 1);
@@ -1117,166 +1139,166 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
                   console.error("Error al reordenar registros:", err);
                 }
               }}
-            onOrderColumnChange={async (reorderedColumnNames) => {
-              try {
+              onOrderColumnChange={async (reorderedColumnNames) => {
+                try {
 
-                const allViewColumns = await getColumnsForView(selectedView.id);
-                // 1. Obtener todos los view_columns de la vista actual que son solo de orden
-                const viewColumnsForOrder = allViewColumns.filter(
-                  (vc) =>
-                    vc.filter_condition === null &&
-                    vc.filter_value === null
-                );
-
-                // 2. Hacer el reordenamiento por nombre
-                for (let i = 0; i < reorderedColumnNames.length; i++) {
-                  const colName = reorderedColumnNames[i];
-                  const col = columns.find((c) => c.name === colName);
-                  if (!col) continue;
-
-                  const viewCol = viewColumnsForOrder.find(
-                    (vc) => vc.column_id === col.column_id
+                  const allViewColumns = await getColumnsForView(selectedView.id);
+                  // 1. Obtener todos los view_columns de la vista actual que son solo de orden
+                  const viewColumnsForOrder = allViewColumns.filter(
+                    (vc) =>
+                      vc.filter_condition === null &&
+                      vc.filter_value === null
                   );
 
-                  if (viewCol) {
-                    await handleUpdateViewColumnPosition(viewCol.id, i + 1);
+                  // 2. Hacer el reordenamiento por nombre
+                  for (let i = 0; i < reorderedColumnNames.length; i++) {
+                    const colName = reorderedColumnNames[i];
+                    const col = columns.find((c) => c.name === colName);
+                    if (!col) continue;
+
+                    const viewCol = viewColumnsForOrder.find(
+                      (vc) => vc.column_id === col.column_id
+                    );
+
+                    if (viewCol) {
+                      await handleUpdateViewColumnPosition(viewCol.id, i + 1);
+                    }
                   }
+
+                  setLocalRefreshFlag((prev) => !prev); // Refrescar después de aplicar todos los cambios
+                } catch (err) {
+                  console.error("Error al reordenar columnas:", err);
                 }
+              }}
 
-                setLocalRefreshFlag((prev) => !prev); // Refrescar después de aplicar todos los cambios
-              } catch (err) {
-                console.error("Error al reordenar columnas:", err);
-              }
-            }}
-
-            getRowKey={(row) => row.id}
-            onCreate={effectiveCanCreate ? () => setShowAddRecordDialog(true) : undefined}
-            onUpdate={effectiveCanUpdate ? (id, updatedData) => {
-              setRecordToEdit({ ...updatedData, id });
-              setShowEditRecordDialog(true);
-            } : undefined}
-            onDelete={effectiveCanDelete ? handleDeleteRecord : undefined}
-            rowIdKey="id"
-            permissions={{
-              canCreate: effectiveCanCreate,
-              canRead: effectiveCanRead,
-              canUpdate: effectiveCanUpdate,
-              canDelete: effectiveCanDelete
-            }}
+              getRowKey={(row) => row.id}
+              onCreate={effectiveCanCreate ? () => setShowAddRecordDialog(true) : undefined}
+              onUpdate={effectiveCanUpdate ? (id, updatedData) => {
+                setRecordToEdit({ ...updatedData, id });
+                setShowEditRecordDialog(true);
+              } : undefined}
+              onDelete={effectiveCanDelete ? handleDeleteRecord : undefined}
+              rowIdKey="id"
+              permissions={{
+                canCreate: effectiveCanCreate,
+                canRead: effectiveCanRead,
+                canUpdate: effectiveCanUpdate,
+                canDelete: effectiveCanDelete
+              }}
               renderForm={({ mode, item, open, onClose, onSubmit }) => (
-                  <DynamicRecordFormDialog
-                    open={open}
-                    colName={colName}
-                    foreignForm={!!(constFilter && hiddenColumns)}
-                    onOpenChange={(val) => {
-                      if (!val) onClose();
-                    }}
-                    onCancel={onClose}
-                    tableId={tableId}
-                    record={item}
-                    mode={mode}
-                    onDelete={effectiveCanDelete ? handleDeleteRecord : undefined}
-                    onSubmitSuccess={async (createdOrUpdatedRecord) => {
-                      if (mode === "create") {
-                        const userColumn = columns.find((col) => col.data_type === "user");
-                        const userId = userColumn
-                          ? createdOrUpdatedRecord.message.record.record_data?.[userColumn.name]
-                          : null;
+                <DynamicRecordFormDialog
+                  open={open}
+                  colName={colName}
+                  foreignForm={!!(constFilter && hiddenColumns)}
+                  onOpenChange={(val) => {
+                    if (!val) onClose();
+                  }}
+                  onCancel={onClose}
+                  tableId={tableId}
+                  record={item}
+                  mode={mode}
+                  onDelete={effectiveCanDelete ? handleDeleteRecord : undefined}
+                  onSubmitSuccess={async (createdOrUpdatedRecord) => {
+                    if (mode === "create") {
+                      const userColumn = columns.find((col) => col.data_type === "user");
+                      const userId = userColumn
+                        ? createdOrUpdatedRecord.message.record.record_data?.[userColumn.name]
+                        : null;
 
-                        if (userId) {
-                          try {
-                            const table = await getTableById(tableId);
-                            const tableName = table.name;
+                      if (userId) {
+                        try {
+                          const table = await getTableById(tableId);
+                          const tableName = table.name;
 
-                            await notifyAssignedUser({
-                              userId,
-                              action: "created",
-                              tableName,
-                              recordId: createdOrUpdatedRecord?.id,
-                            });
-                          } catch (err) {
-                            console.error("Error notificando usuario asignado:", err);
-                          }
+                          await notifyAssignedUser({
+                            userId,
+                            action: "created",
+                            tableName,
+                            recordId: createdOrUpdatedRecord?.id,
+                          });
+                        } catch (err) {
+                          console.error("Error notificando usuario asignado:", err);
                         }
                       }
+                    }
 
-                      onSubmit(createdOrUpdatedRecord);
-                      setLocalRefreshFlag((prev) => !prev);
-                    }}
-                  />
-                )}
-          />
+                    onSubmit(createdOrUpdatedRecord);
+                    setLocalRefreshFlag((prev) => !prev);
+                  }}
+                />
+              )}
+            />
           </div>
         )}
       </div>
 
       {/* Dialogs */}
       <DialogsContainer
-          showFilterDialog={showFilterDialog}
-          setShowFilterDialog={setShowFilterDialog}
-          showAddRecordDialog={showAddRecordDialog}
-          setShowAddRecordDialog={setShowAddRecordDialog}
-          deleteConfirmRecord={deleteConfirmRecord}
-          cancelDeleteRecord={cancelDeleteRecord}
-          confirmDeleteRecord={confirmDeleteRecord}
-          tableId={tableId}
-          colName={colName}
-          constFilter={constFilter}
-          hiddenColumns={hiddenColumns}
-          getTableById={getTableById}
-          notifyAssignedUser={notifyAssignedUser}
-          setLocalRefreshFlag={setLocalRefreshFlag}
-          columns={columns}
-          setDeleteConfirmRecord={setDeleteConfirmRecord}
-          showColumnFormDialog={showColumnFormDialog}
-          setShowColumnFormDialog={setShowColumnFormDialog}
-          columnFormMode={columnFormMode}
-          selectedColumn={selectedColumn}
-          handleColumnFormSubmit={handleColumnFormSubmit}
-          handleColumnFormCancel={handleColumnFormCancel}
-          handleDeleteColumnClick={handleDeleteColumnClick}
-          showViewDeleteDialog={showViewDeleteDialog}
-          setShowViewDeleteDialog={setShowViewDeleteDialog}
-          viewToDelete={viewToDelete}
-          setViewToDelete={setViewToDelete}
-          handleDeleteViewLocal={handleDeleteViewLocal}
-          showColumnDeleteDialog={showColumnDeleteDialog}
-          setShowColumnDeleteDialog={setShowColumnDeleteDialog}
-          columnToDelete={columnToDelete}
-          handleDeleteColumn={handleDeleteColumn}
-          showViewDialog={showViewDialog}
-          setShowViewDialog={setShowViewDialog}
-          selectedView={selectedView}
-          viewFormMode={viewFormMode}
-          setViewFormMode={setViewFormMode}
-          handleCreateViewLocal={handleCreateViewLocal}
-          handleUpdateViewLocal={handleUpdateViewLocal}
-          activeSort={activeSort}
-          activeFilters={activeFilters}
-          setActiveFilters={setActiveFilters}
-          setActiveSort={setActiveSort}
-          showManageColumnsDialog={showManageColumnsDialog}
-          setShowManageColumnsDialog={setShowManageColumnsDialog}
-          handleUpdatePosition={handleUpdatePosition}
-          handleCreateColumn={handleCreateColumn}
-          handleUpdateColumn={handleUpdateColumn}
-          showManageViewsDialog={showManageViewsDialog}
-          setShowManageViewsDialog={setShowManageViewsDialog}
-          showFilterManager={showFilterManager}
-          setShowFilterManager={setShowFilterManager}
-          filterConditions={filterConditions}
-          filterDraft={filterDraft}
-          setFilterDraft={setFilterDraft}
-          handleAddFilter={handleAddFilter}
-          columnVisibility={columnVisibility}
-          setColumnVisibility={setColumnVisibility}
-          showColumnVisibilityDialog={showColumnVisibilityDialog}
-          setShowColumnVisibilityDialog={setShowColumnVisibilityDialog}
-          showSortDialog = {showSortDialog}
-          setShowSortDialog = {setShowSortDialog}
-          setSortConfig = {setSortConfig}
-          sortConfig = {sortConfig}
-          handleSetSort = {handleSetSort}
+        showFilterDialog={showFilterDialog}
+        setShowFilterDialog={setShowFilterDialog}
+        showAddRecordDialog={showAddRecordDialog}
+        setShowAddRecordDialog={setShowAddRecordDialog}
+        deleteConfirmRecord={deleteConfirmRecord}
+        cancelDeleteRecord={cancelDeleteRecord}
+        confirmDeleteRecord={confirmDeleteRecord}
+        tableId={tableId}
+        colName={colName}
+        constFilter={constFilter}
+        hiddenColumns={hiddenColumns}
+        getTableById={getTableById}
+        notifyAssignedUser={notifyAssignedUser}
+        setLocalRefreshFlag={setLocalRefreshFlag}
+        columns={columns}
+        setDeleteConfirmRecord={setDeleteConfirmRecord}
+        showColumnFormDialog={showColumnFormDialog}
+        setShowColumnFormDialog={setShowColumnFormDialog}
+        columnFormMode={columnFormMode}
+        selectedColumn={selectedColumn}
+        handleColumnFormSubmit={handleColumnFormSubmit}
+        handleColumnFormCancel={handleColumnFormCancel}
+        handleDeleteColumnClick={handleDeleteColumnClick}
+        showViewDeleteDialog={showViewDeleteDialog}
+        setShowViewDeleteDialog={setShowViewDeleteDialog}
+        viewToDelete={viewToDelete}
+        setViewToDelete={setViewToDelete}
+        handleDeleteViewLocal={handleDeleteViewLocal}
+        showColumnDeleteDialog={showColumnDeleteDialog}
+        setShowColumnDeleteDialog={setShowColumnDeleteDialog}
+        columnToDelete={columnToDelete}
+        handleDeleteColumn={handleDeleteColumn}
+        showViewDialog={showViewDialog}
+        setShowViewDialog={setShowViewDialog}
+        selectedView={selectedView}
+        viewFormMode={viewFormMode}
+        setViewFormMode={setViewFormMode}
+        handleCreateViewLocal={handleCreateViewLocal}
+        handleUpdateViewLocal={handleUpdateViewLocal}
+        activeSort={activeSort}
+        activeFilters={activeFilters}
+        setActiveFilters={setActiveFilters}
+        setActiveSort={setActiveSort}
+        showManageColumnsDialog={showManageColumnsDialog}
+        setShowManageColumnsDialog={setShowManageColumnsDialog}
+        handleUpdatePosition={handleUpdatePosition}
+        handleCreateColumn={handleCreateColumn}
+        handleUpdateColumn={handleUpdateColumn}
+        showManageViewsDialog={showManageViewsDialog}
+        setShowManageViewsDialog={setShowManageViewsDialog}
+        showFilterManager={showFilterManager}
+        setShowFilterManager={setShowFilterManager}
+        filterConditions={filterConditions}
+        filterDraft={filterDraft}
+        setFilterDraft={setFilterDraft}
+        handleAddFilter={handleAddFilter}
+        columnVisibility={columnVisibility}
+        setColumnVisibility={setColumnVisibility}
+        showColumnVisibilityDialog={showColumnVisibilityDialog}
+        setShowColumnVisibilityDialog={setShowColumnVisibilityDialog}
+        showSortDialog={showSortDialog}
+        setShowSortDialog={setShowSortDialog}
+        setSortConfig={setSortConfig}
+        sortConfig={sortConfig}
+        handleSetSort={handleSetSort}
       />
     </div>
   );

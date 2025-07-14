@@ -245,12 +245,9 @@ const useTabStore = create(
 
           setLoadingTab(nextTab.id); // mostrar "cargando"
           setActiveTab(nextTab.id);
-          console.log("djo opa", router, nextTab.path)
 
           if (router && nextTab.path) {
-            console.log("djo ENTRA AL IF")
             try {
-              console.log("djo ENTRA AL IF")
               await router.push(nextTab.path); // asegurarse de que navega
             } catch (err) {
               console.error("Error navegando al siguiente tab:", err);
