@@ -9,7 +9,6 @@ export default function SortableColumnHeader({
   columnWidths,
   resizingColumn,
   handleResizeStart,
-  isDraggableColumnEnabled = false
 }) {
   const { isEditingMode } = useEditModeStore(); // 🟢 esto controla si se puede mover
   const {
@@ -22,7 +21,7 @@ export default function SortableColumnHeader({
   } = useSortable({
     id: column.key,
     data: { type: "column" },
-    disabled: !(isEditingMode && isDraggableColumnEnabled)
+    disabled: !isEditingMode,
   });
 
 
@@ -33,7 +32,7 @@ export default function SortableColumnHeader({
     minWidth: columnWidths[column.key],
     maxWidth: columnWidths[column.key],
     position: "relative",
-    opacity: isDragging ? 0 : 1, // 👈 Oculta la columna original si se está arrastrando
+    opacity: isDragging ? 0 : 1,
     zIndex: isDragging ? 0 : 1,
   };
 

@@ -233,20 +233,23 @@ export default function Table({
                 : verticalListSortingStrategy
             }
           >
+            {isDraggableColumnEnabled && (  
             <DragOverlay>
-              {dragType === "column" && activeColumn ? (
-                <div
-                  className="bg-#f7f3f2 border px-2 py-1 shadow-md"
-                  style={{
-                    width: columnWidths[activeColumn.key],
-                    minWidth: columnWidths[activeColumn.key],
-                    maxWidth: columnWidths[activeColumn.key],
-                  }}
-                >
-                  {activeColumn.header}
-                </div>
-              ) : null}
+              {/* Aqui se esta usando  isDraggableColumnEnabled para comprobar si es la tabla principal o cualquier otra tabla*/}
+                {dragType === "column" && activeColumn ? (
+                  <div
+                    className="bg-#f7f3f2 border px-2 py-1 shadow-md"
+                    style={{
+                      width: columnWidths[activeColumn.key],
+                      minWidth: columnWidths[activeColumn.key],
+                      maxWidth: columnWidths[activeColumn.key],
+                    }}
+                  >
+                    {activeColumn.header}
+                  </div>
+                ) : null}
             </DragOverlay>
+             )}
 
             <TableUI>
               <TableHeader>

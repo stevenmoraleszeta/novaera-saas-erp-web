@@ -291,7 +291,6 @@ export default function GenericCRUDTable({
           columnWidths={columnWidths}
           isDraggableColumnEnabled = {isDraggableColumnEnabled}
           onColumnResize={(columnKey, newWidth) => {
-            console.log("djo ESTO CAMBIO",newWidth,"EN COL", columnKey )
             const widthNum = parseInt(newWidth)
             if (selectedView) {
               const matchingColumn = rawColumns.find((c) => c.name === columnKey);
