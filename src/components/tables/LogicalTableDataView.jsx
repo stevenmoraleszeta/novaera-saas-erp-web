@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import {
   getLogicalTableStructure,
   getLogicalTableRecords,
@@ -15,6 +15,7 @@ import {
   ArrowUp,
   ArrowDown,
   Eye,
+  Check
 } from "lucide-react";
 import useEditModeStore from "@/stores/editModeStore";
 import DynamicRecordFormDialog from "../records/DynamicRecordFormDialog";
@@ -58,6 +59,10 @@ import { useRoles } from '@/hooks/useRoles';
 
 export default function LogicalTableDataView({ tableId, refresh, colName, constFilter, hiddenColumns, forcePermissions }) {
   const { isEditingMode } = useEditModeStore();
+  const creatingGeneralViewRef = useRef(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [newTableName, setNewTableName] = useState("");
+  const [nameError, setNameError] = useState("");
   const { getTableById, handleUpdatePositionRecord, createOrUpdateTable } = useLogicalTables(null);
   const {
     views,
@@ -169,6 +174,45 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     }
   }, [columns]);
 
+  useEffect(() => {
+    if (
+      creatingGeneralViewRef.current ||
+      views.length > 0 ||
+      !tableId ||
+      columns.length === 0
+    ) {
+      return;
+    }
+    creatingGeneralViewRef.current = true;
+    const createDefaultView = async () => {
+      try {
+        const newView = await handleCreateView({
+          tableId,
+          name: "Vista General",
+          sort_by: null,
+          sort_direction: null,
+        });
+        const viewId = newView.message.view_id;
+        for (let i = 0; i < columns.length; i++) {
+          const col = columns[i];
+          await handleAddColumnToView({
+            view_id: viewId,
+            column_id: col.column_id,
+            visible: true,
+            filter_condition: null,
+            filter_value: null,
+            position_num: i + 1,
+          });
+        }
+        setLocalRefreshFlag((prev) => !prev);
+      } catch (err) {
+        console.error("Error creando la vista por defecto:", err);
+      } finally {
+        creatingGeneralViewRef.current = false;
+      }
+    };
+    createDefaultView();
+  }, [views, tableId, columns]);
   useEffect(() => {
     const fetchData = async () => {
       if (users.length > 0) {
@@ -834,9 +878,69 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
 
   return (
     <div className="flex-1 flex flex-col p-6 overflow-hidden">
-      <span className="text-3xl font-bold text-gray-900 mb-2">
-        {tableMeta?.name || "Nombre Tabla"}
-      </span>
+      <div className="flex items-center gap-2 mb-2">
+        {isEditingName ? (
+          <>
+            <input
+              value={newTableName}
+              onChange={(e) => setNewTableName(e.target.value)}
+              className="text-3xl font-bold text-gray-900 bg-transparent border-b-2 border-gray-400 focus:outline-none focus:border-black w-[300px]"
+              maxLength={50}
+              autoFocus
+            />
+            <button
+              onClick={async () => {
+                const trimmed = newTableName.trim();
+                if (trimmed.length === 0) {
+                  setNameError("El nombre no puede estar vacío.");
+                  return;
+                }
+                if (trimmed.length > 50) {
+                  setNameError("Máximo 50 caracteres.");
+                  return;
+                }
+                try {
+                  await createOrUpdateTable({
+                    id: tableMeta.id,
+                    name: trimmed,
+                  });
+                  tableMeta.name = trimmed;
+                  setIsEditingName(false);
+                  setNameError("");
+                } catch (error) {
+                  setNameError("Error al guardar el nombre.");
+                  console.error(error);
+                }
+              }}
+              className="text-gray-500 hover:text-gray-800"
+              title="Guardar nombre"
+            >
+              <Check className="w-6 h-6" />
+            </button>
+          </>
+        ) : (
+          <>
+            <span className="text-3xl font-bold text-gray-900">
+              {tableMeta?.name || "Nombre Tabla"}
+            </span>
+            {isEditingMode && (
+              <button
+                onClick={() => {
+                  setNewTableName(tableMeta?.name || "");
+                  setIsEditingName(true);
+                }}
+                className="text-gray-500 hover:text-gray-800"
+                title="Editar nombre"
+              >
+                <Edit3 className="w-5 h-5" />
+              </button>
+            )}
+          </>
+        )}
+      </div>
+      {nameError && (
+        <span className="text-red-500 text-sm mt-1">{nameError}</span>
+      )}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-6">
           <div className="flex gap-2">
