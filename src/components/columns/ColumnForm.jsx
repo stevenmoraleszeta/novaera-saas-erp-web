@@ -202,8 +202,12 @@ export default function ColumnForm({
 
       // Agregar opciones personalizadas si es tipo selección con opciones custom
       if (formData.data_type === "select" && selectionType === "custom") {
-        columnData.custom_options = customOptions;
-        console.log("Sending custom options:", customOptions);
+        columnData.custom_options = customOptions.map(opt =>
+          typeof opt === "string"
+            ? { value: opt, label: opt }
+            : opt
+        );
+        console.log("Sending custom options:", columnData.custom_options);
       }
 
       // Para tipos de archivo, asegurar que no tengan configuraciones de foreign key
