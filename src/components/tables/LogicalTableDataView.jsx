@@ -77,7 +77,8 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     handleAddColumnToView,
     handleDeleteViewColumn,
     handleUpdatePosition: handleUpdateViewPosition,
-    handleUpdateViewColumnPosition
+    handleUpdateViewColumnPosition,
+    loadingViews
   } = useViews(tableId);
 
   // Hook para verificar permisos del usuario
@@ -177,12 +178,14 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   useEffect(() => {
     if (
       creatingGeneralViewRef.current ||
+      loadingViews ||
       views.length > 0 ||
       !tableId ||
       columns.length === 0
     ) {
       return;
     }
+    
     creatingGeneralViewRef.current = true;
     const createDefaultView = async () => {
       try {
@@ -214,6 +217,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     };
     createDefaultView();
   }, [views, tableId, columns]);
+  
   useEffect(() => {
     const fetchData = async () => {
       if (users.length > 0) {
@@ -1069,6 +1073,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         </div>
       </div>
       <div className="flex flex-wrap mb-2 items-center">
+         {/*
         {activeSort && activeSort.column && (
           <span className="inline-flex items-center text-sm font-medium">
             {columns.find((c) => c.name === activeSort.column)?.name ||
@@ -1083,7 +1088,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         {activeSort && activeSort.column && activeFilters.length > 0 && (
           <div className="w-px h-4 bg-black mx-2" />
         )}
-        {/*  TEXTO QUE INDICA QUE FILTRO ESTA ACTIVO
+         TEXTO QUE INDICA QUE FILTRO ESTA ACTIVO
         {activeFilters.map((f, idx) => (
           <span
             key={idx}
