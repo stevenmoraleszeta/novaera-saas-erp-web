@@ -9,6 +9,7 @@ const mapViewFromBackend = (backendView) => ({
   sortDirection: backendView.sort_direction,
   position_num: backendView.position_num,
   columns: backendView.columns || [], // esto puede llenarse aparte
+  width_px:backendView.width_px
 });
 
 // Mapeo del frontend al backend
@@ -18,6 +19,7 @@ const mapViewToBackend = (frontendView) => ({
   sort_by: frontendView.sort_by,
   position_num: frontendView.position_num,
   sort_direction: frontendView.sort_direction,
+  width_px: frontendView.width_px
 });
 
 // Crear una vista

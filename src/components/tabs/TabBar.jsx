@@ -164,7 +164,7 @@ export default function TabBar() {
                 tab={tab}
                 activeTab={activeTab}
                 onClick={handleTabClick}
-                onClose={closeTab}
+                onClose={() => closeTab(tab.id, router)}
                 icon={getTabIcon(tab)}
                 onTogglePin={togglePinTab}
               />

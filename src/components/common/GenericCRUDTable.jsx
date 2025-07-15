@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Table from "@/components/tables/Table";
 import { Button } from "@/components/ui/button";
 import { Filter, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
@@ -8,9 +8,11 @@ import SearchBar from "@/components/common/SearchBar";
 import FilterDialog from "@/components/tables/dialogs/FilterDialog";
 import SortDialog from "@/components/tables/dialogs/SortDialog";
 import useEditModeStore from "@/stores/editModeStore";
+import { useViews } from "@/hooks/useViews";
 
 export default function GenericCRUDTable({
   title,
+  selectedView,
   data = [],
   columns = [],
   getRowKey = (row) => row.id,
@@ -21,8 +23,17 @@ export default function GenericCRUDTable({
   renderForm,
   useFilter = true,
   onOrderChange,
-  onOrderColumnChange
+  onOrderColumnChange,
+  rawColumns,
+  isDraggableColumnEnabled
 }) {
+
+  const {
+    views,
+    handleAddColumnToView,
+    handleUpdateViewColumn,
+    getColumnsForView,
+  } = useViews();
 
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState("create");
@@ -35,6 +46,11 @@ export default function GenericCRUDTable({
   const [sortConfig, setSortConfig] = useState(null);
   const [activeSort, setActiveSort] = useState(null);
   const [activeFilters, setActiveFilters] = useState([]);
+
+
+  const [columnWidths, setColumnWidths] = useState({});
+
+
   const [filterDraft, setFilterDraft] = useState({
     column: "",
     condition: "",
@@ -48,9 +64,9 @@ export default function GenericCRUDTable({
   };
 
   const handleEdit = (item) => {
-  setFormMode("edit");
-  setSelectedItem(item);  
-  setFormOpen(true);
+    setFormMode("edit");
+    setSelectedItem(item);
+    setFormOpen(true);
   };
 
   const filterConditions = [
@@ -153,6 +169,30 @@ export default function GenericCRUDTable({
     return result;
   }, [data, activeFilters, searchTerm, activeSort]);
 
+  useEffect(() => {
+    if (!selectedView || !Array.isArray(rawColumns) || rawColumns.length === 0) {
+      // No hay columnas crudas, no se puede mapear el ancho, pero tampoco hay problema
+      return;
+    }
+
+    const loadViewColumns = async () => {
+      const viewColumns = await getColumnsForView(selectedView.id);
+
+      const widthMap = {};
+      for (const vc of viewColumns) {
+        const rawCol = rawColumns.find((col) => col.column_id === vc.column_id);
+        if (rawCol && vc.width_px) {
+          widthMap[rawCol.name] = `${vc.width_px}px`;
+        }
+      }
+
+      setColumnWidths(widthMap);
+    };
+
+    loadViewColumns();
+  }, [selectedView, rawColumns, getColumnsForView]);
+
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-2">
@@ -245,31 +285,71 @@ export default function GenericCRUDTable({
           data={filteredData}
           getRowKey={getRowKey}
           onOrderChange={onOrderChange}
-          onOrderColumnChange = {onOrderColumnChange}
+          onOrderColumnChange={onOrderColumnChange}
           pagination={true}
           onRowClick={handleEdit}
+          columnWidths={columnWidths}
+          isDraggableColumnEnabled = {isDraggableColumnEnabled}
+          onColumnResize={(columnKey, newWidth) => {
+            const widthNum = parseInt(newWidth)
+            if (selectedView) {
+              const matchingColumn = rawColumns.find((c) => c.name === columnKey);
+              const columnId = matchingColumn?.column_id;
+
+
+              // Lógica async en una IIFE o dentro de un useEffect/callback async
+              (async () => {
+                const viewColumns = await getColumnsForView(selectedView.id);
+                const matchingViewColumn = viewColumns.find(
+                  (vc) =>
+                    vc.column_id === columnId &&
+                    vc.filter_condition === null &&
+                    vc.filter_value === null
+                );
+
+                if (matchingViewColumn) {
+                  await handleUpdateViewColumn(matchingViewColumn.id, {
+                    width_px: widthNum,
+                    view_id: selectedView.id,
+                    position_num: matchingViewColumn.position_num
+                  });
+                } else {
+                  let filterToAdd = {
+                    view_id: selectedView.id,
+                    column_id: columnId,
+                    visible: true,
+                    filter_condition: null,
+                    filter_value: null,
+                    width_px: widthNum
+                  };
+                  console.log("bro  NOT matchingViewColumn ")
+                  handleAddColumnToView(filterToAdd);
+                }
+              })();
+            }
+          }}
         />
       </div>
-        {renderForm  &&
-          renderForm({
-            mode: formMode,
-            item: selectedItem,
-            open: formOpen,
-            onClose: () => setFormOpen(false),
-            onSubmit: (formData) => {
-              if (formMode === "create") {
-                onCreate?.(formData);
-              } else {
-                const itemId = selectedItem?.[rowIdKey];
-                onUpdate?.(itemId, formData);
-              }
-              setFormOpen(false);
-            },
-            onDelete: (id) => {
-              onDelete?.(id);
-              setFormOpen(false);
-            },
-          })}
+      {renderForm &&
+        renderForm({
+          mode: formMode,
+          item: selectedItem,
+          open: formOpen,
+          onClose: () => setFormOpen(false),
+          onSubmit: (formData) => {
+            if (formMode === "create") {
+              onCreate?.(formData);
+            } else {
+              const itemId = selectedItem?.[rowIdKey];
+              onUpdate?.(itemId, formData);
+            }
+            setFormOpen(false);
+          },
+          onDelete: (id) => {
+            onDelete?.(id);
+            setFormOpen(false);
+          },
+        })}
 
       <FilterDialog
         open={showFilterDialog}
@@ -279,7 +359,7 @@ export default function GenericCRUDTable({
         filterConditions={filterConditions}
         setFilterDraft={setFilterDraft}
         onAddFilter={handleAddFilter}
-        showFilters = {true}
+        showFilters={true}
       />
 
       <SortDialog
