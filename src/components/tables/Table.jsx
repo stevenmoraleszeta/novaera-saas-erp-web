@@ -71,7 +71,6 @@ export default function Table({
 
     if (hasWidths) {
       setColumnWidths(externalColumnWidths);
-      console.log("bro ✅ Se aplicaron tamaños externos:", externalColumnWidths);
     }
   }, [externalColumnWidths]);
 
@@ -84,7 +83,6 @@ export default function Table({
         externalColumnWidths && Object.keys(externalColumnWidths).length > 0;
 
       if (!hasWidths) {
-        console.log("bro ⚠️ Usando tamaños por defecto");
         setColumnWidths(columns.reduce((acc, col) => ({ ...acc, [col.key]: "200px" }), {}));
       }
     }
@@ -141,7 +139,6 @@ export default function Table({
 
     if (onColumnResize && state.resizingColumn && state.finalWidth) {
       const finalWidthPx = `${state.finalWidth}px`;
-      console.log("djo ✅ Final width:", finalWidthPx);
       onColumnResize(state.resizingColumn, finalWidthPx);
     }
   }, [handleResizeMove, onColumnResize]);
@@ -254,7 +251,7 @@ export default function Table({
             <TableUI>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-6">&nbsp;</TableHead>
+                  <TableHead className="w-[2px]">&nbsp;</TableHead>
                   {orderedColumns.map((key) => {
                     const column = columns.find((c) => c.key === key);
 
