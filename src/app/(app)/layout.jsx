@@ -10,11 +10,11 @@ export default function AppLayout({ children }) {
   return (
     <AuthGuard>
       <div className="min-h-[100dvh] flex flex-col">
-        <Header />
-        <div className="flex-grow flex flex-col">
+        <div className="sticky-header-container">
+          <Header />
           <TabBar />
-          <main className="flex-grow p-4 text-gray-900">{children}</main>
         </div>
+        <main className="flex-grow p-4 text-gray-900">{children}</main>
         <Footer />
       </div>
     </AuthGuard>

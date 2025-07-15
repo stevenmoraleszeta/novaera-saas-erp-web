@@ -180,3 +180,10 @@
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
 }
+
+/* pin header and tabs on top */
+.sticky-header-container {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}

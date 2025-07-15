@@ -54,12 +54,12 @@ export default function ModuleCard({ module, onClick, isEditingMode = false }) {
       <CardContent className="p-0 flex items-center justify-center">
         {/* 1. Si hay iconUrl válida, mostrarla */}
         {LucideIcon && !imageError ? (
-          <LucideIcon className="w-24 h-24 text-gray-800 dark:text-gray-200" />
+           <LucideIcon className="w-2/3 h-2/3 text-gray-800 dark:text-gray-200" /> //w-24 h-24 Esto lo cambié a que sea por tamaño porcentual (66%) y no fijo
         ) : isEmoji ? (
           <span className="text-[6rem] leading-none">{module.iconUrl}</span>
         ) : (
           // 3. Fallback por defecto
-          <GripVertical className="w-24 h-24 text-gray-800 dark:text-gray-200" />
+          <GripVertical className="w-2/3 h-2/3 text-gray-800 dark:text-gray-200" />
         )}
       </CardContent>
     </Card>
