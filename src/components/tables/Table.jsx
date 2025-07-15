@@ -17,6 +17,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  DragOverlay
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -24,6 +25,7 @@ import {
   verticalListSortingStrategy,
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
+
 
 import { restrictToHorizontalAxis, restrictToVerticalAxis } from "@dnd-kit/modifiers";
 
@@ -37,9 +39,13 @@ export default function Table({
   className = "",
   getRowKey = (row) => row.id,
   onOrderChange,
-  onOrderColumnChange
+  onOrderColumnChange,
+  onColumnResize,
+  columnWidths: externalColumnWidths,
+  isDraggableColumnEnabled
 }) {
 
+  const [activeColumn, setActiveColumn] = useState(null);
   const [orderedColumns, setOrderedColumns] = useState(columns.map((col) => col.key));
   const [isDraggingEnabled, setIsDraggingEnabled] = useState(false);
 
@@ -58,6 +64,29 @@ export default function Table({
   useEffect(() => {
     setInternalData(data);
   }, [data]);
+
+  useEffect(() => {
+    const hasWidths =
+      externalColumnWidths && Object.keys(externalColumnWidths).length > 0;
+
+    if (hasWidths) {
+      setColumnWidths(externalColumnWidths);
+    }
+  }, [externalColumnWidths]);
+
+  useEffect(() => {
+    if (columns.length > 0) {
+      setOrderedColumns(columns.map((col) => col.key));
+      setVisibleColumns(columns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}));
+
+      const hasWidths =
+        externalColumnWidths && Object.keys(externalColumnWidths).length > 0;
+
+      if (!hasWidths) {
+        setColumnWidths(columns.reduce((acc, col) => ({ ...acc, [col.key]: "200px" }), {}));
+      }
+    }
+  }, [columns]);
 
   const sensors = useSensors(useSensor(PointerSensor));
 
@@ -88,6 +117,9 @@ export default function Table({
     const deltaX = e.clientX - state.startX;
     const newWidth = Math.max(100, state.startWidth + deltaX);
 
+    // Actualizar el ref directamente también
+    state.finalWidth = newWidth;
+
     setColumnWidths((prev) => ({
       ...prev,
       [state.resizingColumn]: `${newWidth}px`,
@@ -95,17 +127,21 @@ export default function Table({
   }, []);
 
   const handleResizeEnd = useCallback(() => {
+    const state = resizeStateRef.current;
     setResizingColumn(null);
     resizeStateRef.current = {};
 
-    document.removeEventListener("mousemove", handleResizeMove, {
-      capture: true,
-    });
+    document.removeEventListener("mousemove", handleResizeMove, { capture: true });
     document.removeEventListener("mouseup", handleResizeEnd, { capture: true });
 
     document.body.style.userSelect = "";
     document.body.style.cursor = "";
-  }, []);
+
+    if (onColumnResize && state.resizingColumn && state.finalWidth) {
+      const finalWidthPx = `${state.finalWidth}px`;
+      onColumnResize(state.resizingColumn, finalWidthPx);
+    }
+  }, [handleResizeMove, onColumnResize]);
 
 
 
@@ -113,8 +149,10 @@ export default function Table({
     const id = event.active.id;
 
     if (orderedColumns.includes(id)) {
+      const column = columns.find((c) => c.key === id);
+      setActiveColumn(column);
       setDragType("column");
-    } else if (internalData.some(row => getRowKey(row) === id)) {
+    } else if (internalData.some((row) => getRowKey(row) === id)) {
       setDragType("row");
     }
   };
@@ -143,6 +181,7 @@ export default function Table({
 
     setIsDraggingEnabled(false);
     setDragType(null);
+    setActiveColumn(null);
   };
 
   const getModifiers = () => {
@@ -157,13 +196,6 @@ export default function Table({
     .map((key) => columns.find((col) => col.key === key))
     .filter((col) => !!col && visibleColumns[col.key]);
 
-  useEffect(() => {
-    if (columns.length > 0) {
-      setOrderedColumns(columns.map((col) => col.key));
-      setVisibleColumns(columns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}));
-      setColumnWidths(columns.reduce((acc, col) => ({ ...acc, [col.key]: "200px" }), {}));
-    }
-  }, [columns]);
 
 
   const handleColumnDragEnd = ({ active, over }) => {
@@ -198,11 +230,28 @@ export default function Table({
                 : verticalListSortingStrategy
             }
           >
-            {/* 💡 Table layout MUST NOT include DndContext directly */}
+            {isDraggableColumnEnabled && (  
+            <DragOverlay>
+              {/* Aqui se esta usando  isDraggableColumnEnabled para comprobar si es la tabla principal o cualquier otra tabla*/}
+                {dragType === "column" && activeColumn ? (
+                  <div
+                    className="bg-#f7f3f2 border px-2 py-1 shadow-md"
+                    style={{
+                      width: columnWidths[activeColumn.key],
+                      minWidth: columnWidths[activeColumn.key],
+                      maxWidth: columnWidths[activeColumn.key],
+                    }}
+                  >
+                    {activeColumn.header}
+                  </div>
+                ) : null}
+            </DragOverlay>
+             )}
+
             <TableUI>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-6">&nbsp;</TableHead>
+                  <TableHead className="w-[2px]">&nbsp;</TableHead>
                   {orderedColumns.map((key) => {
                     const column = columns.find((c) => c.key === key);
 
@@ -217,6 +266,7 @@ export default function Table({
                         onColumnDragEnd={handleColumnDragEnd}
                         isDraggingEnabled={isDraggingEnabled}
                         setIsDraggingEnabled={setIsDraggingEnabled}
+                        isDraggableColumnEnabled ={isDraggableColumnEnabled}
                       />
                     );
                   })}

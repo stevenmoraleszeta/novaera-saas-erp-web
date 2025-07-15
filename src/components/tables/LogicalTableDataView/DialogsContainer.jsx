@@ -310,6 +310,7 @@ const { handleUpdatePosition, handleDelete } = useColumns(null);
       
                   <GenericCRUDTable
                     title="Columnas"
+                    selectedView = {selectedView}
                     data={columns}
                     hiddenColumns = {hiddenColumns}
                     columns={[
@@ -370,6 +371,7 @@ const { handleUpdatePosition, handleDelete } = useColumns(null);
                     </DialogHeader>
                   <GenericCRUDTable
                     title="Vistas Personalizadas"
+                    selectedView = {selectedView}
                     data={views}
                     columns={[
                       {
@@ -452,6 +454,7 @@ const { handleUpdatePosition, handleDelete } = useColumns(null);
       
                   <GenericCRUDTable
                     title="Filtros"
+                    selectedView = {selectedView}
                     data={activeFilters}
                     columns={[
                       {
@@ -622,6 +625,7 @@ const { handleUpdatePosition, handleDelete } = useColumns(null);
       
                   <GenericCRUDTable
                     title="Columnas visibles"
+                    selectedView = {selectedView}
                     data={columns.map((col) => ({
                       ...col,
                       visible: columnVisibility[col.name] !== false, // default true
