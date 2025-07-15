@@ -77,7 +77,8 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     handleAddColumnToView,
     handleDeleteViewColumn,
     handleUpdatePosition: handleUpdateViewPosition,
-    handleUpdateViewColumnPosition
+    handleUpdateViewColumnPosition,
+    loadingViews
   } = useViews(tableId);
 
   // Hook para verificar permisos del usuario
@@ -177,12 +178,14 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   useEffect(() => {
     if (
       creatingGeneralViewRef.current ||
+      loadingViews ||
       views.length > 0 ||
       !tableId ||
       columns.length === 0
     ) {
       return;
     }
+    
     creatingGeneralViewRef.current = true;
     const createDefaultView = async () => {
       try {
@@ -214,6 +217,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     };
     createDefaultView();
   }, [views, tableId, columns]);
+  
   useEffect(() => {
     const fetchData = async () => {
       if (users.length > 0) {
