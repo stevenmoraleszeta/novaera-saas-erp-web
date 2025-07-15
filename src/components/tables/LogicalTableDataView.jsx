@@ -1073,6 +1073,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         </div>
       </div>
       <div className="flex flex-wrap mb-2 items-center">
+         {/*
         {activeSort && activeSort.column && (
           <span className="inline-flex items-center text-sm font-medium">
             {columns.find((c) => c.name === activeSort.column)?.name ||
@@ -1087,7 +1088,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         {activeSort && activeSort.column && activeFilters.length > 0 && (
           <div className="w-px h-4 bg-black mx-2" />
         )}
-        {/*  TEXTO QUE INDICA QUE FILTRO ESTA ACTIVO
+         TEXTO QUE INDICA QUE FILTRO ESTA ACTIVO
         {activeFilters.map((f, idx) => (
           <span
             key={idx}
