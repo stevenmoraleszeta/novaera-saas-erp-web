@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import useCurrentUser from "@/hooks/useCurrentUser";
 import {
   getLogicalTableStructure,
   createLogicalTableRecord,
@@ -10,11 +11,12 @@ import {
 import FieldRenderer from "../common/FieldRenderer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, AlertCircle, Users } from "lucide-react";
+import { Plus, AlertCircle, Users, History } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import LogicalTableDataView from "@/components/tables/LogicalTableDataView";
 import AssignedUsersCell from "@/components/tables/AssignedUsersCell";
+import AuditLogModal from "./AuditLogModal";
 import { getAssignedUsersByRecord } from "@/services/recordAssignedUsersService";
 import axios from "@/lib/axios";
 import { X } from "lucide-react";
@@ -46,6 +48,12 @@ export default function DynamicRecordFormDialog({
   const [hasNotificationColumns, setHasNotificationColumns] = useState(false);
   const [showAssignedUsersModal, setShowAssignedUsersModal] = useState(false);
   const [assignedUsers, setAssignedUsers] = useState([]);
+
+  // Modal para historial de cambios
+  const [showAuditLogModal, setShowAuditLogModal] = useState(false);
+
+  // Obtener usuario autenticado
+  const currentUser = useCurrentUser();
 
   useEffect(() => {
     if (!tableId || !open) return;
@@ -163,10 +171,13 @@ export default function DynamicRecordFormDialog({
     try {
       let result;
       if (mode === "create") {
-        result = await createLogicalTableRecord(tableId, values);
+        // Si hay usuario autenticado, pasar su id como tercer argumento
+        const userId = currentUser?.id;
+        result = await createLogicalTableRecord(tableId, values, userId);
       } else if (mode === "edit" && record) {
-        result = await updateLogicalTableRecord(record.id, values, lastPosition);
-
+        // Pasar el userId como cuarto argumento si la función lo soporta
+        const userId = currentUser?.id;
+        result = await updateLogicalTableRecord(record.id, values, lastPosition, userId);
       }
       if (onSubmitSuccess) onSubmitSuccess(result);
       if (mode === "create") {
@@ -200,7 +211,7 @@ export default function DynamicRecordFormDialog({
     } finally {
       setLoading(false);
     }
-  }, [tableId, values, validate, onSubmitSuccess, columns, onOpenChange, mode, record]);
+  }, [tableId, values, validate, onSubmitSuccess, columns, onOpenChange, mode, record, currentUser, lastPosition]);
 
   const handleOpenForeignModal = (col) => {
     const interTable = tables.find(t =>
@@ -261,6 +272,19 @@ return (
         >
           <X className="w-6 h-6" />
         </button>
+        {/* Botón para ver historial de cambios (solo en modo edición) */}
+        {mode === "edit" && record?.id && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setShowAuditLogModal(true)}
+            disabled={loading}
+            className="flex items-center gap-2"
+          >
+            <History className="w-4 h-4" />
+            Ver Cambios
+          </Button>
+        )}
       </div>
 
       {/* Scrollable form */}
@@ -451,6 +475,15 @@ return (
           </div>
         </div>
       </div>
+    )}
+    {/* Modal de historial de cambios */}
+    {showAuditLogModal && record?.id && (
+      <AuditLogModal
+        open={showAuditLogModal}
+        onClose={setShowAuditLogModal}
+        recordId={record.id}
+        tableName={record.table_name || ""}
+      />
     )}
   </div>
 );

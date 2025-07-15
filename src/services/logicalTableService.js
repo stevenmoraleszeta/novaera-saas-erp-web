@@ -17,7 +17,7 @@ export async function getLogicalTableRecords(tableId, params = {}) {
 }
 
 // Crear un nuevo registro en una tabla lógica
-export async function createLogicalTableRecord(tableId, recordData) {
+export async function createLogicalTableRecord(tableId, recordData, userId) {
   // recordData: { ...campos }
   // Obtener columnas para validar y transformar los datos según el tipo
   const { data: columns } = await axios.get(`/columns/table/${tableId}`);
@@ -51,17 +51,18 @@ export async function createLogicalTableRecord(tableId, recordData) {
   const { data } = await axios.post("/records/", {
     table_id: tableId,
     record_data: record,
+    createdBy: userId,
   });
   return data;
 }
 
 // Actualizar un registro en una tabla lógica
-export async function updateLogicalTableRecord(recordId, recordData, positionNum) {
-   const response = await axios.put(`/records/${recordId}`, {
+export async function updateLogicalTableRecord(recordId, recordData, positionNum, userId) {
+  const response = await axios.put(`/records/${recordId}`, {
     recordData,
     position_num: positionNum,
+    updatedBy: userId,
   });
-  
   return response;
 }
 
