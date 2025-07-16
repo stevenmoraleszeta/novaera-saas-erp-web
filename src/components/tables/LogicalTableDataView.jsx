@@ -262,9 +262,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   }, [roles]);
 
   useEffect(() => {
-    if (selectedView) {
-      handleSelectView(selectedView)
-    }
+
     const fetchData = async () => {
       if (!tableId) {
         setColumns([]);
@@ -288,6 +286,10 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         setTotal(
           data.total || (data.records ? data.records.length : data.length)
         );
+
+        if (selectedView) {
+          handleSelectView(selectedView)
+        }
       } catch (err) {
         console.error("Error fetching table data:", err);
         setRecords([]);
@@ -557,7 +559,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
 
         const aVal = (a.record_data || a)[columnName];
         const bVal = (b.record_data || b)[columnName];
-        
+
         // Manejo nulos primero
         if (aVal == null && bVal == null) continue;
         if (aVal == null) return 1;
