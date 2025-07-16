@@ -157,8 +157,7 @@ const ScheduledNotificationForm = ({
         {/* Fecha objetivo */}
         <div className="form-group">
           <label htmlFor="target_date">
-            Fecha Objetivo <span className="required">*</span>
-          </label>
+            Fecha y Hora Objetivo <span className="required">*</span>          </label>
           <input
             type="datetime-local"
             id="target_date"
