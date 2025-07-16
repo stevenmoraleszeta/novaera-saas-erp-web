@@ -2,6 +2,11 @@ import axios from '../lib/axios';
 
 // Servicio para notificaciones programadas
 class ScheduledNotificationsService {
+  // Obtener notificaciones generales del usuario (solo no leídas)
+  async getUserGeneralNotifications(userId) {
+    const response = await axios.get(`/scheduled-notifications/user/${userId}/general`);
+    return response.data;
+  }
   
   // Crear una notificación programada
   async createScheduledNotification(data) {
@@ -131,7 +136,7 @@ class ScheduledNotificationsService {
 
   // Marcar notificación general como leída
   async markGeneralNotificationAsRead(notificationId) {
-    const response = await axios.put(`/notifications/${notificationId}/read`);
+    const response = await axios.put(`/scheduled-notifications/general/${notificationId}/read`);
     return response.data;
   }
 }

@@ -291,7 +291,7 @@ const ScheduledNotificationsManager = ({ tableId = null, recordId = null }) => {
                   <span>{selectedNotification.notification_title}</span>
                 </div>
                 <div className="detail-item">
-                  <label>Fecha Objetivo:</label>
+                  <label>Fecha Objetio:</label>
                   <span>{formatDate(selectedNotification.target_date)}</span>
                 </div>
                 <div className="detail-item">

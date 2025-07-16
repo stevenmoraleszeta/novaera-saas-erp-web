@@ -119,13 +119,15 @@ export default function DynamicRecordFormDialog({
         ['date', 'datetime', 'timestamp'].includes(col.data_type)
       );
       setHasNotificationColumns(hasDateColumns);
-      
-      // Si estamos editando un registro y la tabla tiene notificaciones, cargar usuarios asignados
-      if (hasDateColumns && mode === "edit" && record?.id) {
-        loadAssignedUsers();
-      }
     }
-  }, [columns, mode, record]);
+  }, [columns]);
+
+  // Cargar usuarios asignados cuando el modal se abre en modo edición
+  useEffect(() => {
+    if (open && mode === "edit" && record?.id) {
+      loadAssignedUsers();
+    }
+  }, [open, mode, record]);
 
   function castValueByDataType(type, value) {
     if (value === null || value === undefined) return value;
@@ -378,11 +380,14 @@ return (
         </div>
         
         {/* Botón de usuarios asignados - solo si es modo edición y hay notificaciones */}
-        {mode === "edit" && hasNotificationColumns && record?.id && (
+        {mode === "edit" && record?.id && (
           <Button
             type="button"
             variant="outline"
-            onClick={() => setShowAssignedUsersModal(true)}
+            onClick={async () => {
+              await loadAssignedUsers();
+              setShowAssignedUsersModal(true);
+            }}
             disabled={loading}
             className="flex items-center gap-2"
           >

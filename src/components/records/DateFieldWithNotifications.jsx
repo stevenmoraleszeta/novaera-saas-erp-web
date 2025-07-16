@@ -221,9 +221,21 @@ const DateFieldWithNotifications = ({
               </div>
 
               <div>
-                <p className="text-sm text-gray-600 mb-3">
-                  <strong>Fecha objetivo:</strong> {value || 'No especificada'}
-                </p>
+                <label className="block text-sm font-medium mb-1">Fecha de notificación</label>
+                <Input
+                  type="date"
+                  className="w-full p-2 border rounded-md mb-2"
+                  value={notificationData.date || value?.slice(0,10) || ''}
+                  onChange={e => setNotificationData(prev => ({ ...prev, date: e.target.value }))}
+                />
+                <label className="block text-sm font-medium mb-1">Hora de notificación</label>
+                <Input
+                  type="time"
+                  className="w-full p-2 border rounded-md"
+                  value={notificationData.time || value?.slice(11,16) || ''}
+                  onChange={e => setNotificationData(prev => ({ ...prev, time: e.target.value }))}
+                />
+                <small className="text-xs text-gray-500">Por defecto se usa la fecha y hora del registro, pero puedes cambiarlas.</small>
               </div>
 
               <div>
@@ -321,18 +333,6 @@ const DateFieldWithNotifications = ({
                 >
                   Crear Notificación
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setShowNotificationModal(false);
-                  }}
-                  className="flex-1"
-                >
-                  Cancelar
-                </Button>
               </div>
             </CardContent>
           </Card>
@@ -365,6 +365,5 @@ const DateFieldWithNotifications = ({
       )}
     </div>
   );
-};
-
+}
 export default DateFieldWithNotifications;
