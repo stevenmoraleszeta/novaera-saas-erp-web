@@ -56,6 +56,8 @@ import { sincronizarTablaRoles } from "@/services/rolesTableManager";
 import { useUsers } from '@/hooks/useUsers';
 import { useRoles } from '@/hooks/useRoles';
 
+import { useViewSorts } from "@/hooks/useViewSorts";
+
 
 export default function LogicalTableDataView({ tableId, refresh, colName, constFilter, hiddenColumns, forcePermissions }) {
   const { isEditingMode } = useEditModeStore();
@@ -149,8 +151,17 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
 
   const [orderedViewColumnNames, setOrderedViewColumnNames] = useState([]);
 
+  const [showSortManager, setShowSortManager] = useState(false);
+
   const { users } = useUsers();
   const { roles } = useRoles();
+
+  const {
+    sorts: viewSorts,
+    loading: loadingSort,
+    loadViewSorts
+  } = useViewSorts(selectedView?.id);
+
 
   constFilter = constFilter || null;
 
@@ -185,7 +196,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     ) {
       return;
     }
-    
+
     creatingGeneralViewRef.current = true;
     const createDefaultView = async () => {
       try {
@@ -217,7 +228,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     };
     createDefaultView();
   }, [views, tableId, columns]);
-  
+
   useEffect(() => {
     const fetchData = async () => {
       if (users.length > 0) {
@@ -262,6 +273,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         return;
       }
       loadViews();
+      loadViewSorts();
       setLoading(true);
       try {
         const cols = await getLogicalTableStructure(tableId);
@@ -361,6 +373,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   const cancelDeleteRecord = () => {
     setDeleteConfirmRecord(null);
   };
+
 
   const tableColumns = useMemo(() => {
     let cols = columns
@@ -535,19 +548,39 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
       });
     });
   }
-  if (activeSort && activeSort.column) {
+  if (viewSorts.length > 0) {
     processedRecords = [...processedRecords].sort((a, b) => {
-      const aVal = (a.record_data || a)[activeSort.column];
-      const bVal = (b.record_data || b)[activeSort.column];
-      if (aVal == null && bVal == null) return 0;
-      if (aVal == null) return 1;
-      if (bVal == null) return -1;
-      if (aVal === bVal) return 0;
-      if (activeSort.direction === "asc") {
-        return aVal > bVal ? 1 : -1;
-      } else {
-        return aVal < bVal ? 1 : -1;
+
+      for (const sort of viewSorts) {
+        const columnName = columns.find((col) => col.column_id === sort.columnId)?.name;
+        if (!columnName) continue;
+
+        const aVal = (a.record_data || a)[columnName];
+        const bVal = (b.record_data || b)[columnName];
+        
+        // Manejo nulos primero
+        if (aVal == null && bVal == null) continue;
+        if (aVal == null) return 1;
+        if (bVal == null) return -1;
+
+        // Comparación de strings con localeCompare
+        if (typeof aVal === "string" && typeof bVal === "string") {
+          const cmp = aVal.localeCompare(bVal);
+          if (cmp !== 0) return sort.direction === "asc" ? cmp : -cmp;
+          continue;
+        }
+
+        // Comparación de números (o strings numéricos)
+        if (aVal !== bVal) {
+          return sort.direction === "asc"
+            ? aVal > bVal ? 1 : -1
+            : aVal < bVal ? 1 : -1;
+        }
+
+        // Si son iguales, pasar al siguiente sort
       }
+
+      return 0;
     });
   }
   const filteredRecords = searchTerm
@@ -572,10 +605,6 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     setFilterDraft({ column: "", condition: "", value: "" });
     setShowFilterDialog(false);
   };
-
-  useEffect(() => {
-    // Aquí puedes poner la lógica que dependa del nuevo valor de activeSort
-  }, [activeSort]);
 
   const handleSetSort = () => {
     if (!sortConfig?.column || !sortConfig?.direction) return;
@@ -759,7 +788,6 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
 
   const handleCreateViewLocal = async (viewData) => {
     try {
-      console.log("djo: VIEWDATA", viewData, tableId)
       const sortColumn = columns.find(col => col.name === activeSort?.column);
 
       const newView = await handleCreateView({
@@ -807,37 +835,6 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         sortBy: sortColumn?.column_id || null,
         sortDirection: activeSort?.direction || null,
       });
-
-      // Get current view columns to delete them
-      //const currentViewColumns = getColumnsForView(viewId);
-
-      // Remove all existing column configurations from the view
-      //for (const viewCol of currentViewColumns) {
-      //await handleDeleteViewColumn(viewCol.id, viewId);
-      //}
-
-      // Create new column configurations with current settings
-      // This includes visibility and filter settings for each column
-      /*
-      const viewColumns = columns.map((col) => {
-        // Find if this column has an active filter
-        const activeFilter = activeFilters.find((f) => f.column === col.name);
-
-        return {
-          view_id: viewId,
-          column_id: col.column_id,
-          visible: columnVisibility[col.name] !== false,
-          filter_condition: activeFilter?.condition || null,
-          filter_value: activeFilter?.value || null,
-        };
-      }); */
-
-      // Add each column configuration to the view
-      // This is where filters are actually stored - as column properties
-      //for (const viewCol of viewColumns) {
-      //  await handleAddColumnToView(viewCol);
-      //}
-
       setShowViewDialog(false);
       setViewFormMode("create");
       setSelectedView(null);
@@ -1032,11 +1029,22 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
           >
             <Filter className="w-5 h-5" />
           </Button>
-          <Button
+
+          {/*          <Button
             variant="ghost"
             size="icon"
             className="w-9 h-9"
             onClick={() => setShowSortDialog(true)}
+          >
+            <ArrowUpDown className="w-5 h-5" />
+          </Button>} */}
+
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="w-9 h-9"
+            onClick={() => setShowSortManager(true)}
           >
             <ArrowUpDown className="w-5 h-5" />
           </Button>
@@ -1073,39 +1081,6 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         </div>
       </div>
       <div className="flex flex-wrap mb-2 items-center">
-         {/*
-        {activeSort && activeSort.column && (
-          <span className="inline-flex items-center text-sm font-medium">
-            {columns.find((c) => c.name === activeSort.column)?.name ||
-              activeSort.column}
-            {activeSort.direction === "asc" ? (
-              <ArrowUp className="ml-1 w-4 h-4 inline" />
-            ) : (
-              <ArrowDown className="ml-1 w-4 h-4 inline" />
-            )}
-          </span>
-        )}
-        {activeSort && activeSort.column && activeFilters.length > 0 && (
-          <div className="w-px h-4 bg-black mx-2" />
-        )}
-         TEXTO QUE INDICA QUE FILTRO ESTA ACTIVO
-        {activeFilters.map((f, idx) => (
-          <span
-            key={idx}
-            className="inline-flex items-center text-sm font-medium mr-4"
-          >
-            {columns.find((c) => c.name === f.column)?.name || f.column}{" "}
-            {filterConditions.find((cond) => cond.value === f.condition)
-              ?.label || f.condition}{" "}
-            {f.value &&
-            f.condition !== "is_null" &&
-            f.condition !== "is_not_null"
-              ? `"${f.value}"`
-              : ""}
-          </span>
-        ))}
-          */}
-
       </div>
       <div
         className="flex-1 overflow-hidden bg-white relative"
@@ -1304,6 +1279,8 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         setSortConfig={setSortConfig}
         sortConfig={sortConfig}
         handleSetSort={handleSetSort}
+        showSortManager={showSortManager}
+        setShowSortManager={setShowSortManager}
       />
     </div>
   );
