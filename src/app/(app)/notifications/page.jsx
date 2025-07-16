@@ -39,49 +39,50 @@ const NotificacionesPage = () => {
         <div className="p-4 text-center text-gray-500">No tienes notificaciones</div>
       ) : (
         <div className="space-y-3">
-          {notifications.map(n => (
-            <div key={n.id} className={`flex items-start gap-2 p-4 rounded-md border ${
-              n.read ? 'border-gray-200 bg-gray-50' : 'border-green-200 bg-green-50'
-            }`}>
-              <Bell className={`h-5 w-5 mt-1 ${
-                n.read ? 'text-gray-400' : 'text-green-500'
-              }`} />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
-                    Programada
-                  </span>
-                  {n.read && (
-                    <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">
-                      Leída
+          {notifications.map((n, idx) => {
+            // Si hay ids duplicados, usa una key compuesta
+            const key = `${n.id}-${n.created_at || idx}`;
+            return (
+              <div key={key} className={`flex items-start gap-2 p-4 rounded-md border ${
+                n.read ? 'border-gray-200 bg-gray-50' : 'border-green-200 bg-green-50'
+              }`}>
+                <Bell className={`h-5 w-5 mt-1 ${
+                  n.read ? 'text-gray-400' : 'text-green-500'
+                }`} />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
+                      Programada
                     </span>
-                  )}
-                </div>
-                <div className="font-medium text-gray-900">
-                  {n.notification_title || n.title}
-                  {n.table_name && (
-                    <>
-                      <span className="ml-1 text-xs text-gray-500">[{n.table_name}]</span>
+                    {n.read && (
+                      <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+                        Leída
+                      </span>
+                    )}
+                  </div>
+                  <div className="font-medium text-gray-900">
+                    {n.notification_title || n.title}
+                    {n.table_id && (
                       <button
-                        className="ml-1 text-xs text-blue-600 hover:underline"
-                        onClick={() => router.push(`/modulos/${n.table_id}`)}
+                        className="ml-2 text-xs text-blue-600 hover:underline"
+                        onClick={() => router.push(`${n.link_to_module}`)}
                       >
-                        Ver tabla
+                        Ver módulo
                       </button>
-                    </>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-600 mt-1">{n.notification_message || n.message}</div>
+                  <div className="text-xs mt-2 text-gray-400">
+                    Para: {n.target_date?.slice(0, 10)} | 
+                    Creada: {new Date(n.created_at).toLocaleString()}
+                  </div>
+                  {n.notification_sent && (
+                    <span className="text-xs text-green-600 mt-1 block">✓ Enviada</span>
                   )}
                 </div>
-                <div className="text-xs text-gray-600 mt-1">{n.notification_message || n.message}</div>
-                <div className="text-xs mt-2 text-gray-400">
-                  Para: {n.target_date?.slice(0, 10)} | 
-                  Creada: {new Date(n.created_at).toLocaleString()}
-                </div>
-                {n.notification_sent && (
-                  <span className="text-xs text-green-600 mt-1 block">✓ Enviada</span>
-                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

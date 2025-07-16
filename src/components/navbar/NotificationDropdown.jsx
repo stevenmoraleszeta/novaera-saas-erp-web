@@ -21,10 +21,15 @@ const NotificationDropdown = () => {
     const fetchNotifications = async () => {
       setLoading(true);
       try {
-        // Solo obtener notificaciones programadas del usuario (ya filtradas como no leídas)
-        const res = await scheduledNotificationsService.getUserScheduledNotifications();
-        console.log('Notificaciones dropdown:', res);
-        setNotifications(res.data || res || []);
+        // Obtener notificaciones programadas no leídas
+        const scheduled = await scheduledNotificationsService.getUserScheduledNotifications(userId);
+        // Obtener notificaciones normales no leídas
+        const general = await scheduledNotificationsService.getUserGeneralNotifications(userId);
+        // Filtrar solo las no leídas
+        const unreadGeneral = (general.data || general || []).filter(n => n.read === false);
+        const unreadScheduled = (scheduled.data || scheduled || []).filter(n => n.read === false);
+        // Unir ambas listas
+        setNotifications([...unreadScheduled, ...unreadGeneral]);
       } catch (e) {
         console.error('Error cargando notificaciones dropdown:', e);
         setNotifications([]);
@@ -39,8 +44,17 @@ const NotificationDropdown = () => {
   // Marcar como leída
   const markAsRead = async (notificationId) => {
     try {
-      await scheduledNotificationsService.markNotificationAsRead(notificationId);
-      // Remover la notificación de la lista local
+      // Buscar la notificación en la lista local para saber su tipo
+      const notification = notifications.find(n => n.id === notificationId);
+      if (!notification) return;
+      if (notification.notification_title || notification.target_date) {
+        // Es una scheduled notification
+        await scheduledNotificationsService.markNotificationAsRead(notificationId);
+      } else {
+        // Es una general notification
+        await scheduledNotificationsService.markGeneralNotificationAsRead(notificationId);
+      }
+      // Eliminar la notificación del dropdown
       setNotifications(notifications => notifications.filter(n => n.id !== notificationId));
     } catch (error) {
       console.error('Error marking notification as read:', error);
@@ -84,19 +98,16 @@ const NotificationDropdown = () => {
                   <div className="flex-1">
                     <div className="font-medium flex flex-wrap gap-1 items-center">
                       {n.notification_title || n.title}
-                      {n.table_name && (
-                        <>
-                          <span className="ml-1 text-xs text-gray-500">[{n.table_name}]</span>
-                          <button
-                            className="ml-1 text-xs text-blue-600 hover:underline"
-                            onClick={() => {
-                              setOpen(false);
-                              router.push(`/modulos/${n.table_id}`);
-                            }}
-                          >
-                            Ver tabla
-                          </button>
-                        </>
+                      {(n.link_to_module || n.table_id) && (
+                        <button
+                          className="ml-2 text-xs text-blue-600 hover:underline"
+                          onClick={() => {
+                            setOpen(false);
+                            router.push(n.link_to_module ? n.link_to_module : `/modulos/${n.table_id}`);
+                          }}
+                        >
+                          Ver módulo
+                        </button>
                       )}
                     </div>
                     <div className="text-xs text-muted-foreground">{n.notification_message || n.message}</div>
