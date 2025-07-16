@@ -6,13 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
+import ReusableCombobox from "@/components/ui/reusableCombobox";
+
 import {
   Dialog,
   DialogContent,
@@ -84,10 +80,13 @@ export default function UserForm({
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
   // Transform roles to options format
-  const roleOptions = roles.map((role) => ({
-    value: role.name,
-    label: role.name,
-  }));
+  const roleOptions = [
+    { value: "Sin rol", label: "Sin rol" },
+    ...roles.map((role) => ({
+      value: role.name,
+      label: role.name,
+    })),
+  ];
 
   // Load roles on component mount - removed since we now receive roles as prop
 
@@ -382,27 +381,14 @@ export default function UserForm({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="role">Rol del Sistema</Label>
-                  <Select
+                  <ReusableCombobox
+                    label="Rol del Sistema"
+                    placeholder="Selecciona un rol"
+                    options={roleOptions}
                     value={formData.role}
-                    onValueChange={(value) => {
-                      console.log('UserForm - Role changed to:', value);
-                      handleChange("role", value);
-                    }}
+                    onChange={(value) => handleChange("role", value)}
                     disabled={loading}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un rol" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Sin rol">Sin rol</SelectItem>
-                      {roleOptions.map((role) => (
-                        <SelectItem key={role.value} value={role.value}>
-                          {role.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  />
                   {formData.role && (
                     <p className="text-xs text-gray-500">
                       Rol actual: {formData.role}
