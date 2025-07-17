@@ -7,13 +7,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/components/ui/select";
+import ReusableCombobox from "@/components/ui/reusableCombobox";
 
 export default function SortDialog({
   open,
@@ -23,6 +17,17 @@ export default function SortDialog({
   setSortConfig,
   onSetSort,
 }) {
+
+  const columnOptions = columns.map((col) => ({
+    value: col.name,
+    label: col.header || col.name || col.column_id,
+  }));
+
+  const directionOptions = [
+    { value: "asc", label: "Ascendente" },
+    { value: "desc", label: "Descendente" },
+  ];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -30,37 +35,20 @@ export default function SortDialog({
           <DialogTitle>Ordenamiento</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4">
-          <Select
+          <ReusableCombobox
+            placeholder="Columna"
+            options={columnOptions}
             value={sortConfig?.column || ""}
-            onValueChange={(val) =>
-              setSortConfig((cfg) => ({ ...cfg, column: val }))
-            }
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Columna" />
-            </SelectTrigger>
-            <SelectContent>
-              {columns.map((col) => (
-                <SelectItem key={col.column_id} value={col.name}>
-                  {col.header || col.name || col.column_id}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
+            onChange={(val) =>
+              setSortConfig((cfg) => ({ ...cfg, column: val }))}
+          />
+          <ReusableCombobox
+            placeholder="Dirección"
+            options={directionOptions}
             value={sortConfig?.direction || ""}
-            onValueChange={(val) =>
-              setSortConfig((cfg) => ({ ...cfg, direction: val }))
-            }
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Dirección" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="asc">Ascendente</SelectItem>
-              <SelectItem value="desc">Descendente</SelectItem>
-            </SelectContent>
-          </Select>
+            onChange={(val) =>
+              setSortConfig((cfg) => ({ ...cfg, direction: val }))}
+          />
         </div>
         <DialogFooter>
           <Button
