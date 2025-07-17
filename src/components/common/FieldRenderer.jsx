@@ -3,13 +3,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useUsers } from "@/hooks/useUsers";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import SelectionField from "./SelectionField";
 import { Label } from "@/components/ui/label";
 import { getLogicalTableRecords } from "@/services/logicalTableService";
@@ -19,6 +12,8 @@ import FileUpload from "./FileUpload";
 import FileDisplay from "./FileDisplay";
 import DateFieldWithNotifications from "../records/DateFieldWithNotifications";
 import AssignedUsersCell from "../tables/AssignedUsersCell";
+
+import ReusableCombobox from "@/components/ui/reusableCombobox"; 
 
 export default function FieldRenderer({ 
   id, 
@@ -93,7 +88,6 @@ export default function FieldRenderer({
           value={value}
           onChange={(val) => onChange({ target: { value: val === "none" ? "" : val } })}
           required={column.is_required}
-          label={column.name}
           placeholder={`Selecciona ${column.name}`}
         />
       );
@@ -116,56 +110,74 @@ export default function FieldRenderer({
     // Llave foránea legacy: usar Select manual (mantener como fallback)
     if (column.is_foreign_key && column.foreign_table_id && column.foreign_column_name) {
       console.log('Rendering legacy foreign key field - this should not be used for new intermediate tables');
+      const legacyFkOptions = [
+        { label: "-- Ninguno --", value: "none" },
+        ...foreignOptions.filter((option) => option.value !== "")
+      ];
       return (
-        <Select
-          value={value?.toString() || "none"}
-          onValueChange={(val) => onChange({ target: { value: val === "none" ? "" : val } })}
-        >
-          <SelectTrigger className={baseClassName}>
-            <SelectValue placeholder={`Selecciona ${column.name}`} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">-- Ninguno --</SelectItem>
-            {foreignOptions
-              .filter((option) => option.value !== "")
-              .map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
+        <ReusableCombobox
+          placeholder={`Selecciona ${column.name}`}
+          options={legacyFkOptions}
+          value={value || "none"}
+          onChange={(val) => onChange({ target: { value: val === "none" ? "" : val } })}
+        />
+
+        // <Select
+        //   value={value?.toString() || "none"}
+        //   onValueChange={(val) => onChange({ target: { value: val === "none" ? "" : val } })}
+        // >
+        //   <SelectTrigger className={baseClassName}>
+        //     <SelectValue placeholder={`Selecciona ${column.name}`} />
+        //   </SelectTrigger>
+        //   <SelectContent>
+        //     <SelectItem value="none">-- Ninguno --</SelectItem>
+        //     {foreignOptions
+        //       .filter((option) => option.value !== "")
+        //       .map((option) => (
+        //         <SelectItem key={option.value} value={option.value}>
+        //           {option.label}
+        //         </SelectItem>
+        //       ))}
+        //   </SelectContent>
+        // </Select>
       );
     }
 
     // Tipo especial: "user"
     if (column.data_type === "user") {
-      const options = users.map((u) => ({
-        value: u.id.toString(),
+      const userOptions = users.map((u) => ({
+        value: u.id,
         label: u.name || `Usuario #${u.id}`,
       }));
 
-      const selectedLabel =
-        options.find((opt) => opt.value === (value?.toString() || ""))?.label || "";
+      // const selectedLabel =
+      //   options.find((opt) => opt.value === (value?.toString() || ""))?.label || "";
 
       return (
-        <Select
-          value={value?.toString() || ""}
-          onValueChange={(val) => onChange({ target: { value: parseInt(val, 10) } })}
-        >
-          <SelectTrigger className={baseClassName}>
-            <SelectValue placeholder={`Selecciona ${column.name}`}>
-              {selectedLabel}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {options.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <ReusableCombobox
+          placeholder={`Selecciona ${column.name}`}
+          options={userOptions}
+          value={value}
+          onChange={(val) => onChange({ target: { value: val ? parseInt(val, 10) : null } })}
+        />
+
+        // <Select
+        //   value={value?.toString() || ""}
+        //   onValueChange={(val) => onChange({ target: { value: parseInt(val, 10) } })}
+        // >
+        //   <SelectTrigger className={baseClassName}>
+        //     <SelectValue placeholder={`Selecciona ${column.name}`}>
+        //       {selectedLabel}
+        //     </SelectValue>
+        //   </SelectTrigger>
+        //   <SelectContent>
+        //     {options.map((option) => (
+        //       <SelectItem key={option.value} value={option.value}>
+        //         {option.label}
+        //       </SelectItem>
+        //     ))}
+        //   </SelectContent>
+        // </Select>
       );
     }
 
@@ -322,23 +334,33 @@ export default function FieldRenderer({
 
     case "select":
     case "enum":
-      const options = column.options || [];
+      // const options = column.options || [];
+      const customOptions = (column.options || []).map(opt => 
+        typeof opt === 'string' ? { label: opt, value: opt } : opt
+      );
       return (
-        <Select
-          value={value || ""}
-          onValueChange={(val) => onChange({ target: { value: val } })}
-        >
-          <SelectTrigger className={baseClassName}>
-            <SelectValue placeholder={`Selecciona ${column.name}`} />
-          </SelectTrigger>
-          <SelectContent>
-            {options.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <ReusableCombobox
+          placeholder={`Selecciona ${column.name}`}
+          options={customOptions}
+          value={value}
+          onChange={(val) => onChange({ target: { value: val } })}
+        />
+
+        // <Select
+        //   value={value || ""}
+        //   onValueChange={(val) => onChange({ target: { value: val } })}
+        // >
+        //   <SelectTrigger className={baseClassName}>
+        //     <SelectValue placeholder={`Selecciona ${column.name}`} />
+        //   </SelectTrigger>
+        //   <SelectContent>
+        //     {options.map((option) => (
+        //       <SelectItem key={option.value} value={option.value}>
+        //         {option.label}
+        //       </SelectItem>
+        //     ))}
+        //   </SelectContent>
+        // </Select>
       );
 
     case "file":

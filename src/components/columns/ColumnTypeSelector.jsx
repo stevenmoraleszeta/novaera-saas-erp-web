@@ -1,3 +1,5 @@
+//Ya no se está usando, pero igual es mejor revisar bien por cualquier cosas
+
 "use client";
 
 import React, { useState } from "react";

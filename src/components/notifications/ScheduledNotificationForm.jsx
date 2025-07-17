@@ -4,6 +4,7 @@ import { getUsers } from '../../services/userService';
 import Button from '../common/Button';
 import Modal from '../common/Modal';
 import { toast } from 'sonner';
+import ReusableCombobox from '@/components/ui/reusableCombobox';
 
 const ScheduledNotificationForm = ({ 
   isOpen, 
@@ -26,6 +27,11 @@ const ScheduledNotificationForm = ({
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const dateColumnOptions = dateColumns.map(column => ({
+    label: `${column.name} (${column.data_type})`,
+    value: column.id,
+  }));
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -135,7 +141,17 @@ const ScheduledNotificationForm = ({
       <form onSubmit={handleSubmit} className="notification-form">
         {/* Columna de fecha */}
         <div className="form-group">
-          <label htmlFor="column_id">
+          <ReusableCombobox
+            label="Columna de Fecha *"
+            placeholder="Seleccione una columna de fecha"
+            options={dateColumnOptions}
+            value={formData.column_id}
+            onChange={(val) => setFormData(prev => ({ ...prev, column_id: val }))}
+            disabled={loading}
+            required
+          />
+
+          {/* <label htmlFor="column_id">
             Columna de Fecha <span className="required">*</span>
           </label>
           <select
@@ -151,7 +167,7 @@ const ScheduledNotificationForm = ({
                 {column.name} ({column.data_type})
               </option>
             ))}
-          </select>
+          </select> */}
         </div>
 
         {/* Fecha objetivo */}
@@ -276,7 +292,6 @@ const ScheduledNotificationForm = ({
           }
 
           .form-group input,
-          .form-group select,
           .form-group textarea {
             width: 100%;
             padding: 0.75rem;
@@ -288,7 +303,6 @@ const ScheduledNotificationForm = ({
           }
 
           .form-group input:focus,
-          .form-group select:focus,
           .form-group textarea:focus {
             outline: none;
             border-color: #3b82f6;
