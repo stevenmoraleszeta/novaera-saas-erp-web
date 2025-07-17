@@ -88,7 +88,6 @@ export default function FieldRenderer({
           value={value}
           onChange={(val) => onChange({ target: { value: val === "none" ? "" : val } })}
           required={column.is_required}
-          label={column.name}
           placeholder={`Selecciona ${column.name}`}
         />
       );

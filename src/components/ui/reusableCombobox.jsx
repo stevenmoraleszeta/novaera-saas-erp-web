@@ -1,9 +1,7 @@
-// Archivo: components/ui/ReusableCombobox.jsx (Nombre sugerido)
-
 "use client";
 
 import React, { useState } from "react";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, ChevronDown  } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -22,19 +20,19 @@ import {
 } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 
-// La lista de opciones ahora es un prop
 export default function ReusableCombobox({
   value,
   onChange,
-  options = [], // <-- NUEVO PROP: Array de { label: string, value: any }
+  options = [],
   label = "",
-  placeholder = "Seleccione una opción...", // Placeholder personalizable
+  placeholder = "Seleccione una opción...", 
   error,
   required = false,
+  disabled = false,
+  triggerClassName = ""
 }) {
   const [open, setOpen] = useState(false);
 
-  // Encuentra el label del valor seleccionado
   const selectedLabel = options.find((opt) => opt.value === value)?.label;
 
   return (
@@ -50,14 +48,25 @@ export default function ReusableCombobox({
           <Button
             variant="outline"
             role="combobox"
+            disabled={disabled}
             aria-expanded={open}
-            className="w-full justify-between h-11"
+            className={cn(
+             "flex h-11 w-full items-center justify-between border border-transparent bg-gray-200 hover:bg-gray-200 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800 dark:hover:bg-gray-800",
+              triggerClassName
+            )}
           >
             {selectedLabel || placeholder}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 10 5"
+              fill="currentColor"
+              className="ml-2 !h-[20px] !w-[25px] shrink-0" 
+            >
+              <path d="M0 0L5 5L10 0Z" />
+            </svg>
           </Button>
         </PopoverTrigger>
-        <PopoverContent 
+        <PopoverContent
           className="w-[--radix-popover-trigger-width] p-0" 
           side="bottom" 
           align="start"
@@ -86,9 +95,8 @@ export default function ReusableCombobox({
                 {options.map((option) => (
                   <CommandItem
                     key={option.value}
-                    value={String(option.value)} // El valor debe ser string para Command
+                    value={String(option.value)}
                     onSelect={(currentValue) => {
-                      // Encuentra el valor original (puede no ser string)
                       const originalValue = options.find(o => String(o.value) === currentValue)?.value;
                       onChange(originalValue === value ? "" : originalValue);
                       setOpen(false);
