@@ -7,13 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -24,10 +17,11 @@ import { X, Save, Trash2 } from "lucide-react";
 
 import useUserStore from "@/stores/userStore";
 import { useForeignKeyOptions } from "@/hooks/useForeignKeyOptions";
-import ColumnTypeSelector from "./ColumnTypeSelector";
 import SelectionTypeSelector from "./SelectionTypeSelector";
 import CustomOptionsManager from "./CustomOptionsManager";
 import { getOrCreateJoinTable } from "@/services/tablesService";
+
+import ReusableCombobox from "@/components/ui/reusableCombobox";
 
 export default function ColumnForm({
   open = false,
@@ -62,6 +56,23 @@ export default function ColumnForm({
     created_by: user?.id || null,
     column_position: lastPosition,
   });
+  const DATA_TYPES = [
+    { label: "Texto", value: "string" },
+    { label: "Texto largo", value: "text" },
+    { label: "Número entero", value: "integer" },
+    { label: "Número decimal", value: "decimal" },
+    { label: "Checkbox", value: "boolean" },
+    { label: "Fecha", value: "date" },
+    { label: "Fecha y hora", value: "datetime" },
+    { label: "Relación Foránea", value: "foreign" },
+    { label: "Selección", value: "select" },
+    { label: "Archivo", value: "file" },
+    { label: "Múltiples archivos", value: "file_array" },
+    { label: "Usuario", value: "user" },
+    { label: "Usuarios Asignados", value: "assigned_users" },
+    { label: "JSON", value: "json" },
+    { label: "UUID", value: "uuid" },
+  ];
 
   // Estados para opciones personalizadas
   const [selectionType, setSelectionType] = useState("table");
@@ -75,6 +86,26 @@ export default function ColumnForm({
         !table.name.startsWith("mid_") && !table.name.includes(" - ")
     );
   }, [tables]);
+
+  const tableOptions = useMemo(() => {
+    if (!tables) return [];
+    return tables
+      .filter((table) => !table.name.startsWith("mid_") && !table.name.includes(" - "))
+      .map((table) => ({
+        label: table.name,
+        value: table.id,
+      }));
+  }, [tables]);
+
+  const foreignColumnOptions = useMemo(() => {
+    if (!formData.foreign_table_id || !columnsByTable[formData.foreign_table_id]) {
+      return [];
+    }
+    return columnsByTable[formData.foreign_table_id].map((col) => ({
+      label: col.name,
+      value: col.name,
+    }));
+  }, [formData.foreign_table_id, columnsByTable]);
 
   useEffect(() => {
     setFormError(null);
@@ -241,6 +272,11 @@ export default function ColumnForm({
     onOpenChange?.(false);
   };
 
+  const handleTableChange = (value) => {
+    handleChange("foreign_table_id", value ? Number(value) : null);
+    handleChange("foreign_column_name", "");
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] h-[80vh] flex flex-col max-h-[90vh] overflow-y-auto">
@@ -269,8 +305,10 @@ export default function ColumnForm({
 
             {/* Tipo de Dato */}
             <div className="space-y-2">
-              <Label>Tipo de Dato</Label>
-              <ColumnTypeSelector
+              <ReusableCombobox
+                label="Tipo de Dato"
+                placeholder="Seleccione un tipo de dato..."
+                options={DATA_TYPES} // <- Le pasas los datos que moviste
                 value={formData.data_type}
                 onChange={handleTypeChange}
               />
@@ -279,46 +317,28 @@ export default function ColumnForm({
             {/* Tabla Foránea para tipo foreign */}
             {formData.data_type === "foreign" && (
               <div className="space-y-2">
-                <Label>Tabla Foránea</Label>
-                <Select
-                  value={formData.foreign_table_id !== null ? formData.foreign_table_id.toString() : ""}
-                  onValueChange={(value) => handleChange("foreign_table_id", value ? Number(value) : null)}
+                <ReusableCombobox
+                  label="Tabla Foránea"
+                  placeholder="Selecciona una tabla"
+                  options={tableOptions}
+                  value={formData.foreign_table_id}
+                  onChange={(value) => handleChange("foreign_table_id", value ? Number(value) : null)}
                   disabled={loading}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una tabla" />
-                  </SelectTrigger>
-                  <SelectContent sideOffset={5} collisionPadding={100}>
-                    {filteredTables.map((table) => (
-                      <SelectItem key={table.id} value={table.id.toString()}>
-                          {table.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                />
               </div>
             )}
 
             {/* Columna Foránea para tipo foreign */}
             {formData.data_type === "foreign" && formData.foreign_table_id && (
               <div className="space-y-2">
-                <Label>Columna Foránea</Label>
-                <Select
-                  value={formData.foreign_column_name || ""}
-                  onValueChange={(value) => handleChange("foreign_column_name", value)}
+                <ReusableCombobox
+                  label="Columna Foránea"
+                  placeholder="Selecciona columna foránea"
+                  options={foreignColumnOptions}
+                  value={formData.foreign_column_name}
+                  onChange={(value) => handleChange("foreign_column_name", value)}
                   disabled={loading}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona columna foránea" />
-                  </SelectTrigger>
-                  <SelectContent sideOffset={5} collisionPadding={100}>
-                    {(columnsByTable[formData.foreign_table_id] || []).map((col) => (
-                      <SelectItem key={col.name} value={col.name}>
-                        {col.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                />
               </div>
             )}
 
@@ -336,43 +356,26 @@ export default function ColumnForm({
                 {selectionType === "table" && (
                   <>
                     <div className="space-y-2">
-                      <Label>Tabla de origen</Label>                        <Select
-                          value={formData.foreign_table_id && formData.foreign_table_id > 0 ? formData.foreign_table_id.toString() : ""}
-                          onValueChange={(value) => handleChange("foreign_table_id", value ? Number(value) : null)}
-                          disabled={loading}
-                        >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona una tabla" />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-[250px]">
-                          {filteredTables.map((table) => (
-                            <SelectItem key={table.id} value={table.id.toString()}>
-                                {table.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <ReusableCombobox
+                        label="Tabla de origen"
+                        placeholder="Selecciona una tabla"
+                        options={tableOptions}
+                        value={formData.foreign_table_id}
+                        onChange={(value) => handleChange("foreign_table_id", value ? Number(value) : null)}
+                        disabled={loading}
+                      />
                     </div>
 
                     {formData.foreign_table_id && (
                       <div className="space-y-2">
-                        <Label>Campo a mostrar</Label>
-                        <Select
-                          value={formData.foreign_column_name || ""}
-                          onValueChange={(value) => handleChange("foreign_column_name", value)}
+                        <ReusableCombobox
+                          label="Campo a mostrar"
+                          placeholder="Selecciona campo"
+                          options={foreignColumnOptions}
+                          value={formData.foreign_column_name}
+                          onChange={(value) => handleChange("foreign_column_name", value)}
                           disabled={loading}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona campo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(columnsByTable[formData.foreign_table_id] || []).map((col) => (
-                              <SelectItem key={col.name} value={col.name}>
-                                {col.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        />
                       </div>
                     )}
                   </>

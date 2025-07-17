@@ -16,6 +16,14 @@ import { X } from "lucide-react";
 
 import useUserStore from "@/stores/userStore";
 
+import ReusableCombobox from "@/components/ui/reusableCombobox";
+
+const tableTypeOptions = [
+  { value: "logical", label: "Tabla Lógica" },
+  { value: "physical", label: "Tabla Física" },
+  { value: "view", label: "Vista" },
+];
+
 export default function LogicalTableModal({
   open = false,
   onOpenChange,
@@ -116,7 +124,16 @@ export default function LogicalTableModal({
 
             {/* Table Type Field */}
             <div className="space-y-2">
-              <Label htmlFor="table_type">Tipo de Tabla</Label>
+              <ReusableCombobox
+                label="Tipo de Tabla"
+                placeholder="Selecciona un tipo"
+                options={tableTypeOptions}
+                value={formData.table_type}
+                onChange={(value) => handleChange("table_type", value)}
+                disabled={loading}
+              />
+
+              {/* <Label htmlFor="table_type">Tipo de Tabla</Label>
               <select
                 id="table_type"
                 value={formData.table_type}
@@ -127,7 +144,7 @@ export default function LogicalTableModal({
                 <option value="logical">Tabla Lógica</option>
                 <option value="physical">Tabla Física</option>
                 <option value="view">Vista</option>
-              </select>
+              </select> */}
             </div>
 
             {/* Error Display */}
