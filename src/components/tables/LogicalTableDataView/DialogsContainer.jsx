@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +21,7 @@ import ViewForm from "@/components/ViewForm";
 import { useColumns } from "@/hooks/useColumns";
 import SortDialog from "../dialogs/SortDialog";
 import { useViews } from "@/hooks/useViews";
+
 
 import { useViewSorts } from "@/hooks/useViewSorts";
 
@@ -728,16 +730,18 @@ export default function DialogsContainer(props) {
                       <Label>Columna</Label>
                       <Input value={formData.name} disabled />
                       <Label>¿Visible?</Label>
-                      <select
-                        value={formData.visible ? "true" : "false"}
-                        onChange={(e) =>
-                          setFormData({ ...formData, visible: e.target.value === "true" })
-                        }
-                        className="w-full border px-2 py-1"
-                      >
-                        <option value="true">Sí</option>
-                        <option value="false">No</option>
-                      </select>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="visible"
+                          checked={formData.visible}
+                          onCheckedChange={(checked) => {
+                            setFormData((prev) => ({ ...prev, visible: !!checked }));
+                          }}
+                        />
+                        <label htmlFor="visible" className="text-sm">
+                          ¿Visible?
+                        </label>
+                      </div>
                     </div>
                     <DialogFooter className="pt-4">
                       <Button onClick={() => onSubmit(formData)}>Guardar</Button>
