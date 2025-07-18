@@ -12,7 +12,6 @@ import { login as authServiceLogin } from "@/services/authService";
 import { Label } from "@/components/ui/label";
 
 export default function HomePage() {
-
   const { setUser } = useUserStore();
   const { clearTabs } = useTabStore();
   const router = useRouter();
