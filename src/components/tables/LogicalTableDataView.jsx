@@ -688,10 +688,11 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
       setColumnFormMode("create");
       setSelectedColumn(null);
       setLocalRefreshFlag((prev) => !prev);
+      console.log("URGENTE: ", nuevaColumna.column.column_id)
       for (const vista of views) {
         await handleAddColumnToView({
           view_id: vista.id,
-          column_id: nuevaColumna.column.sp_crear_columna,
+          column_id: nuevaColumna.column.column_id,
           visible: true,
           filter_condition: null,
           filter_value: null,
