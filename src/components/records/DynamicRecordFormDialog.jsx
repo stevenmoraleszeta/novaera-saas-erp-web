@@ -350,7 +350,7 @@ return (
               return (
                 <div key={col.column_id} className="space-y-2">
                   <Label htmlFor={`field-${col.name}`}>
-                    {col.name}
+                    {col.name.endsWith('_id') ? col.foreign_column_name : col.name}
                     {col.is_required && (
                       <Badge className="ml-1 text-xs text-destructive bg-transparent">
                         *Requerido
@@ -458,7 +458,8 @@ return (
           <h2 className="text-2xl font-bold">
             {foreignModalColumn
               ? `Registros relacionados de ${
-                  foreignModalColumn.foreign_table_name || "Tabla intermedia"
+                foreignModalColumn.foreign_table_name || foreignModalColumn.name || "Tabla intermedia"
+                  // foreignModalColumn.foreign_table_name || "Tabla intermedia"
                 }`
               : "Registros relacionados"}
           </h2>

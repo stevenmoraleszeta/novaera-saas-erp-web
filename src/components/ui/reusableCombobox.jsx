@@ -37,8 +37,8 @@ export default function ReusableCombobox({
 
   return (
     <div className="space-y-2">
-      {label && ( // Solo muestra el label si se proporciona
-        <Label className="text-sm font-medium text-gray-700">
+      {label && ( 
+        <Label className="text-sm font-black">
           {label} {required && <span className="text-red-500">*</span>}
         </Label>
       )}
@@ -77,7 +77,7 @@ export default function ReusableCombobox({
               const item = options.find(d => String(d.value) === itemValue);
               const itemLabel = item?.label || '';
               const normalizeText = (text) => 
-                text
+                String(text || "")
                   .normalize("NFD")
                   .replace(/[\u0300-\u036f]/g, "")
                   .toLowerCase();
