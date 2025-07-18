@@ -39,9 +39,15 @@ export function middleware(request) {
     pathname === "/";
 
   // Si el usuario accede a / y tiene token, redirige a /modulos
-  if (pathname === "/" && token) {
+  // Solo si la petición es GET y no es prerendering
+  if (
+    pathname === "/" &&
+    token &&
+    request.method === "GET" &&
+    !request.nextUrl.searchParams.has("__prerender_bypass")
+  ) {
     console.log(`🔍 Middleware: Usuario autenticado en /, redirigiendo a /modulos`);
-    return NextResponse.redirect(new URL("/modules", request.url));
+    return NextResponse.redirect(new URL("/modulos", request.url));
   }
 
   console.log(
