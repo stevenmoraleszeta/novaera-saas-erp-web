@@ -153,6 +153,8 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
 
   const [showSortManager, setShowSortManager] = useState(false);
 
+  const [selectOptions, setSelectOptions] = useState({});
+
   const { users } = useUsers();
   const { roles } = useRoles();
 
@@ -356,6 +358,35 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     setHasNotificationColumns(hasDateColumns);
   }, [columns]);
 
+  //Obtener los datos de las tablas para select!
+  useEffect(() => {
+  const fetchAllOptions = async () => {
+    if (columns.length === 0) return;
+
+    const optionsMap = {};
+    await Promise.all(
+      columns.map(async (col) => {
+        if (col.data_type === 'select' && col.foreign_table_id) {
+          try {
+            const records = await getLogicalTableRecords(col.foreign_table_id);
+            optionsMap[col.name] = records.map(r => ({
+              value: r.id,
+              label: r.record_data[col.foreign_column_name] || `ID: ${r.id}`,
+            }));
+          } catch (error) {
+            console.error(`Error fetching options for column ${col.name}:`, error);
+            optionsMap[col.name] = [];
+          }
+        }
+      })
+    );
+    setSelectOptions(optionsMap);
+  };
+
+  fetchAllOptions();
+}, [columns]); // Se ejecuta cada vez que las columnas cambian
+
+
   const handleDeleteRecord = async (record) => {
     setDeleteConfirmRecord(record);
   };
@@ -393,11 +424,15 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         !(hiddenColumns || []).includes(col.name))
       .map((col) => ({
         key: col.name,
-        header: col.name,
+        // header: col.name, 
+        header: col.name.endsWith('_id') ? col.foreign_column_name : col.name,
         width: col.data_type === "int" ? "80px" : "auto",
         render: (value, row) => {
           const cellValue = row.record_data ? row.record_data[col.name] : row[col.name];
-
+          if (col.data_type === 'select' && selectOptions[col.name]) {
+            const option = selectOptions[col.name].find(opt => opt.value === cellValue);
+            return <span className="text-sm">{option ? option.label : cellValue || "-"}</span>;
+          }
           // Renderizar archivos de manera especial
           if (col.data_type === "file" || col.data_type === "file_array") {
             return (
@@ -914,6 +949,8 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
       </div>
     );
   }
+  console.log("Datos de las filas que llenan las columnas:", columns);
+  console.log("Datos de las filas que llenan la tabla:", records);
 
   return (
     <div className="flex-1 flex flex-col p-6 overflow-hidden">

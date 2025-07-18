@@ -124,12 +124,12 @@ export default function DialogsContainer(props) {
   } = useViews(tableId);
   
   const columnOptions = columns.map(col => ({
-    label: col.name,
+    label: col.foreign_column_name || col.name,
     value: col.name
   }));
 
   const conditionOptions = filterConditions.map(cond => ({
-    label: cond.label,
+    label: cond.foreign_column_name || cond.label,
     value: cond.value
   }));
 
@@ -139,7 +139,7 @@ export default function DialogsContainer(props) {
   ];
 
   const sortableColumnOptions = columns.map(col => ({
-    label: col.name,
+    label: col.foreign_column_name || col.name,
     value: col.name,
   }));
 
@@ -361,7 +361,7 @@ export default function DialogsContainer(props) {
             data={columns}
             hiddenColumns={hiddenColumns}
             columns={[
-              { column_id: "name", name: "name", key: "name", header: "Nombre" },
+              { column_id: "name", name: "name", key: "name", header: "Nombre", render: (value, row) => row.header || row.name },
               { column_id: "data_type", name: "data_type", key: "data_type", header: "Tipo" },
               {
                 column_id: "required",
@@ -740,7 +740,6 @@ export default function DialogsContainer(props) {
                     <div className="space-y-4">
                       <Label>Columna</Label>
                       <Input value={formData.name} disabled />
-                      <Label>¿Visible?</Label>
                       <ReusableCombobox
                         label="¿Visible?"
                         options={visibilityOptions}

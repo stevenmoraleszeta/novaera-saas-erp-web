@@ -25,7 +25,7 @@ export default function FilterDialog({
 
   const columnOptions = columns.map((col) => ({
     value: col.name,
-    label: col.header || col.name || col.column_id,
+    label: col.foreign_column_name || col.header || col.name || col.column_id,
   }));
 
   const conditionOptions = filterConditions;
@@ -102,7 +102,7 @@ export default function FilterDialog({
                   htmlFor={`col-${col.name}`}
                   className="text-sm font-medium leading-none"
                 >
-                  {col.name}
+                  {col.foreign_column_name || col.name}
                 </label>
               </div>
             ))}
