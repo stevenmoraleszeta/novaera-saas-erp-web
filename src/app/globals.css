@@ -185,5 +185,5 @@
 .sticky-header-container {
   position: sticky;
   top: 0;
-  z-index: 50;
+  z-index: 5000;
 }
