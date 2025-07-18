@@ -15,6 +15,10 @@ const geistMono = Geist_Mono({
 });
 
 export default function RootLayout({ children }) {
+  // Si estamos en la página principal ("/"), no renderizar el layout global
+  if (typeof window !== "undefined" && window.location.pathname === "/") {
+    return <>{children}</>;
+  }
   return (
     <html lang="en">
       <body
@@ -27,7 +31,6 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
-
 // Loading fallback component
 function LoadingFallback() {
   return (
