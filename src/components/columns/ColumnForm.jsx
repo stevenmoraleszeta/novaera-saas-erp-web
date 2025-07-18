@@ -74,6 +74,7 @@ export default function ColumnForm({
     { label: "Usuarios Asignados", value: "assigned_users" },
     { label: "JSON", value: "json" },
     { label: "UUID", value: "uuid" },
+    { label: "Tabla", value: "tabla"}
   ];
 
   // Estados para opciones personalizadas
@@ -324,7 +325,6 @@ export default function ColumnForm({
                 options={DATA_TYPES} // <- Le pasas los datos que moviste
                 value={formData.data_type}
                 onChange={handleTypeChange}
-                options={["string", "number", "boolean", "date", "select", "file", "file_array", "foreign", "tabla"]}
               />
             </div>
 

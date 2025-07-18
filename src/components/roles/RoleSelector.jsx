@@ -1,6 +1,6 @@
 "use client";
 import { useRoles } from "../../hooks/useRoles";
-import ReusableCombobox from "@/components/ui/ReusableCombobox";
+import ReusableCombobox from "@/components/ui/reusableCombobox";
 
 export default function RoleSelector({ value, onChange }) {
   const { roles, loading } = useRoles();
