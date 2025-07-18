@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +21,7 @@ import ViewForm from "@/components/ViewForm";
 import { useColumns } from "@/hooks/useColumns";
 import SortDialog from "../dialogs/SortDialog";
 import { useViews } from "@/hooks/useViews";
+
 
 import { useViewSorts } from "@/hooks/useViewSorts";
 
@@ -97,7 +99,8 @@ export default function DialogsContainer(props) {
     sortConfig,
     handleSetSort,
     showSortManager,
-    setShowSortManager
+    setShowSortManager,
+    getDefaultValuesFromFilters
   } = props;
 
   const {
@@ -179,6 +182,7 @@ export default function DialogsContainer(props) {
         colName={colName}
         foreignForm={!!(constFilter && hiddenColumns)}
         onSubmitSuccess={async (createdRecord) => {
+          console.log("green epaaa: ",getDefaultValuesFromFilters(activeFilters))
           const userColumn = columns.find((col) => col.data_type === "user");
           const userId = userColumn
             ? createdRecord.message.record.record_data?.[userColumn.name]
