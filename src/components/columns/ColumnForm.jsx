@@ -322,7 +322,7 @@ export default function ColumnForm({
               <ReusableCombobox
                 label="Tipo de Dato"
                 placeholder="Seleccione un tipo de dato..."
-                options={DATA_TYPES} // <- Le pasas los datos que moviste
+                options={DATA_TYPES} 
                 value={formData.data_type}
                 onChange={handleTypeChange}
               />
@@ -412,6 +412,7 @@ export default function ColumnForm({
                           placeholder="Selecciona campo"
                           options={foreignColumnOptions}
                           value={formData.foreign_column_name}
+                          //  value={formData.related_table_name}
                           onChange={(value) => handleChange("foreign_column_name", value)}
                           disabled={loading}
                         />

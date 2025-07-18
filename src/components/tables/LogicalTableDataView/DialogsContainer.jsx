@@ -126,7 +126,7 @@ export default function DialogsContainer(props) {
   }));
 
   const conditionOptions = filterConditions.map(cond => ({
-    label: cond.label,
+    label: cond.foreign_column_name || cond.label,
     value: cond.value
   }));
 
@@ -736,7 +736,6 @@ export default function DialogsContainer(props) {
                     <div className="space-y-4">
                       <Label>Columna</Label>
                       <Input value={formData.name} disabled />
-                      <Label>¿Visible?</Label>
                       <ReusableCombobox
                         label="¿Visible?"
                         options={visibilityOptions}

@@ -350,7 +350,7 @@ return (
               return (
                 <div key={col.column_id} className="space-y-2">
                   <Label htmlFor={`field-${col.name}`}>
-                    {col.foreign_column_name || col.name}
+                    {col.name}   {/* col.foreign_column_name || */}
                     {col.is_required && (
                       <Badge className="ml-1 text-xs text-destructive bg-transparent">
                         *Requerido
@@ -547,7 +547,7 @@ return (
                 loadAssignedUsers();
               }}
               tableId={tableId}
-              recordId={record.id}
+              recordId={record_data.Nombre || record.id}
               isEditing={true}
               className="w-full"
             />
