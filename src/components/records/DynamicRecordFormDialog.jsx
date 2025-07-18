@@ -289,7 +289,7 @@ export default function DynamicRecordFormDialog({
   if (!open) return null;
 
 return (
-    <div className="fixed inset-0 z-50 bg-black/30 flex items-start justify-center px-4 py-28">
+    <div className="fixed inset-0 z-10 bg-black/30 flex items-start justify-center px-4 py-28">
       <div
         className={`bg-white rounded-lg shadow-lg ${
           foreignModalOpen ? "w-[90vw] max-w-[900px]" : "w-[95vw] max-w-[1150px]"
@@ -453,7 +453,7 @@ return (
 
     {/* Modal de tabla relacionada (tipo foreign) */}
     {foreignModalOpen && (
-      <div className="bg-white rounded-lg shadow-lg w-[900px] min-h-[80vh] overflow-y-auto p-4 ml-4 relative z-20">
+      <div className="bg-white rounded-lg shadow-lg w-[900px] min-h-[80vh] overflow-y-auto p-4 ml-4 relative z-10">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold">
             {foreignModalColumn
@@ -493,7 +493,7 @@ return (
 
     {/* Modal de tabla relacionada (tipo tabla) */}
     {relatedTableModalOpen && relatedTableModalColumn && (
-      <div className="bg-white rounded-lg shadow-lg w-[900px] min-h-[80vh] overflow-y-auto p-4 ml-4 relative z-20">
+      <div className="bg-white rounded-lg shadow-lg w-[900px] min-h-[80vh] overflow-y-auto p-4 ml-4 relative z-10">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold">
             {relatedTableModalColumn.related_table_name
@@ -523,7 +523,7 @@ return (
     )}
     {/* Modal de usuarios asignados */}
     {showAssignedUsersModal && mode === "edit" && record?.id && (
-      <div className="fixed inset-0 z-60 bg-black/50 flex items-center justify-center px-4">
+      <div className="fixed inset-0 z-10 bg-black/50 flex items-center justify-center px-4">
         <div className="bg-white rounded-lg shadow-lg w-[600px] max-h-[80vh] overflow-hidden">
           <div className="flex justify-between items-center p-4 border-b">
             <h2 className="text-xl font-bold flex items-center gap-2">
