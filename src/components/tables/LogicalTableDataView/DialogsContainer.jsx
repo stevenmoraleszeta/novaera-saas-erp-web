@@ -31,8 +31,6 @@ import ReusableCombobox from "@/components/ui/reusableCombobox";
 export default function DialogsContainer(props) {
 
   const { handleUpdatePosition, handleDelete } = useColumns(null);
-
-
   const {
     showFilterDialog,
     setShowFilterDialog,
@@ -100,8 +98,12 @@ export default function DialogsContainer(props) {
     handleSetSort,
     showSortManager,
     setShowSortManager,
-    getDefaultValuesFromFilters
+    getDefaultValuesFromFilters,
+    formInitialValues,
+    setFormInitialValues
   } = props;
+
+  console.log("mcr: activeFilters <<<___<<--", activeFilters)
 
   const {
     sorts,
@@ -122,7 +124,7 @@ export default function DialogsContainer(props) {
     getColumnsForView,
     handleUpdatePosition: handleUpdateViewPosition,
   } = useViews(tableId);
-  
+
   const columnOptions = columns.map(col => ({
     label: col.name,
     value: col.name
@@ -177,12 +179,14 @@ export default function DialogsContainer(props) {
 
       <DynamicRecordFormDialog
         open={showAddRecordDialog}
+        defaultValues={formInitialValues}
         onOpenChange={setShowAddRecordDialog}
         tableId={tableId}
         colName={colName}
         foreignForm={!!(constFilter && hiddenColumns)}
         onSubmitSuccess={async (createdRecord) => {
-          console.log("green epaaa: ",getDefaultValuesFromFilters(activeFilters))
+          console.log("mcr epaaa: ", getDefaultValuesFromFilters(activeFilters))
+
           const userColumn = columns.find((col) => col.data_type === "user");
           const userId = userColumn
             ? createdRecord.message.record.record_data?.[userColumn.name]
@@ -535,7 +539,7 @@ export default function DialogsContainer(props) {
               );
               const columnId = matchingColumn?.column_id || null;
               const visible = columnVisibility[matchingColumn?.name] || null;
-
+              console.log("mcr: FILTRO A IDDDD", newFilter)
               let filterToAdd = {
                 view_id: selectedView.id,
                 column_id: columnId,
@@ -543,6 +547,7 @@ export default function DialogsContainer(props) {
                 filter_condition: newFilter?.condition || null,
                 filter_value: newFilter?.value || null,
               };
+              console.log("mcr: FILTRO A AGREGAR", filterToAdd)
               handleAddColumnToView(filterToAdd);
             }}
             onUpdate={(_, updatedFilter) => {
@@ -571,7 +576,7 @@ export default function DialogsContainer(props) {
             }}
             renderForm={({ mode, item, open, onClose, onSubmit, onDelete }) => {
               const [formData, setFormData] = useState({
-                id: "",
+                //id: "",
                 column: columns[0]?.name,
                 condition: "equals",
                 value: "",
@@ -580,7 +585,7 @@ export default function DialogsContainer(props) {
               useEffect(() => {
                 if (open && mode === "create") {
                   setFormData({
-                    id: crypto.randomUUID(),
+                    //id: crypto.randomUUID(),
                     column: columns[0]?.name,
                     condition: "equals",
                     value: "",
@@ -589,6 +594,8 @@ export default function DialogsContainer(props) {
                   setFormData(item);
                 }
               }, [open, mode, item, columns]);
+              const selectedColumn = columns.find(c => c.name === formData.column);
+              const columnType = selectedColumn?.data_type; // Puede ser "boolean", "number", "text", etc.
               return (
                 <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
                   <DialogContent className="sm:max-w-md">
@@ -602,7 +609,10 @@ export default function DialogsContainer(props) {
                         label="Columna"
                         options={columnOptions}
                         value={formData.column}
-                        onChange={(val) => setFormData({ ...formData, column: val })}
+                        onChange={(val) => {
+                          console.log("mcr Nuevo valor seleccionado:", val, columnOptions);
+                          setFormData({ ...formData, column: val });
+                        }}
                       />
                       <ReusableCombobox
                         label="Condición"
@@ -613,12 +623,31 @@ export default function DialogsContainer(props) {
                       {!["is_null", "is_not_null"].includes(formData.condition) && (
                         <>
                           <Label>Valor</Label>
-                          <Input
-                            value={formData.value}
-                            onChange={(e) =>
-                              setFormData({ ...formData, value: e.target.value })
-                            }
-                          />
+                          {columnType === "boolean" ? (
+                            <ReusableCombobox
+                              value={formData.value}
+                              onChange={(val) => setFormData({ ...formData, value: val })}
+                              options={[
+                                { label: "true", value: true },
+                                { label: "false", value: false },
+                              ]}
+                            />
+                          ) : columnType === "integer" || columnType === "number" ? (
+                            <Input
+                              type="number"
+                              value={formData.value}
+                              onChange={(e) =>
+                                setFormData({ ...formData, value: e.target.value })
+                              }
+                            />
+                          ) : (
+                            <Input
+                              value={formData.value}
+                              onChange={(e) =>
+                                setFormData({ ...formData, value: e.target.value })
+                              }
+                            />
+                          )}
                         </>
                       )}
                     </div>

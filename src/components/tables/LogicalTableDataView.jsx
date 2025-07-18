@@ -153,6 +153,8 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
 
   const [showSortManager, setShowSortManager] = useState(false);
 
+  const [formInitialValues, setFormInitialValues] = useState({});
+
   const { users } = useUsers();
   const { roles } = useRoles();
 
@@ -380,7 +382,8 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     const defaults = {};
     for (const filter of filters) {
       if (filter.condition === "equals" || filter.condition === "is_null") {
-        defaults[filter.column_id] = filter.value ?? null;
+        console.log("mcr", filter, filter.value)
+        defaults[filter.column] = filter.value ?? null;
       }
     }
     return defaults;
@@ -434,7 +437,11 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
           // Renderizar otros tipos de datos
           return (
             <span className="text-sm">
-              {cellValue || "-"}
+              {cellValue === null || cellValue === undefined
+                ? "-"
+                : typeof cellValue === "boolean"
+                  ? cellValue ? "Sí" : "No"
+                  : cellValue.toString()}
             </span>
           );
         },
@@ -1078,7 +1085,12 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
           </div>
           {effectiveCanCreate && (
             <Button
-              onClick={() => setShowAddRecordDialog(true)}
+              onClick={() => {
+                const defaults = getDefaultValuesFromFilters(activeFilters);
+                console.log("mcr CLICKK: ", defaults);
+                setFormInitialValues(defaults);
+                setShowAddRecordDialog(true);
+              }}
               size="lg"
               className="w-[150px] h-[36px] rounded-[5px] flex items-center justify-center"
             >
@@ -1293,7 +1305,9 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         handleSetSort={handleSetSort}
         showSortManager={showSortManager}
         setShowSortManager={setShowSortManager}
-        getDefaultValuesFromFilters = {getDefaultValuesFromFilters}
+        getDefaultValuesFromFilters={getDefaultValuesFromFilters}
+        formInitialValues={formInitialValues}
+        setFormInitialValues={setFormInitialValues}
       />
     </div>
   );
