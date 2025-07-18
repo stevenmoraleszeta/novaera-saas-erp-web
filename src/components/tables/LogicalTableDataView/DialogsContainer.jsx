@@ -97,7 +97,8 @@ export default function DialogsContainer(props) {
     sortConfig,
     handleSetSort,
     showSortManager,
-    setShowSortManager
+    setShowSortManager,
+    getDefaultValuesFromFilters
   } = props;
 
   const {
@@ -154,6 +155,7 @@ export default function DialogsContainer(props) {
         colName={colName}
         foreignForm={!!(constFilter && hiddenColumns)}
         onSubmitSuccess={async (createdRecord) => {
+          console.log("green epaaa: ",getDefaultValuesFromFilters(activeFilters))
           const userColumn = columns.find((col) => col.data_type === "user");
           const userId = userColumn
             ? createdRecord.message.record.record_data?.[userColumn.name]
