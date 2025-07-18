@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
 export function middleware(request) {
+  const { pathname } = request.nextUrl;
+  const token = request.cookies.get("token")?.value;
+
   // Si el usuario accede a / y tiene token, redirige a /modules (solo en navegación real, no en build/prerender)
   if (
     pathname === "/" &&
@@ -10,8 +13,6 @@ export function middleware(request) {
   ) {
     return NextResponse.redirect(new URL("/modules", request.url));
   }
-  const { pathname } = request.nextUrl;
-  const token = request.cookies.get("token")?.value;
 
   // Skip middleware for static assets and API routes
   if (
@@ -81,6 +82,6 @@ export const config = {
     "/roles/:path*",
     "/permissions/:path*",
     "/profile/:path*",
-    "/notifications/:path*", 
+    "/notifications/:path*",
   ],
 };
