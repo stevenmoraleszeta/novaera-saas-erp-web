@@ -62,7 +62,7 @@ export default function LoginPage() {
         
         setUser(userToSet);
         clearTabs();
-        window.location.href = "/";
+        window.location.href = "/modules";
       } else {
         console.log("❌ No user in response:", response);
         setLocalError("No se pudo iniciar sesión. Verifica tus credenciales.");

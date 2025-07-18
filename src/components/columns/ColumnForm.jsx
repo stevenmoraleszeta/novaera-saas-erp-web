@@ -55,6 +55,8 @@ export default function ColumnForm({
     table_id: tableId,
     created_by: user?.id || null,
     column_position: lastPosition,
+    related_table_name: "",
+    related_table_description: "",
   });
   const DATA_TYPES = [
     { label: "Texto", value: "string" },
@@ -72,6 +74,7 @@ export default function ColumnForm({
     { label: "Usuarios Asignados", value: "assigned_users" },
     { label: "JSON", value: "json" },
     { label: "UUID", value: "uuid" },
+    { label: "Tabla", value: "tabla"}
   ];
 
   // Estados para opciones personalizadas
@@ -172,7 +175,6 @@ export default function ColumnForm({
       handleChange("foreign_column_id", null);
       handleChange("relation_type", "");
     }
-    
     // Para tipos de archivo, limpiar configuraciones de foreign key
     if (value === "file" || value === "file_array") {
       handleChange("is_foreign_key", false);
@@ -181,11 +183,15 @@ export default function ColumnForm({
       handleChange("foreign_column_id", null);
       handleChange("relation_type", "");
     }
-
     // Si no es tipo selección, resetear opciones personalizadas
     if (value !== "select") {
       setCustomOptions([]);
       setSelectionType("table");
+    }
+    // Si es tipo tabla, limpiar nombre y descripción de tabla relacionada
+    if (value !== "tabla") {
+      handleChange("related_table_name", "");
+      handleChange("related_table_description", "");
     }
   };
 
@@ -195,14 +201,19 @@ export default function ColumnForm({
       setFormError("El nombre de la columna es obligatorio.");
       return;
     }
-
+    // Validar nombre de tabla relacionada si es tipo tabla
+    if (formData.data_type === "tabla") {
+      if (!formData.related_table_name.trim()) {
+        setFormError("El nombre de la nueva tabla es obligatorio para columnas de tipo tabla.");
+        return;
+      }
+    }
     // Validar opciones personalizadas para tipo selección
     if (formData.data_type === "select" && selectionType === "custom") {
       if (customOptions.length === 0) {
         setFormError("Debe agregar al menos una opción personalizada para columnas de tipo selección.");
         return;
       }
-      
       // Validar que todas las opciones tengan contenido
       const invalidOptions = customOptions.some(option => !option.trim());
       if (invalidOptions) {
@@ -229,6 +240,9 @@ export default function ColumnForm({
         is_foreign_key: formData.data_type === "foreign",
         foreign_table_id: (formData.data_type === "foreign" || (formData.data_type === "select" && selectionType === "table")) ? formData.foreign_table_id : null,
         foreign_column_name: (formData.data_type === "foreign" || (formData.data_type === "select" && selectionType === "table")) ? formData.foreign_column_name : null,
+        // Solo enviar nombre y descripción de tabla relacionada si es tipo tabla
+        related_table_name: formData.data_type === "tabla" ? formData.related_table_name : undefined,
+        related_table_description: formData.data_type === "tabla" ? formData.related_table_description : undefined,
       };
 
       // Agregar opciones personalizadas si es tipo selección con opciones custom
@@ -313,6 +327,31 @@ export default function ColumnForm({
                 onChange={handleTypeChange}
               />
             </div>
+
+            {/* Si es tipo tabla, pedir nombre y descripción de la nueva tabla */}
+            {formData.data_type === "tabla" && (
+              <div className="space-y-2">
+                <Label htmlFor="related_table_name">Nombre de la nueva tabla</Label>
+                <Input
+                  id="related_table_name"
+                  type="text"
+                  value={formData.related_table_name}
+                  onChange={(e) => handleChange("related_table_name", e.target.value)}
+                  placeholder="Ej: detalles_factura, items_orden..."
+                  required
+                  disabled={loading}
+                />
+                <Label htmlFor="related_table_description">Descripción de la nueva tabla (opcional)</Label>
+                <Textarea
+                  id="related_table_description"
+                  value={formData.related_table_description}
+                  onChange={(e) => handleChange("related_table_description", e.target.value)}
+                  placeholder="Describe el propósito de la nueva tabla"
+                  rows={2}
+                  disabled={loading}
+                />
+              </div>
+            )}
 
             {/* Tabla Foránea para tipo foreign */}
             {formData.data_type === "foreign" && (

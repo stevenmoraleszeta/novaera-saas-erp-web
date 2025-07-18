@@ -38,6 +38,7 @@ const DATA_TYPES = [
   { label: "Usuarios Asignados", value: "assigned_users" },
   { label: "JSON", value: "json" },
   { label: "UUID", value: "uuid" },
+  { label: "Tabla", value: "tabla" },
 ];
 
 export default function ColumnTypeSelector({

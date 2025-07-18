@@ -43,6 +43,35 @@ export default function DynamicRecordFormDialog({
   const [intermediateTableId, setIntermediateTableId] = useState(null);
   const [columnName, setcolumnName] = useState(null);
   const [tables, setTables] = useState([]);
+  const [pendingNotifications, setPendingNotifications] = useState([]);
+  // Estado y función para el modal de tabla relacionada tipo 'tabla'
+  const [relatedTableModalOpen, setRelatedTableModalOpen] = useState(false);
+  const [relatedTableModalColumn, setRelatedTableModalColumn] = useState(null);
+  const handleOpenRelatedTableModal = (col) => {
+    setRelatedTableModalColumn(col);
+    setRelatedTableModalOpen(true);
+  };
+
+  // Procesar notificaciones pendientes cuando se crea el registro
+  const processPendingNotifications = async (newRecordId) => {
+    for (const notif of pendingNotifications) {
+      try {
+        await scheduledNotificationsService.createScheduledNotification({
+          table_id: tableId,
+          record_id: newRecordId,
+          column_id: notif.columnId,
+          target_date: notif.targetDate,
+          notification_title: notif.title,
+          notification_message: notif.message,
+          notify_before_days: notif.notify_before_days,
+          assigned_users: notif.assigned_users
+        });
+      } catch (error) {
+        console.error('Error enviando notificación pendiente:', error);
+      }
+    }
+    setPendingNotifications([]);
+  };
 
   // Estados para usuarios asignados
   const [hasNotificationColumns, setHasNotificationColumns] = useState(false);
@@ -176,6 +205,10 @@ export default function DynamicRecordFormDialog({
         // Si hay usuario autenticado, pasar su id como tercer argumento
         const userId = currentUser?.id;
         result = await createLogicalTableRecord(tableId, values, userId);
+        // Procesar notificaciones pendientes si existen y el registro fue creado
+        if (pendingNotifications.length > 0 && result?.id) {
+          await processPendingNotifications(result.id);
+        }
       } else if (mode === "edit" && record) {
         // Pasar el userId como cuarto argumento si la función lo soporta
         const userId = currentUser?.id;
@@ -213,7 +246,7 @@ export default function DynamicRecordFormDialog({
     } finally {
       setLoading(false);
     }
-  }, [tableId, values, validate, onSubmitSuccess, columns, onOpenChange, mode, record, currentUser, lastPosition]);
+  }, [tableId, values, validate, onSubmitSuccess, columns, onOpenChange, mode, record, currentUser, lastPosition, pendingNotifications]);
 
   const handleOpenForeignModal = (col) => {
     const interTable = tables.find(t =>
@@ -292,10 +325,23 @@ return (
       {/* Scrollable form */}
       <div className="overflow-y-auto px-4 py-2 flex-1">
         {columns.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-gray-500 flex flex-col items-center">
             <Plus className="w-12 h-12 mx-auto mb-3 text-gray-300" />
             <h4 className="font-medium mb-2">No hay columnas definidas</h4>
-            <p className="text-sm">Esta tabla no tiene columnas configuradas</p>
+            <p className="text-sm mb-4">Esta tabla no tiene columnas configuradas.</p>
+            <Button
+              type="button"
+              onClick={() => {
+                // Redirigir o abrir el modal de creación de columna
+                if (window && window.location) {
+                  window.location.href = `/columns?tableId=${tableId}`;
+                }
+              }}
+              className="mb-2"
+            >
+              Crear columna
+            </Button>
+            <p className="text-xs text-gray-400">Agrega columnas para empezar a usar la tabla.</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} noValidate className="space-y-6">
@@ -317,6 +363,13 @@ return (
                       onClick={() => handleOpenForeignModal(col)}
                     >
                       Abrir tabla
+                    </Button>
+                  ) : col.data_type === "tabla" ? (
+                    <Button
+                      type="button"
+                      onClick={() => handleOpenRelatedTableModal(col)}
+                    >
+                      Abrir tabla relacionada
                     </Button>
                   ) : (
                     <FieldRenderer
@@ -398,7 +451,7 @@ return (
       </div>
     </div>
 
-    {/* Modal de tabla relacionada */}
+    {/* Modal de tabla relacionada (tipo foreign) */}
     {foreignModalOpen && (
       <div className="bg-white rounded-lg shadow-lg w-[900px] min-h-[80vh] overflow-y-auto p-4 ml-4 relative z-20">
         <div className="flex justify-between items-center mb-4">
@@ -438,6 +491,36 @@ return (
       </div>
     )}
 
+    {/* Modal de tabla relacionada (tipo tabla) */}
+    {relatedTableModalOpen && relatedTableModalColumn && (
+      <div className="bg-white rounded-lg shadow-lg w-[900px] min-h-[80vh] overflow-y-auto p-4 ml-4 relative z-20">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold">
+            {relatedTableModalColumn.related_table_name
+              ? `Registros de ${relatedTableModalColumn.related_table_name}`
+              : "Registros de tabla relacionada"}
+          </h2>
+          <button
+            onClick={() => setRelatedTableModalOpen(false)}
+            className="text-gray-500 hover:text-gray-700"
+            aria-label="Cerrar modal relacionada"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        {relatedTableModalColumn.foreign_table_id && (
+          <LogicalTableDataView
+            tableId={relatedTableModalColumn.foreign_table_id}
+            forcePermissions={{
+              can_create: true,
+              can_read: true,
+              can_update: true,
+              can_delete: true
+            }}
+          />
+        )}
+      </div>
+    )}
     {/* Modal de usuarios asignados */}
     {showAssignedUsersModal && mode === "edit" && record?.id && (
       <div className="fixed inset-0 z-60 bg-black/50 flex items-center justify-center px-4">
@@ -492,5 +575,52 @@ return (
     )}
   </div>
 );
+}
 
+// Componente para mostrar y crear columnas en la tabla relacionada
+function RelatedTableContent({ tableId }) {
+  const [columns, setColumns] = useState([]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const cols = await getLogicalTableStructure(tableId);
+        setColumns(cols);
+      } catch {
+        setColumns([]);
+      }
+    })();
+  }, [tableId]);
+
+  if (columns.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500 flex flex-col items-center">
+        <Plus className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+        <h4 className="font-medium mb-2">No hay columnas definidas</h4>
+        <p className="text-sm mb-4">Esta tabla no tiene columnas configuradas.</p>
+        <Button
+          type="button"
+          onClick={() => {
+            if (window && window.location) {
+              window.location.href = `/columns?tableId=${tableId}`;
+            }
+          }}
+          className="mb-2"
+        >
+          Crear columna
+        </Button>
+        <p className="text-xs text-gray-400">Agrega columnas para empezar a usar la tabla.</p>
+      </div>
+    );
+  }
+  return (
+    <LogicalTableDataView
+      tableId={tableId}
+      forcePermissions={{
+        can_create: true,
+        can_read: true,
+        can_update: true,
+        can_delete: true
+      }}
+    />
+  );
 }

@@ -9,7 +9,7 @@ const ACTIVE_TAB_STORAGE_KEY = "erp_active_tab";
 const HOME_TAB = {
   id: "home",
   name: "Menú Principal",
-  path: "/",
+  path: "/modules",
   isFixed: true,
   isHome: true,
 };
