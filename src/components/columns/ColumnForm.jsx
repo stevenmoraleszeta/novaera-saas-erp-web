@@ -330,7 +330,7 @@ export default function ColumnForm({
 
             {/* Si es tipo tabla, pedir nombre y descripción de la nueva tabla */}
             {formData.data_type === "tabla" && (
-              <div className="space-y-2 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="space-y-2">
                 <Label htmlFor="related_table_name">Nombre de la nueva tabla</Label>
                 <Input
                   id="related_table_name"
