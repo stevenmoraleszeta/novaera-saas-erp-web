@@ -25,6 +25,8 @@ import { useViews } from "@/hooks/useViews";
 
 import { useViewSorts } from "@/hooks/useViewSorts";
 
+import ReusableCombobox from "@/components/ui/reusableCombobox";
+
 
 export default function DialogsContainer(props) {
 
@@ -120,6 +122,31 @@ export default function DialogsContainer(props) {
     getColumnsForView,
     handleUpdatePosition: handleUpdateViewPosition,
   } = useViews(tableId);
+  
+  const columnOptions = columns.map(col => ({
+    label: col.name,
+    value: col.name
+  }));
+
+  const conditionOptions = filterConditions.map(cond => ({
+    label: cond.label,
+    value: cond.value
+  }));
+
+  const visibilityOptions = [
+    { label: "Sí", value: true },
+    { label: "No", value: false }
+  ];
+
+  const sortableColumnOptions = columns.map(col => ({
+    label: col.name,
+    value: col.name,
+  }));
+
+  const directionOptions = [
+    { label: "Ascendente", value: "asc" },
+    { label: "Descendente", value: "desc" }
+  ];
 
   return (
     <>
@@ -571,36 +598,18 @@ export default function DialogsContainer(props) {
                       </DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
-                      <Label>Columna</Label>
-                      <select
+                      <ReusableCombobox
+                        label="Columna"
+                        options={columnOptions}
                         value={formData.column}
-                        onChange={(e) =>
-                          setFormData({ ...formData, column: e.target.value })
-                        }
-                        className="w-full border px-2 py-1"
-                      >
-                        {columns.map((col) => (
-                          <option key={col.name} value={col.name}>
-                            {col.name}
-                          </option>
-                        ))}
-                      </select>
-
-                      <Label>Condición</Label>
-                      <select
+                        onChange={(val) => setFormData({ ...formData, column: val })}
+                      />
+                      <ReusableCombobox
+                        label="Condición"
+                        options={conditionOptions}
                         value={formData.condition}
-                        onChange={(e) =>
-                          setFormData({ ...formData, condition: e.target.value })
-                        }
-                        className="w-full border px-2 py-1"
-                      >
-                        {filterConditions.map((cond) => (
-                          <option key={cond.value} value={cond.value}>
-                            {cond.label}
-                          </option>
-                        ))}
-                      </select>
-
+                        onChange={(val) => setFormData({ ...formData, condition: val })}
+                      />
                       {!["is_null", "is_not_null"].includes(formData.condition) && (
                         <>
                           <Label>Valor</Label>
@@ -732,18 +741,12 @@ export default function DialogsContainer(props) {
                       <Label>Columna</Label>
                       <Input value={formData.name} disabled />
                       <Label>¿Visible?</Label>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="visible"
-                          checked={formData.visible}
-                          onCheckedChange={(checked) => {
-                            setFormData((prev) => ({ ...prev, visible: !!checked }));
-                          }}
-                        />
-                        <label htmlFor="visible" className="text-sm">
-                          ¿Visible?
-                        </label>
-                      </div>
+                      <ReusableCombobox
+                        label="¿Visible?"
+                        options={visibilityOptions}
+                        value={formData.visible}
+                        onChange={(val) => setFormData({ ...formData, visible: val })}
+                      />
                     </div>
                     <DialogFooter className="pt-4">
                       <Button onClick={() => onSubmit(formData)}>Guardar</Button>
@@ -863,28 +866,18 @@ export default function DialogsContainer(props) {
                       </DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
-                      <Label>Columna</Label>
-                      <select
+                      <ReusableCombobox
+                        label="Columna"
+                        options={sortableColumnOptions}
                         value={formData.column}
-                        onChange={(e) => setFormData({ ...formData, column: e.target.value })}
-                        className="w-full border px-2 py-1"
-                      >
-                        {columns.map((col) => (
-                          <option key={col.name} value={col.name}>
-                            {col.name}
-                          </option>
-                        ))}
-                      </select>
-
-                      <Label>Dirección</Label>
-                      <select
+                        onChange={(val) => setFormData({ ...formData, column: val })}
+                      />
+                      <ReusableCombobox
+                        label="Dirección"
+                        options={directionOptions}
                         value={formData.direction}
-                        onChange={(e) => setFormData({ ...formData, direction: e.target.value })}
-                        className="w-full border px-2 py-1"
-                      >
-                        <option value="asc">Ascendente</option>
-                        <option value="desc">Descendente</option>
-                      </select>
+                        onChange={(val) => setFormData({ ...formData, direction: val })}
+                      />
                     </div>
                     <DialogFooter className="pt-4">
                       <Button onClick={() => onSubmit(formData)}>

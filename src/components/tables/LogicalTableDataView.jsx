@@ -656,7 +656,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
       for (const vista of views) {
         await handleAddColumnToView({
           view_id: vista.id,
-          column_id: nuevaColumna.sp_crear_columna,
+          column_id: nuevaColumna.column.sp_crear_columna,
           visible: true,
           filter_condition: null,
           filter_value: null,

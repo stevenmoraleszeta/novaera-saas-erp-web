@@ -8,13 +8,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/components/ui/select";
+import ReusableCombobox from "@/components/ui/reusableCombobox";
 
 export default function FilterDialog({
   open,
@@ -28,6 +22,13 @@ export default function FilterDialog({
   setColumnVisibility,
   showFilters = false,
 }) {
+
+  const columnOptions = columns.map((col) => ({
+    value: col.name,
+    label: col.header || col.name || col.column_id,
+  }));
+
+  const conditionOptions = filterConditions;
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -41,43 +42,18 @@ export default function FilterDialog({
           
         <div className="flex flex-col gap-4 mb-6 border-b pb-6">
           <h4 className="text-sm font-semibold">Agregar Filtro</h4>
-
-          <Select
+          <ReusableCombobox
+            placeholder="Columna"
+            options={columnOptions}
             value={filterDraft.column}
-            onValueChange={(val) =>
-              setFilterDraft((d) => ({ ...d, column: val }))
-            }
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Columna" />
-            </SelectTrigger>
-            <SelectContent>
-              {columns.map((col) => (
-                <SelectItem key={col.column_id} value={col.name}>
-                  {col.header || col.name || col.column_id}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select
+            onChange={(val) => setFilterDraft((d) => ({ ...d, column: val }))}
+          />
+          <ReusableCombobox
+            placeholder="Condición"
+            options={conditionOptions}
             value={filterDraft.condition}
-            onValueChange={(val) =>
-              setFilterDraft((d) => ({ ...d, condition: val }))
-            }
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Condición" />
-            </SelectTrigger>
-            <SelectContent>
-              {filterConditions.map((cond) => (
-                <SelectItem key={cond.value} value={cond.value}>
-                  {cond.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
+            onChange={(val) => setFilterDraft((d) => ({ ...d, condition: val }))}
+          />
           {filterDraft.condition &&
             !["is_null", "is_not_null"].includes(filterDraft.condition) && (
               <input

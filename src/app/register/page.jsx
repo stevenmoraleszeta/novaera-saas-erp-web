@@ -61,7 +61,7 @@ export default function RegisterPage() {
       setSuccess(
         "Usuario registrado correctamente. Ahora puedes iniciar sesión."
       );
-      setTimeout(() => router.replace("/login"), 2000);
+      setTimeout(() => router.replace("/"), 2000);
     } catch (err) {
       setError(err?.message || "Error al registrar usuario");
     } finally {
@@ -199,7 +199,7 @@ export default function RegisterPage() {
             <p className="text-sm text-black dark:text-black">
               ¿Ya tienes cuenta?{" "}
               <Link
-                href="/login"
+                href="/"
                 className="text-black dark:text-black hover:underline font-medium"
               >
                 Inicia sesión

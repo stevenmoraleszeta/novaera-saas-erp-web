@@ -66,19 +66,19 @@ export default function Header() {
       clearUser();
       clearTabs();
       resetEditMode();
-      router.push("/login");
+      router.push("/");
     } catch (error) {
       console.error("Logout error:", error);
       // Fallback: just clear local state
       clearUser();
       clearTabs();
       resetEditMode();
-      router.push("/login");
+      router.push("/");
     }
   };
 
   return (
-    <header className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-[60]">
+    <header className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-[5000]">
       <Link href="/">
         <h1 className="text-xl font-bold text-gray-900 dark:text-white">
           ERPLOGO
