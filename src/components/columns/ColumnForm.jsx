@@ -118,15 +118,54 @@ export default function ColumnForm({
         ...prev,
         ...initialData,
       }));
-      
-      // Si tiene opciones personalizadas, cargarlas
-      if (initialData.custom_options && initialData.custom_options.length > 0) {
-        // Convertir formato si viene del backend con { value, label }
-        const options = Array.isArray(initialData.custom_options[0]) ? 
-          initialData.custom_options : 
-          initialData.custom_options.map(opt => typeof opt === 'string' ? opt : opt.label || opt.value);
-        setCustomOptions(options);
+
+      if (
+        initialData.data_type === "select" &&
+        (!initialData.foreign_table_id || initialData.foreign_table_id === null)
+      ) {
         setSelectionType("custom");
+        // Obtener opciones personalizadas usando axios
+        (async () => {
+          try {
+            const { default: axios } = await import("@/lib/axios");
+            const { data } = await axios.get(`/columns/${initialData.column_id}/options`);
+            let optionsArr = Array.isArray(data.options) ? data.options : data;
+            const options = Array.isArray(optionsArr)
+              ? optionsArr.map(opt => {
+                  if (typeof opt === "string") {
+                    return { value: opt, label: opt };
+                  }
+                  if (opt.option_value && opt.option_label) {
+                    // Preserva id, column_id y demás propiedades
+                    return {
+                      value: opt.option_value,
+                      label: opt.option_label,
+                      id: opt.id,
+                      column_id: opt.column_id,
+                      option_order: opt.option_order,
+                      is_active: opt.is_active,
+                      created_at: opt.created_at
+                    };
+                  }
+                  if (opt.value && opt.label) {
+                    return {
+                      value: opt.value,
+                      label: opt.label,
+                      id: opt.id,
+                      column_id: opt.column_id
+                    };
+                  }
+                  return opt;
+                })
+              : [];
+            setCustomOptions(options);
+          } catch (err) {
+            setCustomOptions([]);
+          }
+        })();
+      } else if (initialData.data_type === "select" && initialData.foreign_table_id) {
+        setSelectionType("table");
+        setCustomOptions([]);
       } else {
         setSelectionType("table");
         setCustomOptions([]);
@@ -166,71 +205,25 @@ export default function ColumnForm({
 
   const handleTypeChange = (value) => {
     handleChange("data_type", value);
-    if (value === "foreign") {
-      handleChange("is_foreign_key", true);
-    } else {
-      handleChange("is_foreign_key", false);
-      handleChange("foreign_table_id", null);
-      handleChange("foreign_column_name", "");
-      handleChange("foreign_column_id", null);
-      handleChange("relation_type", "");
-    }
-    // Para tipos de archivo, limpiar configuraciones de foreign key
-    if (value === "file" || value === "file_array") {
-      handleChange("is_foreign_key", false);
-      handleChange("foreign_table_id", null);
-      handleChange("foreign_column_name", "");
-      handleChange("foreign_column_id", null);
-      handleChange("relation_type", "");
-    }
-    // Si no es tipo selección, resetear opciones personalizadas
+
+    // Reiniciar opciones personalizadas si cambia el tipo a uno que no es 'select'
     if (value !== "select") {
-      setCustomOptions([]);
       setSelectionType("table");
-    }
-    // Si es tipo tabla, limpiar nombre y descripción de tabla relacionada
-    if (value !== "tabla") {
-      handleChange("related_table_name", "");
-      handleChange("related_table_description", "");
+      setCustomOptions([]);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name.trim()) {
-      setFormError("El nombre de la columna es obligatorio.");
-      return;
-    }
-    // Validar nombre de tabla relacionada si es tipo tabla
-    if (formData.data_type === "tabla") {
-      if (!formData.related_table_name.trim()) {
-        setFormError("El nombre de la nueva tabla es obligatorio para columnas de tipo tabla.");
-        return;
-      }
-    }
-    // Validar opciones personalizadas para tipo selección
-    if (formData.data_type === "select" && selectionType === "custom") {
-      if (customOptions.length === 0) {
-        setFormError("Debe agregar al menos una opción personalizada para columnas de tipo selección.");
-        return;
-      }
-      // Validar que todas las opciones tengan contenido
-      const invalidOptions = customOptions.some(option => !option.trim());
-      if (invalidOptions) {
-        setFormError("Todas las opciones deben tener contenido.");
-        return;
-      }
-    }
+    setFormError(null);
 
     try {
-      setFormError(null);
-
+      // Si es una relación foránea, intentar crear la tabla intermedia si no existe
       if (
         formData.data_type === "foreign" &&
         formData.foreign_table_id &&
         formData.table_id
       ) {
-        // console.log("data = ", formData)
         await getOrCreateJoinTable(formData.table_id, formData.foreign_table_id, formData.foreign_column_name);
       }
 
@@ -246,25 +239,75 @@ export default function ColumnForm({
       };
 
       // Agregar opciones personalizadas si es tipo selección con opciones custom
+      let payload = columnData;
       if (formData.data_type === "select" && selectionType === "custom") {
-        columnData.custom_options = customOptions.map(opt =>
+        payload.custom_options = customOptions.map(opt =>
           typeof opt === "string"
             ? { value: opt, label: opt }
             : opt
         );
-        console.log("Sending custom options:", columnData.custom_options);
+        // Elimina options si existe
+        if (payload.options) delete payload.options;
+        console.log("Enviando opciones personalizadas:", payload.custom_options);
       }
 
       // Para tipos de archivo, asegurar que no tengan configuraciones de foreign key
       if (formData.data_type === "file" || formData.data_type === "file_array") {
-        columnData.is_foreign_key = false;
-        columnData.foreign_table_id = null;
-        columnData.foreign_column_name = null;
-        columnData.foreign_column_id = null;
-        columnData.relation_type = "";
+        payload.is_foreign_key = false;
+        payload.foreign_table_id = null;
+        payload.foreign_column_name = null;
+        payload.foreign_column_id = null;
+        payload.relation_type = "";
       }
 
-      await onSubmit(columnData);
+      // --- NUEVO: En edición, si es tipo select y custom, enviar opciones a /columns/:columnId/options ---
+      if (
+        mode === "edit" &&
+        formData.data_type === "select" &&
+        selectionType === "custom" &&
+        Array.isArray(customOptions) &&
+        customOptions.length > 0 &&
+        (initialData.column_id || initialData.id)
+      ) {
+        try {
+          const { default: axios } = await import("@/lib/axios");
+          const columnId = initialData.column_id || initialData.id;
+          // Solo enviar opciones que no tengan id (nuevas)
+          const newOptions = customOptions.filter(opt => !opt.id);
+          if (newOptions.length > 0) {
+            await axios.post(`/columns/${columnId}/options`, {
+              options: newOptions.map(opt => ({
+                value: opt.value,
+                label: opt.label
+              }))
+            });
+          }
+        } catch (err) {
+          // Si falla, mostrar error pero no bloquear el guardado principal
+          console.error("Error al crear opciones personalizadas:", err);
+        }
+      }
+
+      // --- NUEVO: En edición, si es tipo select y selectionType es 'table', actualizar la columna en la base de datos ---
+      if (
+        mode === "edit" &&
+        formData.data_type === "select" &&
+        selectionType === "table" &&
+        (initialData.column_id || initialData.id)
+      ) {
+        try {
+          const { default: axios } = await import("@/lib/axios");
+          const columnId = initialData.column_id || initialData.id;
+          await axios.put(`/columns/${columnId}`, {
+            foreign_table_id: formData.foreign_table_id,
+            foreign_column_name: formData.foreign_column_name
+          });
+        } catch (err) {
+          console.error("Error al actualizar la columna (tabla/columna de origen):", err);
+        }
+      }
+
+      await onSubmit(payload);
     } catch (err) {
       const msg = err?.response?.data?.error || "Error al guardar la columna";
       setFormError(msg);
@@ -288,7 +331,12 @@ export default function ColumnForm({
 
   const handleTableChange = (value) => {
     handleChange("foreign_table_id", value ? Number(value) : null);
-    handleChange("foreign_column_name", "");
+    // Si es tipo select y selectionType es 'table', limpiar columna y actualizar opciones
+    if (formData.data_type === "select" && selectionType === "table") {
+      handleChange("foreign_column_name", "");
+    } else {
+      handleChange("foreign_column_name", "");
+    }
   };
 
   return (
@@ -426,6 +474,11 @@ export default function ColumnForm({
                     options={customOptions}
                     onChange={setCustomOptions}
                     disabled={loading}
+                    columnId={
+                      mode === "edit"
+                        ? initialData.column_id || initialData.id
+                        : formData.column_id || formData.id
+                    }
                   />
                 )}
               </div>

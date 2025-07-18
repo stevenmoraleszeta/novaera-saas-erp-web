@@ -38,6 +38,12 @@ export function middleware(request) {
     protectedRoutes.some((route) => pathname.startsWith(route)) ||
     pathname === "/";
 
+  // Si el usuario accede a / y tiene token, redirige a /modulos
+  if (pathname === "/" && token) {
+    console.log(`🔍 Middleware: Usuario autenticado en /, redirigiendo a /modulos`);
+    return NextResponse.redirect(new URL("/modules", request.url));
+  }
+
   console.log(
     `🔍 Middleware: isProtectedRoute: ${isProtectedRoute}, isAuthRoute: ${isAuthRoute}`
   );
