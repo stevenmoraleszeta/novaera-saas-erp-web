@@ -376,6 +376,16 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     setDeleteConfirmRecord(null);
   };
 
+  const getDefaultValuesFromFilters = (filters) => {
+    const defaults = {};
+    for (const filter of filters) {
+      if (filter.condition === "equals" || filter.condition === "is_null") {
+        defaults[filter.column_id] = filter.value ?? null;
+      }
+    }
+    return defaults;
+  };
+
 
   const tableColumns = useMemo(() => {
     let cols = columns
@@ -646,7 +656,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
       for (const vista of views) {
         await handleAddColumnToView({
           view_id: vista.id,
-          column_id: nuevaColumna.sp_crear_columna,
+          column_id: nuevaColumna.column.sp_crear_columna,
           visible: true,
           filter_condition: null,
           filter_value: null,
@@ -1283,6 +1293,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         handleSetSort={handleSetSort}
         showSortManager={showSortManager}
         setShowSortManager={setShowSortManager}
+        getDefaultValuesFromFilters = {getDefaultValuesFromFilters}
       />
     </div>
   );

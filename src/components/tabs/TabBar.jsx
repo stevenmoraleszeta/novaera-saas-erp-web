@@ -128,7 +128,7 @@ export default function TabBar() {
   const activeIndex = tabs.findIndex((tab) => tab.id === activeTab);
 
   return (
-    <div className="flex items-center bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-[60]">
+    <div className="flex items-center bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-[5000]">
       <div className="flex items-center">
         <Button
           variant="ghost"
