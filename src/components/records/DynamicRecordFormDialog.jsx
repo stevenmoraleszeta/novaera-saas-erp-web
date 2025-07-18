@@ -458,7 +458,8 @@ return (
           <h2 className="text-2xl font-bold">
             {foreignModalColumn
               ? `Registros relacionados de ${
-                  foreignModalColumn.foreign_table_name || "Tabla intermedia"
+                foreignModalColumn.foreign_table_name || foreignModalColumn.name || "Tabla intermedia"
+                  // foreignModalColumn.foreign_table_name || "Tabla intermedia"
                 }`
               : "Registros relacionados"}
           </h2>
@@ -547,7 +548,7 @@ return (
                 loadAssignedUsers();
               }}
               tableId={tableId}
-              recordId={record_data.Nombre || record.id}
+              recordId={record.id}
               isEditing={true}
               className="w-full"
             />

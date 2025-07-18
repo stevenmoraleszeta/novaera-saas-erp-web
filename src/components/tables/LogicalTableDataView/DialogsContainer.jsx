@@ -357,7 +357,7 @@ export default function DialogsContainer(props) {
             data={columns}
             hiddenColumns={hiddenColumns}
             columns={[
-              { column_id: "name", name: "name", key: "name", header: "Nombre" },
+              { column_id: "name", name: "name", key: "name", header: "Nombre", render: (value, row) => row.header || row.name },
               { column_id: "data_type", name: "data_type", key: "data_type", header: "Tipo" },
               {
                 column_id: "required",
