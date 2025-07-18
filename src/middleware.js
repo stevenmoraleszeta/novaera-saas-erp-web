@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 
 export function middleware(request) {
@@ -12,10 +13,6 @@ export function middleware(request) {
   ) {
     return NextResponse.next();
   }
-
-  console.log(
-    `🔍 Middleware: ${pathname} - Token: ${token ? "Present" : "Missing"}`
-  );
 
   // Define auth routes (login/register)
   const authRoutes = ["/login", "/register"];
@@ -38,39 +35,21 @@ export function middleware(request) {
     protectedRoutes.some((route) => pathname.startsWith(route)) ||
     pathname === "/";
 
-  // Si el usuario accede a / y tiene token, redirige a /modulos
-  // Solo si la petición es GET y no es prerendering
-  if (
-    pathname === "/" &&
-    token &&
-    request.method === "GET" &&
-    !request.nextUrl.searchParams.has("__prerender_bypass")
-  ) {
-    console.log(`🔍 Middleware: Usuario autenticado en /, redirigiendo a /modulos`);
-    return NextResponse.redirect(new URL("/modulos", request.url));
+  // Si el usuario accede a / y tiene token, redirige a /modules
+  if (pathname === "/" && token) {
+    return NextResponse.redirect(new URL("/modules", request.url));
   }
-
-  console.log(
-    `🔍 Middleware: isProtectedRoute: ${isProtectedRoute}, isAuthRoute: ${isAuthRoute}`
-  );
 
   // If user is authenticated and tries to access auth pages, redirect to dashboard
   if (isAuthRoute && token) {
-    console.log(
-      `🔍 Middleware: Authenticated user accessing auth route, redirecting to /`
-    );
     return NextResponse.redirect(new URL("/", request.url));
   }
 
   // If user is not authenticated and tries to access protected routes, redirect to login
   // if (isProtectedRoute && !token) {
-  //   console.log(
-  //     `🔍 Middleware: Unauthenticated user accessing protected route, redirecting to /login`
-  //   );
   //   return NextResponse.redirect(new URL("/login", request.url));
   // }
 
-  console.log(`🔍 Middleware: Allowing access to ${pathname}`);
   return NextResponse.next();
 }
 

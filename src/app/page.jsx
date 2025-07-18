@@ -1,5 +1,4 @@
 "use client";
-export const dynamic = "force-static";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import useUserStore from "../stores/userStore";
