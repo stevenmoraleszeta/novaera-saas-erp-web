@@ -350,7 +350,7 @@ return (
               return (
                 <div key={col.column_id} className="space-y-2">
                   <Label htmlFor={`field-${col.name}`}>
-                    {col.name}
+                    {col.foreign_column_name || col.name}
                     {col.is_required && (
                       <Badge className="ml-1 text-xs text-destructive bg-transparent">
                         *Requerido

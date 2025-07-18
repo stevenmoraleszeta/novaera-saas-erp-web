@@ -383,7 +383,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         !(hiddenColumns || []).includes(col.name))
       .map((col) => ({
         key: col.name,
-        header: col.name,
+        header: col.foreign_column_name || col.name, 
         width: col.data_type === "int" ? "80px" : "auto",
         render: (value, row) => {
           const cellValue = row.record_data ? row.record_data[col.name] : row[col.name];

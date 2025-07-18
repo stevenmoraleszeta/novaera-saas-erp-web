@@ -121,7 +121,7 @@ export default function DialogsContainer(props) {
   } = useViews(tableId);
   
   const columnOptions = columns.map(col => ({
-    label: col.name,
+    label: col.foreign_column_name || col.name,
     value: col.name
   }));
 
@@ -136,7 +136,7 @@ export default function DialogsContainer(props) {
   ];
 
   const sortableColumnOptions = columns.map(col => ({
-    label: col.name,
+    label: col.foreign_column_name || col.name,
     value: col.name,
   }));
 

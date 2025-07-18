@@ -105,7 +105,7 @@ export default function ColumnForm({
       return [];
     }
     return columnsByTable[formData.foreign_table_id].map((col) => ({
-      label: col.name,
+      label: col.foreign_column_name || col.name,
       value: col.name,
     }));
   }, [formData.foreign_table_id, columnsByTable]);
