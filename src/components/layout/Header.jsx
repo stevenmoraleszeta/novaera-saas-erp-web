@@ -66,14 +66,14 @@ export default function Header() {
       clearUser();
       clearTabs();
       resetEditMode();
-      router.push("/login");
+      router.push("/");
     } catch (error) {
       console.error("Logout error:", error);
       // Fallback: just clear local state
       clearUser();
       clearTabs();
       resetEditMode();
-      router.push("/login");
+      router.push("/");
     }
   };
 
