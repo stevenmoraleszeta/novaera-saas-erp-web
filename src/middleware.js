@@ -1,6 +1,15 @@
 import { NextResponse } from "next/server";
 
 export function middleware(request) {
+  // Si el usuario accede a / y tiene token, redirige a /modules (solo en navegación real, no en build/prerender)
+  if (
+    pathname === "/" &&
+    token &&
+    request.method === "GET" &&
+    !request.nextUrl.searchParams.has("__prerender_bypass")
+  ) {
+    return NextResponse.redirect(new URL("/modules", request.url));
+  }
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("token")?.value;
 
