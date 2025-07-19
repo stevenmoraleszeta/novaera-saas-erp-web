@@ -167,6 +167,22 @@
   }
 }
 
+@keyframes flash {
+  0% {
+    background-color: transparent;
+  }
+  25% {
+    background-color: #fef9c3; /* Un amarillo claro y suave */
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.flash-effect {
+  animation: flash 1.5s ease-out;
+}
+
 .animate-shake {
   animation: shake 1.2s ease-in-out infinite;
 }
