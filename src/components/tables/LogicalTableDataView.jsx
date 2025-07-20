@@ -60,7 +60,7 @@ import { useViewSorts } from "@/hooks/useViewSorts";
 
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { arrayMove, SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
-import { DraggableViewTab } from "@/components/tables/DraggableViewTap";
+import { DraggableViewTab } from "@/components/tables/DraggableViewTab";
 
 export default function LogicalTableDataView({ tableId, refresh, colName, constFilter, hiddenColumns, forcePermissions }) {
   const { isEditingMode } = useEditModeStore();
@@ -181,20 +181,34 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     { value: "is_not_null", label: "No es nulo" },
   ];
 
-  const handleDragEnd = (event) => {
-    console.log("handleDragEnd SE ESTÁ EJECUTANDO"); 
+  //Ordenamiento de las views tabs
+  const handleDragEnd = async (event) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = views.findIndex((v) => v.id === active.id);
-      const newIndex = views.findIndex((v) => v.id === over.id); 
-      const viewToMove = views[oldIndex];
+        const oldIndex = views.findIndex((v) => v.id === active.id);
+        const newIndex = views.findIndex((v) => v.id === over.id);
 
-      handleUpdateViewPosition(viewToMove.id, newIndex + 1);
+        const reorderedViews = arrayMove(views, oldIndex, newIndex);
+        const startIndex = Math.min(oldIndex, newIndex);
+        const endIndex = Math.max(oldIndex, newIndex);
 
-      setLocalRefreshFlag((prev) => !prev);
+        const viewsToUpdate = reorderedViews.slice(startIndex, endIndex + 1);
+
+        const updatePromises = viewsToUpdate.map((view, index) => {
+            const newPosition = startIndex + index;
+            return handleUpdateViewPosition(view.id, newPosition);
+        });
+
+        try {
+            await Promise.all(updatePromises);
+            setLocalRefreshFlag((prev) => !prev);
+
+        } catch (error) {
+            console.error("ERROR al actualizar las posiciones de las vistas:", error);
+        }
     }
-  };
+};
 
   useEffect(() => {
     if (columns.length > 0) {
@@ -1048,7 +1062,6 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
                 strategy={horizontalListSortingStrategy}
               >
                 {views.map((view) => {
-                  console.log("Renderizando vista con ID:", view.id);
                   return (
                     <DraggableViewTab
                       key={view.id}
