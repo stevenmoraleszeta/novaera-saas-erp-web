@@ -58,6 +58,9 @@ import { useRoles } from '@/hooks/useRoles';
 
 import { useViewSorts } from "@/hooks/useViewSorts";
 
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import { arrayMove, SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
+import { DraggableViewTab } from "@/components/tables/DraggableViewTab";
 
 export default function LogicalTableDataView({ tableId, refresh, colName, constFilter, hiddenColumns, forcePermissions }) {
   const { isEditingMode } = useEditModeStore();
@@ -177,6 +180,35 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     { value: "is_null", label: "Es nulo" },
     { value: "is_not_null", label: "No es nulo" },
   ];
+
+  //Ordenamiento de las views tabs
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+        const oldIndex = views.findIndex((v) => v.id === active.id);
+        const newIndex = views.findIndex((v) => v.id === over.id);
+
+        const reorderedViews = arrayMove(views, oldIndex, newIndex);
+        const startIndex = Math.min(oldIndex, newIndex);
+        const endIndex = Math.max(oldIndex, newIndex);
+
+        const viewsToUpdate = reorderedViews.slice(startIndex, endIndex + 1);
+
+        const updatePromises = viewsToUpdate.map((view, index) => {
+            const newPosition = startIndex + index;
+            return handleUpdateViewPosition(view.id, newPosition);
+        });
+
+        try {
+            await Promise.all(updatePromises);
+            setLocalRefreshFlag((prev) => !prev);
+
+        } catch (error) {
+            console.error("ERROR al actualizar las posiciones de las vistas:", error);
+        }
+    }
+};
 
   useEffect(() => {
     if (columns.length > 0) {
@@ -950,8 +982,6 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
       </div>
     );
   }
-  console.log("Datos de las filas que llenan las columnas:", columns);
-  console.log("Datos de las filas que llenan la tabla:", records);
 
   return (
     <div className="flex-1 flex flex-col p-6 overflow-hidden">
@@ -1021,6 +1051,40 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-6">
           <div className="flex gap-2">
+            {/* Dynamic view tabs */}
+            <DndContext
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+              disabled={!isEditingMode}
+            >
+              <SortableContext
+                items={views.map(v => v.id)}
+                strategy={horizontalListSortingStrategy}
+              >
+                {views.map((view) => {
+                  return (
+                    <DraggableViewTab
+                      key={view.id}
+                      view={view}
+                      isSelected={selectedView?.id === view.id}
+                      isEditing={isEditingMode}
+                      onClick={handleSelectView}
+                    />
+                  );
+                })}
+              </SortableContext>
+            </DndContext>
+
+            {isEditingMode && (
+              <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => setShowManageViewsDialog(true)}
+                  title="Editar vistas"
+              >
+                  <Edit3 className="w-4 h-4" />
+              </Button>
+            )}
 
             {/* Default view (no filters/sort) */}
             {views.length === 0 && (
@@ -1033,41 +1097,8 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
               >
                 Vista General
               </button>
-
             )}
-
-            {/* Dynamic view tabs */}
-            {views.map((view) => (
-              <div key={view.id} className="relative">
-                <button
-                  className={`text-sm font-bold rounded transition-colors border-[3px]
-                    ${selectedView?.id === view.id
-                      ? "bg-black/30 text-black border-black"
-                      : "bg-transparent text-black border-black"
-                    }`}
-                  style={{
-                    paddingTop: "5px",
-                    paddingBottom: "5px",
-                    paddingLeft: "24px",
-                    paddingRight: "24px",
-                  }}
-                  onClick={() => handleSelectView(view)}
-                >
-                  {view.name}
-                </button>
-              </div>
-            ))}
-
-            {isEditingMode && (
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => setShowManageViewsDialog(true)}
-                title="Editar vistas"
-              >
-                <Edit3 className="w-4 h-4" />
-              </Button>
-            )}
+            
           </div>
         </div>
         <div className="flex items-center gap-2">

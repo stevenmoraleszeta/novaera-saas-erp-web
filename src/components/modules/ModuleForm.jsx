@@ -18,7 +18,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import EmojiPicker from "emoji-picker-react";
+import EmojiPicker , { EmojiStyle } from "emoji-picker-react";
 
 import { X, Save, Trash2, Smile, ChevronDown, AlertTriangle } from "lucide-react";
 
@@ -177,6 +177,7 @@ export default function ModuleForm({
                       height={400}
                       lazyLoadEmojis={true}
                       searchDisabled={false}
+                      emojiStyle={EmojiStyle.APPLE}
                     />
                   </PopoverContent>
                 </Popover>
