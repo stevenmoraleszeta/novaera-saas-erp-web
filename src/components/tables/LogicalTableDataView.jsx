@@ -156,7 +156,11 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
 
   const [showSortManager, setShowSortManager] = useState(false);
 
+
   const [selectOptions, setSelectOptions] = useState({});
+
+  const [formInitialValues, setFormInitialValues] = useState({});
+
 
   const { users } = useUsers();
   const { roles } = useRoles();
@@ -186,29 +190,29 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-        const oldIndex = views.findIndex((v) => v.id === active.id);
-        const newIndex = views.findIndex((v) => v.id === over.id);
+      const oldIndex = views.findIndex((v) => v.id === active.id);
+      const newIndex = views.findIndex((v) => v.id === over.id);
 
-        const reorderedViews = arrayMove(views, oldIndex, newIndex);
-        const startIndex = Math.min(oldIndex, newIndex);
-        const endIndex = Math.max(oldIndex, newIndex);
+      const reorderedViews = arrayMove(views, oldIndex, newIndex);
+      const startIndex = Math.min(oldIndex, newIndex);
+      const endIndex = Math.max(oldIndex, newIndex);
 
-        const viewsToUpdate = reorderedViews.slice(startIndex, endIndex + 1);
+      const viewsToUpdate = reorderedViews.slice(startIndex, endIndex + 1);
 
-        const updatePromises = viewsToUpdate.map((view, index) => {
-            const newPosition = startIndex + index;
-            return handleUpdateViewPosition(view.id, newPosition);
-        });
+      const updatePromises = viewsToUpdate.map((view, index) => {
+        const newPosition = startIndex + index;
+        return handleUpdateViewPosition(view.id, newPosition);
+      });
 
-        try {
-            await Promise.all(updatePromises);
-            setLocalRefreshFlag((prev) => !prev);
+      try {
+        await Promise.all(updatePromises);
+        setLocalRefreshFlag((prev) => !prev);
 
-        } catch (error) {
-            console.error("ERROR al actualizar las posiciones de las vistas:", error);
-        }
+      } catch (error) {
+        console.error("ERROR al actualizar las posiciones de las vistas:", error);
+      }
     }
-};
+  };
 
   useEffect(() => {
     if (columns.length > 0) {
@@ -392,31 +396,31 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
 
   //Obtener los datos de las tablas para select!
   useEffect(() => {
-  const fetchAllOptions = async () => {
-    if (columns.length === 0) return;
+    const fetchAllOptions = async () => {
+      if (columns.length === 0) return;
 
-    const optionsMap = {};
-    await Promise.all(
-      columns.map(async (col) => {
-        if (col.data_type === 'select' && col.foreign_table_id) {
-          try {
-            const records = await getLogicalTableRecords(col.foreign_table_id);
-            optionsMap[col.name] = records.map(r => ({
-              value: r.id,
-              label: r.record_data[col.foreign_column_name] || `ID: ${r.id}`,
-            }));
-          } catch (error) {
-            console.error(`Error fetching options for column ${col.name}:`, error);
-            optionsMap[col.name] = [];
+      const optionsMap = {};
+      await Promise.all(
+        columns.map(async (col) => {
+          if (col.data_type === 'select' && col.foreign_table_id) {
+            try {
+              const records = await getLogicalTableRecords(col.foreign_table_id);
+              optionsMap[col.name] = records.map(r => ({
+                value: r.id,
+                label: r.record_data[col.foreign_column_name] || `ID: ${r.id}`,
+              }));
+            } catch (error) {
+              console.error(`Error fetching options for column ${col.name}:`, error);
+              optionsMap[col.name] = [];
+            }
           }
-        }
-      })
-    );
-    setSelectOptions(optionsMap);
-  };
+        })
+      );
+      setSelectOptions(optionsMap);
+    };
 
-  fetchAllOptions();
-}, [columns]); // Se ejecuta cada vez que las columnas cambian
+    fetchAllOptions();
+  }, [columns]); // Se ejecuta cada vez que las columnas cambian
 
 
   const handleDeleteRecord = async (record) => {
@@ -442,12 +446,48 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   const getDefaultValuesFromFilters = (filters) => {
     const defaults = {};
     for (const filter of filters) {
-      if (filter.condition === "equals" || filter.condition === "is_null") {
-        defaults[filter.column_id] = filter.value ?? null;
+      const { column, condition, value } = filter;
+
+      // Intentar convertir el valor a número si es posible
+      const isNumeric = !isNaN(value) && value !== "";
+      const numericValue = isNumeric ? Number(value) : value;
+
+      switch (condition) {
+        case "equals":
+        case "contains":
+          defaults[column] = value ?? null;
+          break;
+
+        case "greater":
+          defaults[column] = isNumeric ? numericValue + 1 : value;
+          break;
+
+        case "lower":
+          defaults[column] = isNumeric ? numericValue - 1 : value;
+          break;
+
+        case "is_null":
+          defaults[column] = null;
+          break;
+
+        case "is_not_null":
+          if (value === "true" || value === "false") {
+            defaults[column] = true; // valor booleano genérico
+          } else if (isNumeric) {
+            defaults[column] = 1; // valor numérico genérico
+          } else {
+            defaults[column] = "valor"; // valor string genérico
+          }
+          break;
+
+        default:
+          break;
       }
     }
     return defaults;
   };
+
+
 
 
   const tableColumns = useMemo(() => {
@@ -501,7 +541,11 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
           // Renderizar otros tipos de datos
           return (
             <span className="text-sm">
-              {cellValue || "-"}
+              {cellValue === null || cellValue === undefined
+                ? "-"
+                : typeof cellValue === "boolean"
+                  ? cellValue ? "Sí" : "No"
+                  : cellValue.toString()}
             </span>
           );
         },
@@ -798,6 +842,13 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     }
   };
 
+  const parseValue = (val) => {
+    if (val === "true") return true;
+    if (val === "false") return false;
+    if (!isNaN(val) && val !== "") return Number(val);
+    return val;
+  };
+
   // View management functions
   const handleSelectView = async (view) => {
     if (!view) {
@@ -848,11 +899,16 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
           vc.filter_condition === "is_not_null" ||
           (vc.filter_value !== null && vc.filter_value !== undefined && vc.filter_value !== "")
         )) {
+          console.log(
+            vc.filter_value,
+            "tipo:",
+            typeof vc.filter_value
+          );
           filters.push({
             id: vc.id,
             column: col.name,
             condition: vc.filter_condition,
-            value: vc.filter_value,
+            value: parseValue(vc.filter_value),
           });
         }
       }
@@ -1077,12 +1133,12 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
 
             {isEditingMode && (
               <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => setShowManageViewsDialog(true)}
-                  title="Editar vistas"
+                size="icon"
+                variant="ghost"
+                onClick={() => setShowManageViewsDialog(true)}
+                title="Editar vistas"
               >
-                  <Edit3 className="w-4 h-4" />
+                <Edit3 className="w-4 h-4" />
               </Button>
             )}
 
@@ -1098,7 +1154,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
                 Vista General
               </button>
             )}
-            
+
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -1147,7 +1203,11 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
           </div>
           {effectiveCanCreate && (
             <Button
-              onClick={() => setShowAddRecordDialog(true)}
+              onClick={() => {
+                const defaults = getDefaultValuesFromFilters(activeFilters);
+                setFormInitialValues(defaults);
+                setShowAddRecordDialog(true);
+              }}
               size="lg"
               className="w-[150px] h-[36px] rounded-[5px] flex items-center justify-center"
             >
@@ -1362,7 +1422,9 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         handleSetSort={handleSetSort}
         showSortManager={showSortManager}
         setShowSortManager={setShowSortManager}
-        getDefaultValuesFromFilters = {getDefaultValuesFromFilters}
+        getDefaultValuesFromFilters={getDefaultValuesFromFilters}
+        formInitialValues={formInitialValues}
+        setFormInitialValues={setFormInitialValues}
       />
     </div>
   );

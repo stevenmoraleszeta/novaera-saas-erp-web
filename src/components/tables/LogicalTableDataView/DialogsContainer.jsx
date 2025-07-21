@@ -31,8 +31,6 @@ import ReusableCombobox from "@/components/ui/reusableCombobox";
 export default function DialogsContainer(props) {
 
   const { handleUpdatePosition, handleDelete } = useColumns(null);
-
-
   const {
     showFilterDialog,
     setShowFilterDialog,
@@ -100,7 +98,9 @@ export default function DialogsContainer(props) {
     handleSetSort,
     showSortManager,
     setShowSortManager,
-    getDefaultValuesFromFilters
+    getDefaultValuesFromFilters,
+    formInitialValues,
+    setFormInitialValues
   } = props;
 
   const {
@@ -122,7 +122,7 @@ export default function DialogsContainer(props) {
     getColumnsForView,
     handleUpdatePosition: handleUpdateViewPosition,
   } = useViews(tableId);
-  
+
   const columnOptions = columns.map(col => ({
     label: col.foreign_column_name || col.name,
     value: col.name
@@ -177,12 +177,12 @@ export default function DialogsContainer(props) {
 
       <DynamicRecordFormDialog
         open={showAddRecordDialog}
+        defaultValues={formInitialValues}
         onOpenChange={setShowAddRecordDialog}
         tableId={tableId}
         colName={colName}
         foreignForm={!!(constFilter && hiddenColumns)}
         onSubmitSuccess={async (createdRecord) => {
-          console.log("green epaaa: ",getDefaultValuesFromFilters(activeFilters))
           const userColumn = columns.find((col) => col.data_type === "user");
           const userId = userColumn
             ? createdRecord.message.record.record_data?.[userColumn.name]
@@ -535,7 +535,6 @@ export default function DialogsContainer(props) {
               );
               const columnId = matchingColumn?.column_id || null;
               const visible = columnVisibility[matchingColumn?.name] || null;
-
               let filterToAdd = {
                 view_id: selectedView.id,
                 column_id: columnId,
@@ -546,7 +545,6 @@ export default function DialogsContainer(props) {
               handleAddColumnToView(filterToAdd);
             }}
             onUpdate={(_, updatedFilter) => {
-
               setActiveFilters((prev) =>
                 prev.map((f) => (f.id === updatedFilter.id ? updatedFilter : f))
               );
@@ -560,7 +558,10 @@ export default function DialogsContainer(props) {
                 column_id: columnId,
                 visible: visible,
                 filter_condition: updatedFilter?.condition || null,
-                filter_value: updatedFilter?.value || null,
+                filter_value:
+                  updatedFilter?.value !== undefined && updatedFilter?.value !== null
+                    ? updatedFilter.value
+                    : null,
               };
               handleUpdateViewColumn(_, filterEdited);
             }}
@@ -571,7 +572,7 @@ export default function DialogsContainer(props) {
             }}
             renderForm={({ mode, item, open, onClose, onSubmit, onDelete }) => {
               const [formData, setFormData] = useState({
-                id: "",
+                //id: "",
                 column: columns[0]?.name,
                 condition: "equals",
                 value: "",
@@ -580,7 +581,7 @@ export default function DialogsContainer(props) {
               useEffect(() => {
                 if (open && mode === "create") {
                   setFormData({
-                    id: crypto.randomUUID(),
+                    //id: crypto.randomUUID(),
                     column: columns[0]?.name,
                     condition: "equals",
                     value: "",
@@ -589,6 +590,8 @@ export default function DialogsContainer(props) {
                   setFormData(item);
                 }
               }, [open, mode, item, columns]);
+              const selectedColumn = columns.find(c => c.name === formData.column);
+              const columnType = selectedColumn?.data_type; // Puede ser "boolean", "number", "text", etc.
               return (
                 <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
                   <DialogContent className="sm:max-w-md">
@@ -602,7 +605,9 @@ export default function DialogsContainer(props) {
                         label="Columna"
                         options={columnOptions}
                         value={formData.column}
-                        onChange={(val) => setFormData({ ...formData, column: val })}
+                        onChange={(val) => {
+                          setFormData({ ...formData, column: val });
+                        }}
                       />
                       <ReusableCombobox
                         label="Condición"
@@ -613,17 +618,46 @@ export default function DialogsContainer(props) {
                       {!["is_null", "is_not_null"].includes(formData.condition) && (
                         <>
                           <Label>Valor</Label>
-                          <Input
-                            value={formData.value}
-                            onChange={(e) =>
-                              setFormData({ ...formData, value: e.target.value })
-                            }
-                          />
+                          {columnType === "boolean" ? (
+                            <ReusableCombobox
+                              value={formData.value != null ? String(formData.value) : ""}
+                              onChange={(val) =>
+                                setFormData({
+                                  ...formData,
+                                  value:
+                                    val === "true" ? true : val === "false" ? false : null,
+                                })
+                              }
+                              options={[
+                                { label: "Sí", value: "true" },
+                                { label: "No", value: "false" },
+                              ]}
+                            />
+                          ) : columnType === "integer" || columnType === "number" ? (
+                            <Input
+                              type="number"
+                              value={formData.value}
+                              onChange={(e) =>
+                                setFormData({ ...formData, value: e.target.value })
+                              }
+                            />
+                          ) : (
+                            <Input
+                              value={formData.value}
+                              onChange={(e) =>
+                                setFormData({ ...formData, value: e.target.value })
+                              }
+                            />
+                          )}
                         </>
                       )}
                     </div>
                     <DialogFooter className="pt-4">
-                      <Button onClick={() => onSubmit(formData)}>
+                      <Button
+                        onClick={() => {
+                          onSubmit(formData);
+                        }}
+                      >
                         {mode === "create" ? "Agregar" : "Guardar"}
                       </Button>
                       {mode === "edit" && typeof onDelete === "function" && (
