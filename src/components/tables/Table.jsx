@@ -45,8 +45,6 @@ export default function Table({
   isDraggableColumnEnabled
 }) {
 
-  console.log("mcr ID DE EL ROWWWW", data)
-
   const [activeColumn, setActiveColumn] = useState(null);
   const [orderedColumns, setOrderedColumns] = useState(columns.map((col) => col.key));
   const [isDraggingEnabled, setIsDraggingEnabled] = useState(false);
@@ -279,8 +277,6 @@ export default function Table({
                 {internalData.length > 0 ? (
                   internalData.map((row, index) => {
                     const key = getRowKey(row);
-                    console.log("mcr getRowKey:", key, "row:", row); // ⬅️ Imprime el valor
-
                     return (
                       <SortableRow
                         key={key}

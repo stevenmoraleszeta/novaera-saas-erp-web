@@ -16,13 +16,13 @@ export default function SortableRow({
   idRow,
 }) {
 
-let id;
-if(idRow){
+  let id;
+  if (idRow) {
     id = idRow;
-} else {
+  } else {
     id = getRowKey?.(row) ?? row.id ?? rowIndex;
-}
-  
+  }
+
   const {
     attributes,
     listeners,
@@ -40,7 +40,7 @@ if(idRow){
     transition,
     ...(isDragging && { opacity: 0.5 }),
   };
-  
+
 
   return (
     <TableRow
@@ -48,9 +48,8 @@ if(idRow){
       style={style}
       {...attributes}
       onClick={() => onRowClick?.(row)}
-      className={`${
-        onRowClick ? "cursor-pointer hover:bg-[#f0f0f0]" : ""
-      } ${rowIndex % 2 === 0 ? "bg-[#FFFFFF]" : "bg-[#f7f3f2]"}`}
+      className={`${onRowClick ? "cursor-pointer hover:bg-[#f0f0f0]" : ""
+        } ${rowIndex % 2 === 0 ? "bg-[#FFFFFF]" : "bg-[#f7f3f2]"}`}
     >
       {/* Handle de drag a la izquierda */}
       <TableCell className="w-4 px-2 cursor-grab text-gray-400 select-none">
@@ -60,20 +59,17 @@ if(idRow){
       </TableCell>
 
       {/* Resto de columnas */}
-      {visibleColumnsList.map((column) => (
-        <TableCell
-          key={column.key}
-          style={{
-            width: columnWidths[column.key],
-            minWidth: "100px",
-          }}
-          className="truncate"
-        >
-          {column.render
-            ? column.render(row[column.key], row)
-            : row[column.key]}
-        </TableCell>
-      ))}
+      {visibleColumnsList.map((column) => {
+        return (
+          <TableCell key={column.key || column.name}>
+            {typeof row[column.key] === "boolean"
+              ? row[column.key] ? "Sí" : "No"
+              : column.render
+                ? column.render(row[column.key], row)
+                : row[column.key]}
+          </TableCell>
+        );
+      })}
     </TableRow>
   );
 }
