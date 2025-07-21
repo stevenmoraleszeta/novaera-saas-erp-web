@@ -28,6 +28,8 @@ export default function GenericCRUDTable({
   isDraggableColumnEnabled
 }) {
 
+  console.log("mcr: <==============", data)
+
   const {
     views,
     handleAddColumnToView,

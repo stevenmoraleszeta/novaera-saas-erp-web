@@ -45,6 +45,8 @@ export default function Table({
   isDraggableColumnEnabled
 }) {
 
+  console.log("mcr ID DE EL ROWWWW", data)
+
   const [activeColumn, setActiveColumn] = useState(null);
   const [orderedColumns, setOrderedColumns] = useState(columns.map((col) => col.key));
   const [isDraggingEnabled, setIsDraggingEnabled] = useState(false);
@@ -230,9 +232,9 @@ export default function Table({
                 : verticalListSortingStrategy
             }
           >
-            {isDraggableColumnEnabled && (  
-            <DragOverlay>
-              {/* Aqui se esta usando  isDraggableColumnEnabled para comprobar si es la tabla principal o cualquier otra tabla*/}
+            {isDraggableColumnEnabled && (
+              <DragOverlay>
+                {/* Aqui se esta usando  isDraggableColumnEnabled para comprobar si es la tabla principal o cualquier otra tabla*/}
                 {dragType === "column" && activeColumn ? (
                   <div
                     className="bg-#f7f3f2 border px-2 py-1 shadow-md"
@@ -245,13 +247,13 @@ export default function Table({
                     {activeColumn.header}
                   </div>
                 ) : null}
-            </DragOverlay>
-             )}
+              </DragOverlay>
+            )}
 
             <TableUI>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[2px]">&nbsp;</TableHead>
+                  <TableHead className="w-[1px]">&nbsp;</TableHead>
                   {orderedColumns.map((key) => {
                     const column = columns.find((c) => c.key === key);
 
@@ -266,7 +268,7 @@ export default function Table({
                         onColumnDragEnd={handleColumnDragEnd}
                         isDraggingEnabled={isDraggingEnabled}
                         setIsDraggingEnabled={setIsDraggingEnabled}
-                        isDraggableColumnEnabled ={isDraggableColumnEnabled}
+                        isDraggableColumnEnabled={isDraggableColumnEnabled}
                       />
                     );
                   })}
@@ -275,18 +277,23 @@ export default function Table({
 
               <TableBody>
                 {internalData.length > 0 ? (
-                  internalData.map((row, index) => (
-                    <SortableRow
-                      key={getRowKey(row)}
-                      id={getRowKey(row)}
-                      idRow={getRowKey(row)}
-                      rowIndex={index}
-                      row={row}
-                      onRowClick={onRowClick}
-                      visibleColumnsList={visibleColumnsList}
-                      columnWidths={columnWidths}
-                    />
-                  ))
+                  internalData.map((row, index) => {
+                    const key = getRowKey(row);
+                    console.log("mcr getRowKey:", key, "row:", row); // ⬅️ Imprime el valor
+
+                    return (
+                      <SortableRow
+                        key={key}
+                        id={key}
+                        idRow={key}
+                        rowIndex={index}
+                        row={row}
+                        onRowClick={onRowClick}
+                        visibleColumnsList={visibleColumnsList}
+                        columnWidths={columnWidths}
+                      />
+                    );
+                  })
                 ) : (
                   <TableRow>
                     <TableCell

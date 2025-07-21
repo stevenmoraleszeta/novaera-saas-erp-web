@@ -34,7 +34,11 @@ export default function DynamicRecordFormDialog({
   colName,
   foreignForm = false,
   lastPosition = 0,
+  defaultValues
 }) {
+
+  console.log("mcr: DEFAULTTT", defaultValues )
+  
   const [columns, setColumns] = useState([]);
   const [values, setValues] = useState({});
   const [errors, setErrors] = useState({});
@@ -114,14 +118,17 @@ export default function DynamicRecordFormDialog({
           if (mode === "edit" && record?.record_data?.[col.name] !== undefined) {
             initialValues[col.name] = castValueByDataType(col.data_type, record.record_data[col.name]);
           } else {
+            console.log("mcr, ANTES DEL SWITCH", col.data_type, col.name )
             // Valores por defecto según el tipo de dato
             switch (col.data_type) {
               case "boolean":
-                initialValues[col.name] = false;
+                console.log("mcr, SWITCH BOOOL", defaultValues[col.name], defaultValues)
+                initialValues[col.name] = defaultValues[col.name];
                 break;
-              case "int":
+              case "integer":
               case "number":
-                initialValues[col.name] = 0;
+                console.log("mcr, SWITCH NUMEROO", defaultValues[col.name])
+                initialValues[col.name] = defaultValues[col.name];
                 break;
               case "file":
                 initialValues[col.name] = null;
@@ -130,7 +137,8 @@ export default function DynamicRecordFormDialog({
                 initialValues[col.name] = [];
                 break;
               default:
-                initialValues[col.name] = "";
+                console.log("mcr, SWITCH OTRO TIPPPOO", defaultValues[col.name])
+                initialValues[col.name] = defaultValues[col.name];
             }
           }
         });

@@ -127,6 +127,7 @@ export function useViews(tableId) {
   const handleAddColumnToView = useCallback(
     async (columnData) => {
       try {
+        console.log("mcr INSIDE:", columnData)
         const newColumn = await addColumnToView(columnData);
         if (columnData.view_id) {
           await loadColumns(columnData.view_id);
