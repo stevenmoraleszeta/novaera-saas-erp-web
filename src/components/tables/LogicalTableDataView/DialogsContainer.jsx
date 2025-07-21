@@ -103,8 +103,6 @@ export default function DialogsContainer(props) {
     setFormInitialValues
   } = props;
 
-  console.log("mcr: activeFilters <<<___<<--", activeFilters)
-
   const {
     sorts,
     loading,
@@ -185,8 +183,6 @@ export default function DialogsContainer(props) {
         colName={colName}
         foreignForm={!!(constFilter && hiddenColumns)}
         onSubmitSuccess={async (createdRecord) => {
-          console.log("mcr epaaa: ", getDefaultValuesFromFilters(activeFilters))
-
           const userColumn = columns.find((col) => col.data_type === "user");
           const userId = userColumn
             ? createdRecord.message.record.record_data?.[userColumn.name]
@@ -539,7 +535,6 @@ export default function DialogsContainer(props) {
               );
               const columnId = matchingColumn?.column_id || null;
               const visible = columnVisibility[matchingColumn?.name] || null;
-              console.log("mcr: FILTRO A IDDDD", newFilter)
               let filterToAdd = {
                 view_id: selectedView.id,
                 column_id: columnId,
@@ -547,11 +542,9 @@ export default function DialogsContainer(props) {
                 filter_condition: newFilter?.condition || null,
                 filter_value: newFilter?.value || null,
               };
-              console.log("mcr: FILTRO A AGREGAR", filterToAdd)
               handleAddColumnToView(filterToAdd);
             }}
             onUpdate={(_, updatedFilter) => {
-
               setActiveFilters((prev) =>
                 prev.map((f) => (f.id === updatedFilter.id ? updatedFilter : f))
               );
@@ -565,7 +558,10 @@ export default function DialogsContainer(props) {
                 column_id: columnId,
                 visible: visible,
                 filter_condition: updatedFilter?.condition || null,
-                filter_value: updatedFilter?.value || null,
+                filter_value:
+                  updatedFilter?.value !== undefined && updatedFilter?.value !== null
+                    ? updatedFilter.value
+                    : null,
               };
               handleUpdateViewColumn(_, filterEdited);
             }}
@@ -610,7 +606,6 @@ export default function DialogsContainer(props) {
                         options={columnOptions}
                         value={formData.column}
                         onChange={(val) => {
-                          console.log("mcr Nuevo valor seleccionado:", val, columnOptions);
                           setFormData({ ...formData, column: val });
                         }}
                       />
@@ -625,11 +620,17 @@ export default function DialogsContainer(props) {
                           <Label>Valor</Label>
                           {columnType === "boolean" ? (
                             <ReusableCombobox
-                              value={formData.value}
-                              onChange={(val) => setFormData({ ...formData, value: val })}
+                              value={formData.value != null ? String(formData.value) : ""}
+                              onChange={(val) =>
+                                setFormData({
+                                  ...formData,
+                                  value:
+                                    val === "true" ? true : val === "false" ? false : null,
+                                })
+                              }
                               options={[
-                                { label: "true", value: true },
-                                { label: "false", value: false },
+                                { label: "Sí", value: "true" },
+                                { label: "No", value: "false" },
                               ]}
                             />
                           ) : columnType === "integer" || columnType === "number" ? (
@@ -652,7 +653,11 @@ export default function DialogsContainer(props) {
                       )}
                     </div>
                     <DialogFooter className="pt-4">
-                      <Button onClick={() => onSubmit(formData)}>
+                      <Button
+                        onClick={() => {
+                          onSubmit(formData);
+                        }}
+                      >
                         {mode === "create" ? "Agregar" : "Guardar"}
                       </Button>
                       {mode === "edit" && typeof onDelete === "function" && (

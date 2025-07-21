@@ -36,8 +36,6 @@ export default function DynamicRecordFormDialog({
   lastPosition = 0,
   defaultValues
 }) {
-
-  console.log("mcr: DEFAULTTT", defaultValues )
   
   const [columns, setColumns] = useState([]);
   const [values, setValues] = useState({});
@@ -118,16 +116,13 @@ export default function DynamicRecordFormDialog({
           if (mode === "edit" && record?.record_data?.[col.name] !== undefined) {
             initialValues[col.name] = castValueByDataType(col.data_type, record.record_data[col.name]);
           } else {
-            console.log("mcr, ANTES DEL SWITCH", col.data_type, col.name )
             // Valores por defecto según el tipo de dato
             switch (col.data_type) {
               case "boolean":
-                console.log("mcr, SWITCH BOOOL", defaultValues[col.name], defaultValues)
                 initialValues[col.name] = defaultValues[col.name];
                 break;
               case "integer":
               case "number":
-                console.log("mcr, SWITCH NUMEROO", defaultValues[col.name])
                 initialValues[col.name] = defaultValues[col.name];
                 break;
               case "file":
@@ -137,7 +132,6 @@ export default function DynamicRecordFormDialog({
                 initialValues[col.name] = [];
                 break;
               default:
-                console.log("mcr, SWITCH OTRO TIPPPOO", defaultValues[col.name])
                 initialValues[col.name] = defaultValues[col.name];
             }
           }
