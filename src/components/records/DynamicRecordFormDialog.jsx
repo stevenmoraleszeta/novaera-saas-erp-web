@@ -21,6 +21,8 @@ import { getAssignedUsersByRecord } from "@/services/recordAssignedUsersService"
 import axios from "@/lib/axios";
 import { X } from "lucide-react";
 
+import FileUpload from '@/components/common/FileUpload';
+
 export default function DynamicRecordFormDialog({
   open = false,
   onOpenChange,
@@ -52,8 +54,21 @@ export default function DynamicRecordFormDialog({
   const [relatedTableModalOpen, setRelatedTableModalOpen] = useState(false);
   const [relatedTableModalColumn, setRelatedTableModalColumn] = useState(null);
   const handleOpenRelatedTableModal = (col) => {
+    //igual solo para que este abierto uno lateral a la vez
+    setForeignModalOpen(false);
+    setFileModalOpen(false);
+
     setRelatedTableModalColumn(col);
     setRelatedTableModalOpen(true);
+  };
+  // Estados y funciones para los archivos
+  const [fileModalOpen, setFileModalOpen] = useState(false);
+  const [fileModalColumn, setFileModalColumn] = useState(null);
+  const handleOpenFileModal = (col) => {
+    setForeignModalOpen(false);
+    setRelatedTableModalOpen(false);
+    setFileModalColumn(col);
+    setFileModalOpen(true); 
   };
 
   // Procesar notificaciones pendientes cuando se crea el registro
@@ -262,6 +277,10 @@ export default function DynamicRecordFormDialog({
       (t.original_table_id === col.foreign_table_id && t.foreign_table_id === tableId)
     );
     setcolumnName(col);
+    //solo para que esté abierto un modal!
+    setRelatedTableModalOpen(false);
+    setFileModalOpen(false);
+
     setForeignModalOpen(true);
     setForeignModalColumn(col);
     setIntermediateTableId(interTable ? interTable.id : null);
@@ -300,7 +319,8 @@ return (
     <div className="fixed inset-0 z-10 bg-black/30 flex items-start justify-center px-4 py-28">
       <div
         className={`bg-white rounded-lg shadow-lg ${
-          foreignModalOpen ? "w-[90vw] max-w-[900px]" : "w-[95vw] max-w-[1150px]"
+          (foreignModalOpen || relatedTableModalOpen || fileModalOpen)
+          ? "w-1/2" : "w-full max-w-[1150px]"
         } relative z-10 flex flex-col overflow-hidden h-[80vh]`}
       >
       {/* Header */}
@@ -358,7 +378,7 @@ return (
               return (
                 <div key={col.column_id} className="space-y-2">
                   <Label htmlFor={`field-${col.name}`}>
-                    {col.name}
+                    {col.name.endsWith('_id') ? col.foreign_column_name : col.name}
                     {col.is_required && (
                       <Badge className="ml-1 text-xs text-destructive bg-transparent">
                         *Requerido
@@ -379,6 +399,11 @@ return (
                     >
                       Abrir tabla relacionada
                     </Button>
+                    ) : col.data_type === "file_array" ? ( 
+                    <Button type="button" onClick={() => handleOpenFileModal(col)}>
+                      Gestionar Archivos
+                    </Button>
+                  // ----------------------------
                   ) : (
                     <FieldRenderer
                       colName={colName?.foreign_column_name}
@@ -466,7 +491,8 @@ return (
           <h2 className="text-2xl font-bold">
             {foreignModalColumn
               ? `Registros relacionados de ${
-                  foreignModalColumn.foreign_table_name || "Tabla intermedia"
+                foreignModalColumn.foreign_table_name || foreignModalColumn.name || "Tabla intermedia"
+                  // foreignModalColumn.foreign_table_name || "Tabla intermedia"
                 }`
               : "Registros relacionados"}
           </h2>
@@ -531,7 +557,7 @@ return (
     )}
     {/* Modal de usuarios asignados */}
     {showAssignedUsersModal && mode === "edit" && record?.id && (
-      <div className="fixed inset-0 z-10 bg-black/50 flex items-center justify-center px-4">
+      <div className="fixed inset-0 z-15 bg-black/50 flex items-center justify-center px-4">
         <div className="bg-white rounded-lg shadow-lg w-[600px] max-h-[80vh] overflow-hidden">
           <div className="flex justify-between items-center p-4 border-b">
             <h2 className="text-xl font-bold flex items-center gap-2">
@@ -580,6 +606,34 @@ return (
         recordId={record.id}
         tableName={record.table_name || ""}
       />
+    )}
+    
+    {/* Modal de gestion de archivos */}
+    {fileModalOpen && fileModalColumn && (
+      <div className="bg-white rounded-lg shadow-lg w-1/2 h-[80vh] p-4 ml-4 relative z-10 flex flex-col">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold">
+            Gestionar Archivos de "{fileModalColumn.name}"
+          </h2>
+          <button
+            onClick={() => setFileModalOpen(false)}
+            className="text-gray-500 hover:text-gray-700"
+            aria-label="Cerrar modal de archivos"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto pr-2">
+          <FileUpload
+            multiple={true}
+            value={values[fileModalColumn.name]}
+            onChange={(newFileValue) => {
+              handleChange(fileModalColumn.name, newFileValue);
+            }}
+            error={errors[fileModalColumn.name]}
+          />
+        </div>
+      </div>
     )}
   </div>
 );
