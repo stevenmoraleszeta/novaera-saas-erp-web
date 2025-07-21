@@ -22,8 +22,11 @@ export default function SortableColumnHeader({
     id: column.key,
     data: { type: "column" },
     disabled: !isEditingMode,
+    activationConstraint: {
+      delay: 250,
+      tolerance: 10,
+    },
   });
-
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -40,25 +43,36 @@ export default function SortableColumnHeader({
     <TableHead
       ref={setNodeRef}
       {...(isEditingMode ? attributes : {})}
-      {...(isEditingMode ? listeners : {})}
       style={style}
-      className={`cursor-pointer select-none ${isEditingMode ? "cursor-grab hover:bg-[#f0f0f0]" : "cursor-default"}`}
-
+      className={`select-none relative ${isEditingMode ? "cursor-grab hover:bg-[#f0f0f0]" : "cursor-default"}`}
     >
-      <div className="flex items-center justify-between pr-2">
-        <span className="truncate">{column.header}</span>
+      <div className="flex items-center justify-between pr-2 w-full h-full">
+        {/* Área de arrastre expandida */}
+        <div
+          className="flex-1 h-full px-2 truncate"
+          {...(isEditingMode ? listeners : {})}
+        >
+          {column.header}
+        </div>
       </div>
 
+      {/* Área de resize a la derecha */}
       <div
         className={`absolute right-0 top-0 bottom-0 w-2 cursor-col-resize ${resizingColumn === column.key
-          ? "bg-black"
-          : "bg-transparent hover:bg-gray-300"
+            ? "bg-black"
+            : "bg-transparent hover:bg-gray-300"
           }`}
-        onMouseDown={(e) => handleResizeStart(e, column.key)}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          handleResizeStart(e, column.key);
+        }}
         style={{ zIndex: 10 }}
       >
         <div className="absolute right-1 top-1/2 transform -translate-y-1/2 w-0.5 h-8 bg-gray-400 rounded opacity-0 hover:opacity-100 transition-opacity" />
       </div>
     </TableHead>
+
+
   );
 }
