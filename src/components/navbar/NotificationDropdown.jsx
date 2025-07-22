@@ -14,6 +14,36 @@ const NotificationDropdown = () => {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  // Función para formatear fecha y hora
+  const formatDateTime = (dateString) => {
+    if (!dateString) return '';
+    
+    try {
+      const date = new Date(dateString);
+      
+      // Formatear fecha
+      const dateOptions = {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      };
+      const formattedDate = date.toLocaleDateString('es-ES', dateOptions);
+      
+      // Formatear hora
+      const timeOptions = {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false // formato 24 horas
+      };
+      const formattedTime = date.toLocaleTimeString('es-ES', timeOptions);
+      
+      return `${formattedDate} a las ${formattedTime}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateString;
+    }
+  };
+
   // Poll notifications every 30s
   useEffect(() => {
     if (!userId) return;
@@ -25,9 +55,9 @@ const NotificationDropdown = () => {
         const scheduled = await scheduledNotificationsService.getUserScheduledNotifications(userId);
         // Obtener notificaciones normales no leídas
         const general = await scheduledNotificationsService.getUserGeneralNotifications(userId);
-        // Filtrar solo las no leídas
-        const unreadGeneral = (general.data || general || []).filter(n => n.read === false);
-        const unreadScheduled = (scheduled.data || scheduled || []).filter(n => n.read === false);
+        // Filtrar solo las no leídas y activas
+        const unreadGeneral = (general.data || general || []).filter(n => n.read === false && n.is_active !== false);
+        const unreadScheduled = (scheduled.data || scheduled || []).filter(n => n.read === false && n.is_active !== false);
         // Unir ambas listas
         setNotifications([...unreadScheduled, ...unreadGeneral]);
       } catch (e) {
@@ -112,15 +142,21 @@ const NotificationDropdown = () => {
                     </div>
                     <div className="text-xs text-muted-foreground">{n.notification_message || n.message}</div>
                     {n.target_date && (
-                      <div className="text-xs mt-1">Para: {n.target_date?.slice(0, 10)}</div>
+                      <div className="text-xs mt-1 text-blue-600 font-medium">
+                        {formatDateTime(n.target_date)}
+                      </div>
                     )}
                   </div>
-                  <button
-                    className="ml-2 text-xs text-blue-600 hover:underline"
-                    onClick={() => markAsRead(n.id)}
-                  >
-                    Marcar como leída
-                  </button>
+                  <label className="ml-2 flex items-center gap-1 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={false}
+                      onChange={() => markAsRead(n.id)}
+                      className="accent-blue-600 h-4 w-4 rounded border-gray-300 focus:ring-blue-500"
+                      title="Marcar como leída"
+                    />
+                    <span className="text-xs text-blue-600">Leída</span>
+                  </label>
                 </div>
               ))
             )}

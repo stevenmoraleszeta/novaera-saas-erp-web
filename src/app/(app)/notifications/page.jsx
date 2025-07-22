@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import scheduledNotificationsService from '@/services/scheduledNotificationsService';
 import useUserStore from '@/stores/userStore';
-import { Bell } from 'lucide-react';
+import { Bell, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 
 const NotificacionesPage = () => {
@@ -13,26 +14,70 @@ const NotificacionesPage = () => {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  // Función para cargar notificaciones
+  const fetchAll = async () => {
+    setLoading(true);
+    try {
+      const res = await scheduledNotificationsService.getAllUserNotifications(userId);
+      const all = res.data || res || [];
+      setNotifications(all.filter(n => n.is_active !== false));
+    } catch (error) {
+      console.error('Error al cargar notificaciones:', error);
+      setNotifications([]);
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
     if (!userId) return;
-    const fetchAll = async () => {
-      setLoading(true);
-      try {
-        // Usar getAllUserNotifications() que usa la ruta /user/{userId}/combined
-        const res = await scheduledNotificationsService.getAllUserNotifications(userId);
-        setNotifications(res.data || res || []);
-      } catch (error) {
-        console.error('Error al cargar notificaciones:', error);
-        setNotifications([]);
-      }
-      setLoading(false);
-    };
     fetchAll();
+    // eslint-disable-next-line
   }, [userId]);
+
+  // Eliminar una notificación (scheduled o normal) usando los nuevos endpoints
+  const handleDeleteNotification = async (notif) => {
+    try {
+      if (notif.type === 'scheduled' || notif.notification_title) {
+        // Es scheduled notification
+        await scheduledNotificationsService.deactivateScheduledNotification(notif.id);
+      } else {
+        // Es general notification
+        await scheduledNotificationsService.deactivateGeneralNotification(notif.id);
+      }
+      setNotifications((prev) => prev.filter((n) => n.id !== notif.id));
+    } catch (error) {
+      console.error('Error al eliminar notificación:', error);
+    }
+  };
+
+  // Vaciar todas las notificaciones usando el endpoint global
+  const handleClearAll = async () => {
+    setLoading(true);
+    try {
+      await scheduledNotificationsService.deactivateAllNotifications();
+      setNotifications([]);
+    } catch (error) {
+      console.error('Error al vaciar notificaciones:', error);
+    }
+    setLoading(false);
+  };
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white rounded-md border border-gray-200">
-      <h1 className="text-2xl font-bold mb-4 text-gray-900">Todas tus notificaciones programadas</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold text-gray-900">Todas tus notificaciones programadas</h1>
+        {notifications.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleClearAll}
+            disabled={loading}
+            title="Vaciar todas las notificaciones"
+          >
+            Vaciar todo
+          </Button>
+        )}
+      </div>
       {loading ? (
         <div className="p-4 text-center text-gray-500">Cargando...</div>
       ) : notifications.length === 0 ? (
@@ -60,7 +105,7 @@ const NotificacionesPage = () => {
                       </span>
                     )}
                   </div>
-                  <div className="font-medium text-gray-900">
+                  <div className="font-medium text-gray-900 flex items-center gap-2">
                     {n.notification_title || n.title}
                     {n.table_id && (
                       <button
@@ -80,6 +125,15 @@ const NotificacionesPage = () => {
                     <span className="text-xs text-green-600 mt-1 block">✓ Enviada</span>
                   )}
                 </div>
+                {/* Botón para eliminar notificación (ícono de basurero) */}
+                <button
+                  className="ml-2 p-1 rounded text-black hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                  title="Eliminar notificación"
+                  onClick={() => handleDeleteNotification(n)}
+                  disabled={loading}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             );
           })}
