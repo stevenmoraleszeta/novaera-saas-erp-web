@@ -21,8 +21,11 @@ import { getAssignedUsersByRecord } from "@/services/recordAssignedUsersService"
 import axios from "@/lib/axios";
 import { X } from "lucide-react";
 import ConfirmationDialog from "../common/ConfirmationDialog";
+import { toast } from 'sonner';
+import { setAssignedUsersForRecord } from '@/services/recordAssignedUsersService';
 
 import FileUpload from '@/components/common/FileUpload';
+import scheduledNotificationsService from '@/services/scheduledNotificationsService';
 
 export default function DynamicRecordFormDialog({
   open = false,
@@ -49,6 +52,12 @@ export default function DynamicRecordFormDialog({
   const [columnName, setcolumnName] = useState(null);
   const [tables, setTables] = useState([]);
   const [pendingNotifications, setPendingNotifications] = useState([]);
+
+  const [showAssignedUsersModal, setShowAssignedUsersModal] = useState(false);
+  const [assignedUsers, setAssignedUsers] = useState([]);
+  const [hasNotificationColumns, setHasNotificationColumns] = useState(false);
+  const [showAuditLogModal, setShowAuditLogModal] = useState(false);
+  
   // Estado y función para el modal de tabla relacionada tipo 'tabla'
   const [relatedTableModalOpen, setRelatedTableModalOpen] = useState(false);
   const [relatedTableModalColumn, setRelatedTableModalColumn] = useState(null);
@@ -75,32 +84,62 @@ export default function DynamicRecordFormDialog({
 
   // Procesar notificaciones pendientes cuando se crea el registro
   const processPendingNotifications = async (newRecordId) => {
+    console.log('Procesando notificaciones pendientes:', pendingNotifications);
+    
     for (const notif of pendingNotifications) {
       try {
         await scheduledNotificationsService.createScheduledNotification({
-          table_id: tableId,
-          record_id: newRecordId,
+          table_id: parseInt(tableId),
+          record_id: parseInt(newRecordId),
           column_id: notif.columnId,
           target_date: notif.targetDate,
           notification_title: notif.title,
           notification_message: notif.message,
-          notify_before_days: notif.notify_before_days,
-          assigned_users: notif.assigned_users
+          notify_before_days: notif.notify_before_days || 0,
+          assigned_users: notif.assigned_users || []
         });
+        
+        // Si hay usuarios asignados, también asignarlos al registro
+        if (notif.assigned_users && notif.assigned_users.length > 0) {
+          await setAssignedUsersForRecord(newRecordId, notif.assigned_users);
+        }
+        
+        console.log('Notificación creada exitosamente:', notif);
       } catch (error) {
         console.error('Error enviando notificación pendiente:', error);
+        toast.error(`Error al crear notificación: ${notif.title}`);
       }
     }
+    
+    // Limpiar notificaciones pendientes después de procesarlas
     setPendingNotifications([]);
+    
+    if (pendingNotifications.length > 0) {
+      toast.success(`${pendingNotifications.length} notificación(es) creada(s) exitosamente`);
+    }
   };
 
-  // Estados para usuarios asignados
-  const [hasNotificationColumns, setHasNotificationColumns] = useState(false);
-  const [showAssignedUsersModal, setShowAssignedUsersModal] = useState(false);
-  const [assignedUsers, setAssignedUsers] = useState([]);
+  // Función para agregar notificaciones pendientes
+  const handleAddPendingNotification = (columnId, targetDate, title, message, notify_before_days, assigned_users) => {
+    setPendingNotifications(prev => [
+      ...prev,
+      {
+        columnId,
+        targetDate,
+        title,
+        message,
+        notify_before_days: notify_before_days || 0,
+        assigned_users: assigned_users || []
+      }
+    ]);
+  };
 
-  // Modal para historial de cambios
-  const [showAuditLogModal, setShowAuditLogModal] = useState(false);
+  // Función para remover notificaciones pendientes
+  const handleRemovePendingNotification = (columnId) => {
+    setPendingNotifications(prev => 
+      prev.filter(notif => notif.columnId !== columnId)
+    );
+  };
 
   // Obtener usuario autenticado
   const currentUser = useCurrentUser();
@@ -229,23 +268,27 @@ export default function DynamicRecordFormDialog({
     setSubmitError(null);
     if (!validate()) return;
     setLoading(true);
+    
     try {
       let result;
       if (mode === "create") {
-        // Si hay usuario autenticado, pasar su id como tercer argumento
         const userId = currentUser?.id;
         result = await createLogicalTableRecord(tableId, values, userId);
+        
         // Procesar notificaciones pendientes si existen y el registro fue creado
         if (pendingNotifications.length > 0 && result?.id) {
+          console.log('Registro creado con ID:', result.id, 'Procesando notificaciones...');
           await processPendingNotifications(result.id);
         }
       } else if (mode === "edit" && record) {
-        // Pasar el userId como cuarto argumento si la función lo soporta
         const userId = currentUser?.id;
         result = await updateLogicalTableRecord(record.id, values, lastPosition, userId);
       }
+      
       if (onSubmitSuccess) onSubmitSuccess(result);
+      
       if (mode === "create") {
+        // Reset form values
         const initialValues = {};
         columns.forEach((col) => {
           switch (col.data_type) {
@@ -268,10 +311,12 @@ export default function DynamicRecordFormDialog({
         });
         setValues(initialValues);
         setErrors({});
+        setIsDirty(false);
       }
+      
       onOpenChange?.(false);
     } catch (err) {
-      console.log("chat: ERROR:", err);
+      console.log("ERROR:", err);
       setSubmitError(err?.response?.data?.message || "Error al guardar el registro");
     } finally {
       setLoading(false);
@@ -425,6 +470,12 @@ export default function DynamicRecordFormDialog({
                           )
                         }
                         error={errors[col.name]}
+                        // Agregar props para notificaciones si es campo de fecha
+                        tableId={tableId}
+                        recordId={record?.id}
+                        pendingNotifications={pendingNotifications}
+                        onAddPendingNotification={handleAddPendingNotification}
+                        onRemovePendingNotification={handleRemovePendingNotification}
                       />
                     )}
                     {errors[col.name] && (

@@ -139,6 +139,23 @@ class ScheduledNotificationsService {
     const response = await axios.put(`/scheduled-notifications/general/${notificationId}/read`);
     return response.data;
   }
+  // Desactivar (soft delete) notificación programada
+  async deactivateScheduledNotification(id) {
+    const response = await axios.put(`/scheduled-notifications/${id}/deactivate`);
+    return response.data;
+  };
+
+  // Desactivar (soft delete) notificación general
+  async deactivateGeneralNotification(id) {
+    const response = await axios.put(`/notifications/general/${id}/deactivate`);
+    return response.data;
+  };
+
+  // Desactivar (soft delete) todas las notificaciones
+  async deactivateAllNotifications(){
+    const response = await axios.put('/scheduled-notifications/deactivate/all');
+    return response.data;
+  };
 }
 
 export default new ScheduledNotificationsService();
