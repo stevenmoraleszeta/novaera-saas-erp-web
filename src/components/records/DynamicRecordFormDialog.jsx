@@ -23,6 +23,7 @@ import { X } from "lucide-react";
 import ConfirmationDialog from "../common/ConfirmationDialog";
 import { toast } from 'sonner';
 import { setAssignedUsersForRecord } from '@/services/recordAssignedUsersService';
+import { XIcon } from "lucide-react";
 
 import FileUpload from '@/components/common/FileUpload';
 import scheduledNotificationsService from '@/services/scheduledNotificationsService';
@@ -263,19 +264,18 @@ export default function DynamicRecordFormDialog({
     }
   };
 
-  const handleSubmit = useCallback(async (e) => {
-    e.preventDefault();
+  const saveRecord = useCallback(async () => {
     setSubmitError(null);
     if (!validate()) return;
     setLoading(true);
     
     try {
       let result;
+      const userId = currentUser?.id;
       if (mode === "create") {
         const userId = currentUser?.id;
         result = await createLogicalTableRecord(tableId, values, userId);
-        
-        // Procesar notificaciones pendientes si existen y el registro fue creado
+
         if (pendingNotifications.length > 0 && result?.id) {
           console.log('Registro creado con ID:', result.id, 'Procesando notificaciones...');
           await processPendingNotifications(result.id);
@@ -286,7 +286,7 @@ export default function DynamicRecordFormDialog({
       }
       
       if (onSubmitSuccess) onSubmitSuccess(result);
-      
+     
       if (mode === "create") {
         // Reset form values
         const initialValues = {};
@@ -313,7 +313,6 @@ export default function DynamicRecordFormDialog({
         setErrors({});
         setIsDirty(false);
       }
-      
       onOpenChange?.(false);
     } catch (err) {
       console.log("ERROR:", err);
@@ -321,7 +320,29 @@ export default function DynamicRecordFormDialog({
     } finally {
       setLoading(false);
     }
-  }, [tableId, values, validate, onSubmitSuccess, columns, onOpenChange, mode, record, currentUser, lastPosition, pendingNotifications]);
+  }, [
+    tableId,
+    values,
+    validate,
+    onSubmitSuccess,
+    columns,
+    onOpenChange,
+    mode,
+    record,
+    currentUser,
+    lastPosition,
+    pendingNotifications
+  ]);
+
+
+  const handleSubmit = useCallback(
+    async (e) => {
+      e.preventDefault();
+      await saveRecord();
+    },
+    [saveRecord]
+  );
+
 
   const handleOpenForeignModal = (col) => {
     const interTable = tables.find(t =>
@@ -381,24 +402,11 @@ export default function DynamicRecordFormDialog({
           </h2>
           <button
             onClick={handleAttemptClose} //onClick={() => onOpenChange(false)}
-            className="text-gray-500 hover:text-gray-700"
+            className="bg-black text-white ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
             aria-label="Cerrar modal"
           >
-            <X className="w-6 h-6" />
+            <XIcon />
           </button>
-          {/* Botón para ver historial de cambios (solo en modo edición) */}
-          {mode === "edit" && record?.id && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowAuditLogModal(true)}
-              disabled={loading}
-              className="flex items-center gap-2"
-            >
-              <History className="w-4 h-4" />
-              Ver Cambios
-            </Button>
-          )}
         </div>
 
         {/* Scrollable form */}
@@ -501,24 +509,32 @@ export default function DynamicRecordFormDialog({
           open={showExitConfirm}
           onClose={() => setShowExitConfirm(false)}
           title="¿Salir sin guardar?"
-          message="Tienes cambios sin guardar. ¿Estás seguro de que quieres cerrar este formulario?"
+          message="Tienes cambios sin guardar. ¿Qué te gustaría hacer?"
           actions={[
-            { label: "Cancelar", onClick: () => setShowExitConfirm(false), variant: "default" },
             {
-              label: "Salir sin guardar",
+              label: "No guardar",
               onClick: () => {
                 setShowExitConfirm(false);
                 setIsDirty(false);
                 onOpenChange(false);
               },
               variant: "outline"
+            },
+            {
+              label: "Guardar",
+              onClick: async () => {
+                await saveRecord();
+                setShowExitConfirm(false);
+                setIsDirty(false);
+              },
+              variant: "default"
             }
           ]}
         />
 
-
         {/* Footer con botones */}
-        <div className="border-t p-4 flex gap-2 justify-between">
+        <div className="border-t p-4 flex justify-between">
+          {/* Izquierda: Guardar, Eliminar, Duplicar */}
           <div className="flex gap-2">
             <Button type="submit" onClick={handleSubmit} disabled={loading}>
               {loading ? (
@@ -540,25 +556,62 @@ export default function DynamicRecordFormDialog({
                 Eliminar
               </Button>
             )}
+            {mode === "edit" && record && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    setLoading(true);
+                    const { id, created_at, updated_at, ...restData } = record.record_data || {};
+                    const newRecord = await createLogicalTableRecord(tableId, restData, currentUser?.id);
+                    onOpenChange(false);
+                    onSubmitSuccess?.(newRecord);
+                  } catch (error) {
+                    console.error("Error al duplicar registro:", error);
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+              >
+                Duplicar
+              </Button>
+            )}
           </div>
 
-          {/* Botón de usuarios asignados - solo si es modo edición y hay notificaciones */}
-          {mode === "edit" && record?.id && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={async () => {
-                await loadAssignedUsers();
-                setShowAssignedUsersModal(true);
-              }}
-              disabled={loading}
-              className="flex items-center gap-2"
-            >
-              <Users className="w-4 h-4" />
-              Usuarios Asignados ({assignedUsers.length})
-            </Button>
-          )}
+          {/* Derecha: Usuarios Asignados y Ver Cambios */}
+          <div className="flex gap-2">
+            {mode === "edit" && record?.id && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={async () => {
+                  await loadAssignedUsers();
+                  setShowAssignedUsersModal(true);
+                }}
+                disabled={loading}
+                className="flex items-center gap-2"
+              >
+                <Users className="w-4 h-4" />
+                Usuarios Asignados ({assignedUsers.length})
+              </Button>
+            )}
+            {mode === "edit" && record?.id && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowAuditLogModal(true)}
+                disabled={loading}
+                className="flex items-center gap-2"
+              >
+                <History className="w-4 h-4" />
+                Ver Cambios
+              </Button>
+            )}
+          </div>
         </div>
+
       </div>
 
       {/* Modal de tabla relacionada (tipo foreign) */}
@@ -580,10 +633,10 @@ export default function DynamicRecordFormDialog({
                   onOpenChange(false);
                 }
               }}
-              className="text-gray-500 hover:text-gray-700"
+              className="bg-black text-white ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
               aria-label="Cerrar modal"
             >
-              <X className="w-6 h-6" />
+              <XIcon />
             </button>
           </div>
           {foreignModalColumn && intermediateTableId && (
@@ -618,10 +671,10 @@ export default function DynamicRecordFormDialog({
             </h2>
             <button
               onClick={() => setRelatedTableModalOpen(false)}
-              className="text-gray-500 hover:text-gray-700"
+              className="bg-black text-white ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
               aria-label="Cerrar modal relacionada"
             >
-              <X className="w-6 h-6" />
+              <XIcon />
             </button>
           </div>
           {relatedTableModalColumn.foreign_table_id && (
@@ -648,10 +701,10 @@ export default function DynamicRecordFormDialog({
               </h2>
               <button
                 onClick={() => setShowAssignedUsersModal(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="bg-black text-white ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
                 aria-label="Cerrar modal de usuarios"
               >
-                <X className="w-6 h-6" />
+                <XIcon />
               </button>
             </div>
 
@@ -699,10 +752,10 @@ export default function DynamicRecordFormDialog({
             </h2>
             <button
               onClick={() => setFileModalOpen(false)}
-              className="text-gray-500 hover:text-gray-700"
+              className="bg-black text-white ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
               aria-label="Cerrar modal de archivos"
             >
-              <X className="w-6 h-6" />
+              <XIcon />
             </button>
           </div>
           <div className="flex-1 overflow-y-auto pr-2">
