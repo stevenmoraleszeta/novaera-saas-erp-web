@@ -349,7 +349,7 @@ export default function ColumnForm({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 ">
+        <div className="flex-1 overflow-y-auto">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Nombre */}
             <div className="space-y-2">
