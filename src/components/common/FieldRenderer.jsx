@@ -220,7 +220,7 @@ export default function FieldRenderer({
         <Input
           id={id}
           type="number"
-          value={value || ""}
+          value={value || 0}
           onChange={onChange}
           className={baseClassName}
           placeholder={`Ingresa ${column.name}`}

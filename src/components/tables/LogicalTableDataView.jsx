@@ -474,9 +474,9 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
           if (value === "true" || value === "false") {
             defaults[column] = true; // valor booleano genérico
           } else if (isNumeric) {
-            defaults[column] = 1; // valor numérico genérico
+            defaults[column] = 0; // valor numérico genérico
           } else {
-            defaults[column] = "valor"; // valor string genérico
+            defaults[column] = "vacío"; // valor string genérico
           }
           break;
 
@@ -764,7 +764,6 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
       setColumnFormMode("create");
       setSelectedColumn(null);
       setLocalRefreshFlag((prev) => !prev);
-      console.log("URGENTE: ", nuevaColumna.column.column_id)
       for (const vista of views) {
         await handleAddColumnToView({
           view_id: vista.id,
@@ -836,6 +835,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
       setColumns(cols);
       setShowColumnDeleteDialog(false);
       setColumnToDelete(null);
+      setLocalRefreshFlag((prev) => !prev);
     } catch (err) {
       console.error("Error deleting column:", err);
       throw err;
@@ -1320,7 +1320,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
                   mode={mode}
                   onDelete={effectiveCanDelete ? handleDeleteRecord : undefined}
                   onSubmitSuccess={async (createdOrUpdatedRecord) => {
-                    if (mode === "create") {
+                    if (mode === "create" ) {
                       const userColumn = columns.find((col) => col.data_type === "user");
                       const userId = userColumn
                         ? createdOrUpdatedRecord.message.record.record_data?.[userColumn.name]

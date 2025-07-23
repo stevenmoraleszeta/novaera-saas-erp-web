@@ -8,6 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Trash2, GripVertical } from "lucide-react";
 
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import DraggableOption from "./DraggableOption";
+
+import ConfirmationDialog from "@/components/common/ConfirmationDialog";
+
 export default function CustomOptionsManager({
   options = [],
   onChange,
@@ -46,6 +52,8 @@ export default function CustomOptionsManager({
   const [pendingDelete, setPendingDelete] = useState(null);
   const [editedOptions, setEditedOptions] = useState({}); // { index: true }
 
+  const sensors = useSensors(useSensor(PointerSensor));
+
   // Adaptar para manejar opciones como objetos { value, label }
   const handleAddOption = async () => {
     if (!newOption.trim()) return;
@@ -56,6 +64,26 @@ export default function CustomOptionsManager({
     ];
     onChange(updatedOptions);
     setNewOption("");
+  };
+
+  // Moví esto que estaba directamente en el return y lo puse como un handle
+  const handleSaveOption = async (option, index) => {
+    if (!option.id) return;
+    let axios;
+    try {
+      axios = require("@/lib/axios").default;
+    } catch {
+      axios = (await import("@/lib/axios")).default;
+    }
+    try {
+      await axios.put(`/options/${option.id}`, {
+        option_value: option.value,
+        option_label: option.label
+      });
+      setEditedOptions(prev => ({ ...prev, [index]: false }));
+    } catch (err) {
+      console.error("Error al editar la opción:", err);
+    }
   };
 
   const handleRemoveOption = (option, index) => {
@@ -108,92 +136,64 @@ export default function CustomOptionsManager({
     }
   };
 
+  // El drag and drop
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (active.id !== over.id) {
+      const oldIndex = mappedOptions.findIndex(opt => (opt.id || opt.value) === active.id);
+      const newIndex = mappedOptions.findIndex(opt => (opt.id || opt.value) === over.id);
+      const reorderedOptions = arrayMove(mappedOptions, oldIndex, newIndex);
+      onChange(reorderedOptions);
+    }
+  };
+
+  const optionIds = mappedOptions.map(opt => opt.id || opt.value);
+
   return (
     <>
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>¿Estás seguro que deseas eliminar esta opción?</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">Esta acción no se puede deshacer.</div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmOpen(false)}>
-              Cancelar
-            </Button>
-            <Button variant="destructive" onClick={confirmDeleteOption}>
-              Eliminar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmationDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        title="¿Estás seguro que deseas eliminar esta opción?"
+        message="Esta acción no se puede deshacer."
+        actions={[
+          { 
+            label: "Cancelar", 
+            onClick: () => setConfirmOpen(false), 
+            variant: "outline" 
+          },
+          { 
+            label: "Eliminar", 
+            onClick: confirmDeleteOption, 
+            variant: "destructive"
+          },
+        ]}
+      />
       <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-lg">Opciones Personalizadas</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Lista de opciones existentes */}
-          {mappedOptions.length > 0 && (
-            <div className="space-y-3">
-              {mappedOptions.map((option, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-3 p-3 border rounded-lg bg-gray-50"
-                >
-                  <div className="cursor-move text-gray-400">
-                    <GripVertical className="w-4 h-4" />
-                  </div>
-                  <div className="flex-1">
-                    <Input
-                      value={option.label || option.value || ""}
-                      onChange={(e) => handleOptionChange(index, e.target.value)}
-                      placeholder="Opción"
-                      disabled={disabled}
-                      className="h-8"
-                    />
-                  </div>
-                  {/* Botón Guardar si la opción fue editada y tiene id */}
-                  {editedOptions[index] && option.id && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="default"
-                      onClick={async () => {
-                        let axios;
-                        try {
-                          axios = require("@/lib/axios").default;
-                        } catch {
-                          axios = (await import("@/lib/axios")).default;
-                        }
-                        try {
-                          await axios.put(`/options/${option.id}`, {
-                            option_value: option.value,
-                            option_label: option.label
-                          });
-                          setEditedOptions(prev => ({ ...prev, [index]: false }));
-                        } catch (err) {
-                          console.error("Error al editar la opción:", err);
-                        }
-                      }}
-                      disabled={disabled}
-                      className="text-white hover:text-white"
-                    >
-                      Guardar
-                    </Button>
-                  )}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleRemoveOption(option, index)}
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={optionIds} strategy={verticalListSortingStrategy}>
+              <div className="space-y-3">
+                {/* Lista de opciones existentes */}
+                {mappedOptions.map((option, index) => (
+                  //El drag and drop
+                  <DraggableOption 
+                    key={option.id || option.value}
+                    option={option}
+                    index={index}
+                    onOptionChange={handleOptionChange}
+                    onRemoveOption={handleRemoveOption}
+                    onSaveOption={handleSaveOption}
+                    editedOptions={editedOptions}
                     disabled={disabled}
-                    className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
 
           {/* Agregar nueva opción */}
           <div className="border-t pt-4">

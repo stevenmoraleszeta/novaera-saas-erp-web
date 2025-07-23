@@ -286,7 +286,9 @@ export default function DialogsContainer(props) {
 
       {/* View Form Dialog */}
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto" onInteractOutside={(e) => {
+          e.preventDefault();
+        }}>
           <DialogHeader>
             <DialogTitle>
               {viewFormMode === "create" ? "Nueva Vista" : "Editar Vista"}
@@ -350,7 +352,9 @@ export default function DialogsContainer(props) {
       </Dialog>
 
       <Dialog open={showManageColumnsDialog} onOpenChange={setShowManageColumnsDialog}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto" onInteractOutside={(e) => {
+          e.preventDefault();
+        }}>
           <DialogHeader>
             <DialogTitle>Columnas</DialogTitle>
           </DialogHeader>
@@ -412,7 +416,9 @@ export default function DialogsContainer(props) {
       </Dialog>
       {/* View Delete Confirmation Dialog */}
       <Dialog open={showManageViewsDialog} onOpenChange={setShowManageViewsDialog}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" onInteractOutside={(e) => {
+          e.preventDefault();
+        }}>
           <DialogHeader>
             <DialogTitle>Vistas</DialogTitle>
           </DialogHeader>
@@ -494,7 +500,9 @@ export default function DialogsContainer(props) {
       </Dialog>
 
       <Dialog open={showFilterManager} onOpenChange={setShowFilterManager}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" onInteractOutside={(e) => {
+          e.preventDefault();
+        }}>
           <DialogHeader>
             <DialogTitle>Filtros aplicados</DialogTitle>
           </DialogHeader>
@@ -594,7 +602,9 @@ export default function DialogsContainer(props) {
               const columnType = selectedColumn?.data_type; // Puede ser "boolean", "number", "text", etc.
               return (
                 <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-                  <DialogContent className="sm:max-w-md">
+                  <DialogContent className="sm:max-w-md" onInteractOutside={(e) => {
+                    e.preventDefault();
+                  }}>
                     <DialogHeader>
                       <DialogTitle>
                         {mode === "create" ? "Nuevo Filtro" : "Editar Filtro"}
@@ -681,7 +691,9 @@ export default function DialogsContainer(props) {
       </Dialog>
 
       <Dialog open={showColumnVisibilityDialog} onOpenChange={setShowColumnVisibilityDialog}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" onInteractOutside={(e) => {
+          e.preventDefault();
+        }}>
           <DialogHeader>
             <DialogTitle>Columnas visibles</DialogTitle>
           </DialogHeader>
@@ -767,19 +779,25 @@ export default function DialogsContainer(props) {
 
               return (
                 <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-                  <DialogContent className="sm:max-w-md">
+                  <DialogContent className="sm:max-w-md" onInteractOutside={(e) => {
+                    e.preventDefault();
+                  }}>
                     <DialogHeader>
                       <DialogTitle>Visibilidad de columna</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
                       <Label>Columna</Label>
                       <Input value={formData.name} disabled />
-                      <ReusableCombobox
-                        label="¿Visible?"
-                        options={visibilityOptions}
-                        value={formData.visible}
-                        onChange={(val) => setFormData({ ...formData, visible: val })}
-                      />
+                      <div className="flex items-center space-x-2 pt-2">
+                        <Checkbox
+                          id="visible"
+                          checked={formData.visible}
+                          onCheckedChange={(val) =>
+                            setFormData({ ...formData, visible: !!val })
+                          }
+                        />
+                        <Label htmlFor="visible">¿Visible?</Label>
+                      </div>
                     </div>
                     <DialogFooter className="pt-4">
                       <Button onClick={() => onSubmit(formData)}>Guardar</Button>
@@ -793,7 +811,9 @@ export default function DialogsContainer(props) {
       </Dialog>
 
       <Dialog open={showSortManager} onOpenChange={setShowSortManager}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" onInteractOutside={(e) => {
+          e.preventDefault();
+        }}>
           <DialogHeader>
             <DialogTitle>Ordenamiento</DialogTitle>
           </DialogHeader>
@@ -871,6 +891,7 @@ export default function DialogsContainer(props) {
                   await handleUpdateSortPosition(sort.id, i + 1);
                 }
               }
+              setLocalRefreshFlag((prev) => !prev);
             }}
             renderForm={({ mode, item, open, onClose, onSubmit, onDelete }) => {
               const [formData, setFormData] = useState({
@@ -892,7 +913,9 @@ export default function DialogsContainer(props) {
 
               return (
                 <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-                  <DialogContent className="sm:max-w-md">
+                  <DialogContent className="sm:max-w-md" onInteractOutside={(e) => {
+                    e.preventDefault();
+                  }}>
                     <DialogHeader>
                       <DialogTitle>
                         {mode === "create" ? "Nuevo ordenamiento" : "Editar ordenamiento"}
