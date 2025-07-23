@@ -12,6 +12,8 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from 
 import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import DraggableOption from "./DraggableOption";
 
+import ConfirmationDialog from "@/components/common/ConfirmationDialog";
+
 export default function CustomOptionsManager({
   options = [],
   onChange,
@@ -149,22 +151,24 @@ export default function CustomOptionsManager({
 
   return (
     <>
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>¿Estás seguro que deseas eliminar esta opción?</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">Esta acción no se puede deshacer.</div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmOpen(false)}>
-              Cancelar
-            </Button>
-            <Button variant="destructive" onClick={confirmDeleteOption}>
-              Eliminar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmationDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        title="¿Estás seguro que deseas eliminar esta opción?"
+        message="Esta acción no se puede deshacer."
+        actions={[
+          { 
+            label: "Cancelar", 
+            onClick: () => setConfirmOpen(false), 
+            variant: "outline" 
+          },
+          { 
+            label: "Eliminar", 
+            onClick: confirmDeleteOption, 
+            variant: "destructive"
+          },
+        ]}
+      />
       <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-lg">Opciones Personalizadas</CardTitle>
