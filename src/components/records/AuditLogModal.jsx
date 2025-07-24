@@ -23,7 +23,9 @@ export default function AuditLogModal({ open, onClose, recordId, tableName }) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl" onInteractOutside={(e) => {
+        e.preventDefault();
+      }}>
         <DialogHeader>
           <DialogTitle>Historial de Cambios</DialogTitle>
         </DialogHeader>
