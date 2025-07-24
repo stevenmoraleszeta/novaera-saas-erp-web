@@ -96,10 +96,10 @@ export async function updateModule(id, data) {
 }
 
 // Eliminar un módulo
-export async function deleteModule(id) {
+export async function deleteModule(id, cascada = true) {
   try {
     const response = await axios.delete(`/modules/${id}`, {
-      params: { cascada: true },
+      params: { cascada },
     });
     return response.data;
   } catch (error) {

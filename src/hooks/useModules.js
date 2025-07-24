@@ -112,10 +112,10 @@ export function useModules(initialParams = {}) {
     return updatedModule;
   };
 
-  const handleDeleteModule = useCallback(async (id) => {
+  const handleDeleteModule = useCallback(async (id, cascada = true) => {
     try {
       setError(null);
-      await deleteModule(id);
+      await deleteModule(id, cascada);
       setSuccess("Modulo eliminado correctamente");
       loadModules();
     } catch (err) {
