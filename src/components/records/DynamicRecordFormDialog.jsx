@@ -11,13 +11,15 @@ import {
 import FieldRenderer from "../common/FieldRenderer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, AlertCircle, Users, History } from "lucide-react";
+import { Plus, AlertCircle, Users, History, MessageCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import LogicalTableDataView from "@/components/tables/LogicalTableDataView";
 import AssignedUsersCell from "@/components/tables/AssignedUsersCell";
 import AuditLogModal from "./AuditLogModal";
+import RecordComments from "./RecordComments";
 import { getAssignedUsersByRecord } from "@/services/recordAssignedUsersService";
+import { getCommentsCount } from "@/services/recordCommentsService";
 import axios from "@/lib/axios";
 import { X } from "lucide-react";
 import ConfirmationDialog from "../common/ConfirmationDialog";
@@ -58,6 +60,8 @@ export default function DynamicRecordFormDialog({
   const [assignedUsers, setAssignedUsers] = useState([]);
   const [hasNotificationColumns, setHasNotificationColumns] = useState(false);
   const [showAuditLogModal, setShowAuditLogModal] = useState(false);
+  const [showCommentsModal, setShowCommentsModal] = useState(false);
+  const [commentsCount, setCommentsCount] = useState(0);
   
   // Estado y función para el modal de tabla relacionada tipo 'tabla'
   const [relatedTableModalOpen, setRelatedTableModalOpen] = useState(false);
@@ -216,8 +220,20 @@ export default function DynamicRecordFormDialog({
   useEffect(() => {
     if (open && mode === "edit" && record?.id) {
       loadAssignedUsers();
+      loadCommentsCount();
     }
   }, [open, mode, record]);
+
+  // Función para cargar conteo de comentarios
+  const loadCommentsCount = async () => {
+    try {
+      const count = await getCommentsCount(record.id);
+      setCommentsCount(count);
+    } catch (error) {
+      console.error('Error loading comments count:', error);
+      setCommentsCount(0);
+    }
+  };
 
   function castValueByDataType(type, value) {
     if (value === null || value === undefined) return value;
@@ -580,8 +596,20 @@ export default function DynamicRecordFormDialog({
             )}
           </div>
 
-          {/* Derecha: Usuarios Asignados y Ver Cambios */}
+          {/* Derecha: Comentarios, Usuarios Asignados y Ver Cambios */}
           <div className="flex gap-2">
+            {mode === "edit" && record?.id && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowCommentsModal(true)}
+                disabled={loading}
+                className="flex items-center gap-2"
+              >
+                <MessageCircle className="w-4 h-4" />
+                Comentarios ({commentsCount})
+              </Button>
+            )}
             {mode === "edit" && record?.id && (
               <Button
                 type="button"
@@ -692,7 +720,7 @@ export default function DynamicRecordFormDialog({
       )}
       {/* Modal de usuarios asignados */}
       {showAssignedUsersModal && mode === "edit" && record?.id && (
-        <div className="fixed inset-0 z-15 bg-black/50 flex items-center justify-center px-4">
+        <div className="fixed inset-0 z-25 bg-black/50 flex items-center justify-center px-4">
           <div className="bg-white rounded-lg shadow-lg w-[600px] max-h-[80vh] overflow-hidden">
             <div className="flex justify-between items-center p-4 border-b">
               <h2 className="text-xl font-bold flex items-center gap-2">
@@ -740,6 +768,20 @@ export default function DynamicRecordFormDialog({
           onClose={setShowAuditLogModal}
           recordId={record.id}
           tableName={record.table_name || ""}
+        />
+      )}
+
+      {/* Modal de comentarios */}
+      {showCommentsModal && record?.id && (
+        <RecordComments
+          recordId={record.id}
+          tableId={tableId}
+          isOpen={showCommentsModal}
+          onClose={() => {
+            setShowCommentsModal(false);
+            // Recargar conteo de comentarios después de cerrar el modal
+            loadCommentsCount();
+          }}
         />
       )}
 
