@@ -89,9 +89,8 @@ export default function ModuleForm({
   };
 
   const handleEmojiSelect = (emojiObject) => {
-    handleChange("icon", emojiObject.emoji);
+    handleChange("icon", emojiObject.imageUrl);
     setEmojiPickerOpen(false);
-    setValidationError(null);
   };
 
   const handleDelete = () => {
@@ -150,10 +149,19 @@ export default function ModuleForm({
               <Label>Ícono</Label>
               <div className="flex items-center gap-3">
                 {formData.icon && (
+                  // CAMBIO CLAVE 2: La vista previa ahora es una etiqueta <img>
+                  <img 
+                    src={formData.icon} 
+                    alt="ícono seleccionado" 
+                    className="w-10 h-10"
+                  />
+                )}
+
+                {/* {formData.icon && (
                   <div className="text-2xl w-10 h-10 flex items-center justify-center border border-gray-200 rounded-lg bg-gray-50">
                     {formData.icon}
                   </div>
-                )}
+                )} */}
                 <Popover
                   open={emojiPickerOpen}
                   onOpenChange={setEmojiPickerOpen}
@@ -177,7 +185,7 @@ export default function ModuleForm({
                       height={400}
                       lazyLoadEmojis={true}
                       searchDisabled={false}
-                      emojiStyle={EmojiStyle.APPLE}
+                      emojiStyle={EmojiStyle.FACEBOOK} 
                     />
                   </PopoverContent>
                 </Popover>
