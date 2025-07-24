@@ -67,7 +67,8 @@ export default function ModulesPage() {
 
   const handleConfirmDelete = async () => {
     try {
-      await handleDeleteModule(moduleToDelete.id);
+      // Por defecto usar cascada = true para eliminar tablas relacionadas
+      await handleDeleteModule(moduleToDelete.id, true);
       setShowDeleteDialog(false);
       setModuleToDelete(null);
       closeModal();
@@ -171,6 +172,7 @@ export default function ModulesPage() {
         }}
         onConfirm={handleConfirmDelete}
         title="¿Eliminar módulo?"
+        message={`Esta acción eliminará permanentemente el módulo "${moduleToDelete?.name}" y todas sus tablas relacionadas (columnas, registros, etc.). Esta acción no se puede deshacer.`}
         itemName={moduleToDelete?.name}
       />
     </div>
