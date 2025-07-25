@@ -62,7 +62,7 @@ export default function DynamicRecordFormDialog({
   const [showAuditLogModal, setShowAuditLogModal] = useState(false);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
   const [commentsCount, setCommentsCount] = useState(0);
-  
+
   // Estado y función para el modal de tabla relacionada tipo 'tabla'
   const [relatedTableModalOpen, setRelatedTableModalOpen] = useState(false);
   const [relatedTableModalColumn, setRelatedTableModalColumn] = useState(null);
@@ -90,7 +90,7 @@ export default function DynamicRecordFormDialog({
   // Procesar notificaciones pendientes cuando se crea el registro
   const processPendingNotifications = async (newRecordId) => {
     console.log('Procesando notificaciones pendientes:', pendingNotifications);
-    
+
     for (const notif of pendingNotifications) {
       try {
         await scheduledNotificationsService.createScheduledNotification({
@@ -103,22 +103,22 @@ export default function DynamicRecordFormDialog({
           notify_before_days: notif.notify_before_days || 0,
           assigned_users: notif.assigned_users || []
         });
-        
+
         // Si hay usuarios asignados, también asignarlos al registro
         if (notif.assigned_users && notif.assigned_users.length > 0) {
           await setAssignedUsersForRecord(newRecordId, notif.assigned_users);
         }
-        
+
         console.log('Notificación creada exitosamente:', notif);
       } catch (error) {
         console.error('Error enviando notificación pendiente:', error);
         toast.error(`Error al crear notificación: ${notif.title}`);
       }
     }
-    
+
     // Limpiar notificaciones pendientes después de procesarlas
     setPendingNotifications([]);
-    
+
     if (pendingNotifications.length > 0) {
       toast.success(`${pendingNotifications.length} notificación(es) creada(s) exitosamente`);
     }
@@ -141,7 +141,7 @@ export default function DynamicRecordFormDialog({
 
   // Función para remover notificaciones pendientes
   const handleRemovePendingNotification = (columnId) => {
-    setPendingNotifications(prev => 
+    setPendingNotifications(prev =>
       prev.filter(notif => notif.columnId !== columnId)
     );
   };
@@ -284,7 +284,7 @@ export default function DynamicRecordFormDialog({
     setSubmitError(null);
     if (!validate()) return;
     setLoading(true);
-    
+
     try {
       let result;
       const userId = currentUser?.id;
@@ -300,9 +300,9 @@ export default function DynamicRecordFormDialog({
         const userId = currentUser?.id;
         result = await updateLogicalTableRecord(record.id, values, lastPosition, userId);
       }
-      
+
       if (onSubmitSuccess) onSubmitSuccess(result);
-     
+
       if (mode === "create") {
         // Reset form values
         const initialValues = {};
@@ -528,6 +528,15 @@ export default function DynamicRecordFormDialog({
           message="Tienes cambios sin guardar. ¿Qué te gustaría hacer?"
           actions={[
             {
+              label: "Guardar",
+              onClick: async () => {
+                await saveRecord();
+                setShowExitConfirm(false);
+                setIsDirty(false);
+              },
+              variant: "default"
+            },
+            {
               label: "No guardar",
               onClick: () => {
                 setShowExitConfirm(false);
@@ -536,15 +545,6 @@ export default function DynamicRecordFormDialog({
               },
               variant: "outline"
             },
-            {
-              label: "Guardar",
-              onClick: async () => {
-                await saveRecord();
-                setShowExitConfirm(false);
-                setIsDirty(false);
-              },
-              variant: "default"
-            }
           ]}
         />
 
