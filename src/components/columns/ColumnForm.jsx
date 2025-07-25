@@ -74,7 +74,7 @@ export default function ColumnForm({
     { label: "Usuarios Asignados", value: "assigned_users" },
     { label: "JSON", value: "json" },
     { label: "UUID", value: "uuid" },
-    { label: "Tabla", value: "tabla"}
+    { label: "Tabla", value: "tabla" }
   ];
 
   // Estados para opciones personalizadas
@@ -132,31 +132,31 @@ export default function ColumnForm({
             let optionsArr = Array.isArray(data.options) ? data.options : data;
             const options = Array.isArray(optionsArr)
               ? optionsArr.map(opt => {
-                  if (typeof opt === "string") {
-                    return { value: opt, label: opt };
-                  }
-                  if (opt.option_value && opt.option_label) {
-                    // Preserva id, column_id y demás propiedades
-                    return {
-                      value: opt.option_value,
-                      label: opt.option_label,
-                      id: opt.id,
-                      column_id: opt.column_id,
-                      option_order: opt.option_order,
-                      is_active: opt.is_active,
-                      created_at: opt.created_at
-                    };
-                  }
-                  if (opt.value && opt.label) {
-                    return {
-                      value: opt.value,
-                      label: opt.label,
-                      id: opt.id,
-                      column_id: opt.column_id
-                    };
-                  }
-                  return opt;
-                })
+                if (typeof opt === "string") {
+                  return { value: opt, label: opt };
+                }
+                if (opt.option_value && opt.option_label) {
+                  // Preserva id, column_id y demás propiedades
+                  return {
+                    value: opt.option_value,
+                    label: opt.option_label,
+                    id: opt.id,
+                    column_id: opt.column_id,
+                    option_order: opt.option_order,
+                    is_active: opt.is_active,
+                    created_at: opt.created_at
+                  };
+                }
+                if (opt.value && opt.label) {
+                  return {
+                    value: opt.value,
+                    label: opt.label,
+                    id: opt.id,
+                    column_id: opt.column_id
+                  };
+                }
+                return opt;
+              })
               : [];
             setCustomOptions(options);
           } catch (err) {
@@ -341,7 +341,9 @@ export default function ColumnForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] h-[80vh] flex flex-col max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] h-[80vh] flex flex-col max-h-[90vh]" onInteractOutside={(e) => {
+        e.preventDefault();
+      }}>
         <div ref={topRef} />
         <DialogHeader>
           <DialogTitle>
@@ -370,7 +372,7 @@ export default function ColumnForm({
               <ReusableCombobox
                 label="Tipo de Dato"
                 placeholder="Seleccione un tipo de dato..."
-                options={DATA_TYPES} 
+                options={DATA_TYPES}
                 value={formData.data_type}
                 onChange={handleTypeChange}
               />
@@ -517,7 +519,7 @@ export default function ColumnForm({
                 ¿Requerida?
               </label>
             </div>
-            
+
             {/* Validaciones */}
             <div className="space-y-2">
               <Label htmlFor="validations">Validaciones</Label>

@@ -103,6 +103,8 @@ export default function DialogsContainer(props) {
     setFormInitialValues
   } = props;
 
+  const [errorMessage, setErrorMessage] = useState("");
+
   const {
     sorts,
     loading,
@@ -291,7 +293,7 @@ export default function DialogsContainer(props) {
         }}>
           <DialogHeader>
             <DialogTitle>
-              {viewFormMode === "create" ? "Nueva Vista" : "Editar Vista"}
+              {viewFormMode === "create" ? "Nueva Vista" : "Editar Vistas"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -352,7 +354,7 @@ export default function DialogsContainer(props) {
       </Dialog>
 
       <Dialog open={showManageColumnsDialog} onOpenChange={setShowManageColumnsDialog}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto" onInteractOutside={(e) => {
+        <DialogContent className="max-w-6xl max-h-[90vh]" onInteractOutside={(e) => {
           e.preventDefault();
         }}>
           <DialogHeader>
@@ -548,7 +550,7 @@ export default function DialogsContainer(props) {
                 column_id: columnId,
                 visible: visible,
                 filter_condition: newFilter?.condition || null,
-                filter_value: newFilter?.value || null,
+                filter_value: newFilter?.value ?? null
               };
               handleAddColumnToView(filterToAdd);
             }}
@@ -623,7 +625,10 @@ export default function DialogsContainer(props) {
                         label="Condición"
                         options={conditionOptions}
                         value={formData.condition}
-                        onChange={(val) => setFormData({ ...formData, condition: val })}
+                        onChange={(val) => {
+                          setFormData({ ...formData, condition: val });
+                          setErrorMessage(""); // limpia error al cambiar la condición
+                        }}
                       />
                       {!["is_null", "is_not_null"].includes(formData.condition) && (
                         <>
@@ -647,9 +652,10 @@ export default function DialogsContainer(props) {
                             <Input
                               type="number"
                               value={formData.value}
-                              onChange={(e) =>
-                                setFormData({ ...formData, value: e.target.value })
-                              }
+                              onChange={(e) => {
+                                setFormData({ ...formData, value: e.target.value });
+                                setErrorMessage("");
+                              }}
                             />
                           ) : (
                             <Input
@@ -659,12 +665,26 @@ export default function DialogsContainer(props) {
                               }
                             />
                           )}
+                          {errorMessage && (
+                            <p className="text-sm text-red-500">{errorMessage}</p>
+                          )}
                         </>
                       )}
                     </div>
                     <DialogFooter className="pt-4">
                       <Button
                         onClick={() => {
+                          if (
+                            !["is_null", "is_not_null"].includes(formData.condition) &&
+                            (formData.value === null ||
+                              formData.value === undefined ||
+                              formData.value.toString().trim() === "")
+                          ) {
+                            setErrorMessage("El campo de valor no puede estar vacío.");
+                            return;
+                          }
+
+                          setErrorMessage(""); // limpia el error si todo bien
                           onSubmit(formData);
                         }}
                       >
