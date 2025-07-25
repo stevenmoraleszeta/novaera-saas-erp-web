@@ -31,6 +31,11 @@ import ReusableCombobox from "@/components/ui/reusableCombobox";
 export default function DialogsContainer(props) {
 
   const { handleUpdatePosition, handleDelete } = useColumns(null);
+  
+  // Estados para rastrear cambios de posición de columnas en el diálogo
+  const [hasColumnOrderChanges, setHasColumnOrderChanges] = useState(false);
+  const [pendingColumnOrder, setPendingColumnOrder] = useState([]);
+  
   const {
     showFilterDialog,
     setShowFilterDialog,
@@ -102,6 +107,25 @@ export default function DialogsContainer(props) {
     formInitialValues,
     setFormInitialValues
   } = props;
+
+  // Función para aplicar cambios de orden cuando se cierre el modal
+  const handleCloseColumnsDialog = async () => {
+    if (hasColumnOrderChanges && pendingColumnOrder.length > 0) {
+      try {
+        for (let i = 0; i < pendingColumnOrder.length; i++) {
+          await handleUpdatePosition(pendingColumnOrder[i].column_id, i + 1);
+        }
+        setLocalRefreshFlag((prev) => !prev);
+      } catch (err) {
+        console.error("Error al guardar el orden de columnas:", err);
+      }
+    }
+    
+    // Resetear estados
+    setHasColumnOrderChanges(false);
+    setPendingColumnOrder([]);
+    setShowManageColumnsDialog(false);
+  };
 
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -353,7 +377,13 @@ export default function DialogsContainer(props) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showManageColumnsDialog} onOpenChange={setShowManageColumnsDialog}>
+      <Dialog open={showManageColumnsDialog} onOpenChange={(open) => {
+        if (!open) {
+          handleCloseColumnsDialog();
+        } else {
+          setShowManageColumnsDialog(true);
+        }
+      }}>
         <DialogContent className="max-w-6xl max-h-[90vh]" onInteractOutside={(e) => {
           e.preventDefault();
         }}>
@@ -378,14 +408,9 @@ export default function DialogsContainer(props) {
               },
             ]}
             onOrderChange={async (reorderedCols) => {
-              try {
-                for (let i = 0; i < reorderedCols.length; i++) {
-                  await handleUpdatePosition(reorderedCols[i].column_id, i + 1);
-                }
-                //setLocalRefreshFlag((prev) => !prev); // Refresca una sola vez al final
-              } catch (err) {
-                console.error("Error al reordenar columnas:", err);
-              }
+              // Marcar que hay cambios y guardar el nuevo orden
+              setHasColumnOrderChanges(true);
+              setPendingColumnOrder(reorderedCols);
             }}
             getRowKey={(col) => col.column_id}
             onCreate={handleCreateColumn}
