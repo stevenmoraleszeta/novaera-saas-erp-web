@@ -47,6 +47,9 @@ export default function GenericCRUDTable({
   const [activeSort, setActiveSort] = useState(null);
   const [activeFilters, setActiveFilters] = useState([]);
 
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+  };
 
   const [columnWidths, setColumnWidths] = useState({});
 
@@ -140,12 +143,18 @@ export default function GenericCRUDTable({
     }
 
     if (searchTerm) {
-      result = result.filter((row) =>
-        Object.values(row)
-          .join(" ")
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase())
+      result = result.filter((row) => {
+      const searchableValues = Object.values(row).filter(value =>
+        typeof value === 'string' || typeof value === 'number'
       );
+      const rowAsText = searchableValues.join(" ");
+      const normalizedRowText = rowAsText
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+    
+      return normalizedRowText.includes(searchTerm);
+      });
     }
 
     if (activeSort && activeSort.column) {
@@ -216,7 +225,7 @@ export default function GenericCRUDTable({
               <ArrowUpDown className="w-5 h-5" />
             </Button>
             <SearchBar
-              onSearch={setSearchTerm}
+              onSearch={handleSearch}
               debounceDelay={200}
               placeholder="Buscar..."
             />
