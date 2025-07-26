@@ -44,9 +44,32 @@ const ScheduledNotificationForm = ({
   // Cargar datos para edición
   useEffect(() => {
     if (initialData) {
+      // Manejar la fecha correctamente para el input datetime-local
+      let targetDateForInput = '';
+      if (initialData.target_date) {
+        // Si la fecha viene como string desde el servidor (ej: "2024-01-15 14:30:00")
+        let dateString = initialData.target_date;
+        
+        // Si incluye espacio, reemplazar por 'T' para formato datetime-local
+        if (dateString.includes(' ')) {
+          const [datePart, timePart] = dateString.split(' ');
+          const timeOnly = timePart.substring(0, 5); // Solo HH:MM, sin segundos
+          targetDateForInput = `${datePart}T${timeOnly}`;
+        } else {
+          // Si ya viene en formato ISO, crear Date y formatear
+          const date = new Date(dateString);
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          targetDateForInput = `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+      }
+
       setFormData({
         column_id: initialData.column_id || '',
-        target_date: initialData.target_date ? new Date(initialData.target_date).toISOString().slice(0, 16) : '',
+        target_date: targetDateForInput,
         notification_title: initialData.notification_title || '',
         notification_message: initialData.notification_message || '',
         notify_before_days: initialData.notify_before_days || 0,
@@ -97,18 +120,28 @@ const ScheduledNotificationForm = ({
 
     setSubmitting(true);
     try {
+      // El input datetime-local devuelve formato: "YYYY-MM-DDTHH:MM"
+      // Vamos a parsearlo manualmente para evitar problemas de zona horaria
+      const dateTimeString = formData.target_date; // ej: "2024-01-15T14:30"
+      const [datePart, timePart] = dateTimeString.split('T');
+      const [year, month, day] = datePart.split('-');
+      const [hours, minutes] = timePart.split(':');
+      
+      // Formatear directamente como string sin crear objeto Date
+      const formattedDate = `${year}-${month}-${day} ${hours}:${minutes}:00`;
+
       const data = {
         table_id: tableId,
         record_id: recordId,
         ...formData,
-        target_date: new Date(formData.target_date).toISOString()
+        target_date: formattedDate
       };
 
       if (initialData) {
         await updateNotification(initialData.id, data);
         toast.success('Notificación actualizada exitosamente');
       } else {
-        await createNotification(data);
+        await createScheduledNotification(data);
         toast.success('Notificación programada creada exitosamente');
       }
 
@@ -173,7 +206,7 @@ const ScheduledNotificationForm = ({
         {/* Fecha objetivo */}
         <div className="form-group">
           <label htmlFor="target_date">
-            Fecha y Hora Objetivo <span className="required">*</span>          </label>
+            Fecha y Hora Objetiv<span className="required">*</span>          </label>
           <input
             type="datetime-local"
             id="target_date"
