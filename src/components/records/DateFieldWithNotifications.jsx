@@ -40,25 +40,42 @@ const DateFieldWithNotifications = ({
     if (!dateString) return '';
     
     try {
-      const date = new Date(dateString);
+      let date;
       
-      // Formatear fecha
-      const dateOptions = {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      };
-      const formattedDate = date.toLocaleDateString('es-ES', dateOptions);
-      
-      // Formatear hora
-      const timeOptions = {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false // formato 24 horas
-      };
-      const formattedTime = date.toLocaleTimeString('es-ES', timeOptions);
-      
-      return `${formattedDate} a las ${formattedTime}`;
+      // Si viene en formato "YYYY-MM-DD HH:MM:SS", parsearlo manualmente
+      if (dateString.includes(' ') && !dateString.includes('T')) {
+        const [datePart, timePart] = dateString.split(' ');
+        const [year, month, day] = datePart.split('-');
+        const [hours, minutes] = timePart.split(':');
+        
+        return `${day}/${month}/${year} a las ${hours}:${minutes}`;
+      } else {
+        // Para otros formatos, usar Date pero con cuidado
+        date = new Date(dateString);
+        
+        // Verificar si la fecha es válida
+        if (isNaN(date.getTime())) {
+          return dateString;
+        }
+        
+        // Formatear fecha
+        const dateOptions = {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        };
+        const formattedDate = date.toLocaleDateString('es-ES', dateOptions);
+        
+        // Formatear hora
+        const timeOptions = {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false // formato 24 horas
+        };
+        const formattedTime = date.toLocaleTimeString('es-ES', timeOptions);
+        
+        return `${formattedDate} a las ${formattedTime}`;
+      }
     } catch (error) {
       console.error('Error formatting date:', error);
       return dateString;
@@ -95,19 +112,63 @@ const DateFieldWithNotifications = ({
   const handleCreateNotification = async () => {
     console.log("Creando notificación...");
     
-    // Combinar fecha y hora en un solo string ISO
+    // Combinar fecha y hora en formato correcto sin conversión de zona horaria
     let targetDate = '';
-    if (notificationData.date && notificationData.time) {
-      targetDate = new Date(`${notificationData.date}T${notificationData.time}`).toISOString();
-    } else if (value) {
-      // Si no se especifica fecha/hora, usar la del campo
+    
+    // Determinar la fecha a usar
+    let dateToUse = notificationData.date;
+    if (!dateToUse && value) {
       if (type === 'datetime-local' || type === 'datetime') {
-        targetDate = new Date(value).toISOString();
+        // Si es datetime-local, el value viene como "YYYY-MM-DDTHH:MM"
+        if (value.includes('T')) {
+          dateToUse = value.split('T')[0];
+        } else {
+          // Si viene en otro formato, parsearlo manualmente
+          const date = new Date(value);
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          dateToUse = `${year}-${month}-${day}`;
+        }
       } else {
-        // Para tipo date, agregar una hora por defecto (09:00)
-        targetDate = new Date(`${value}T09:00:00`).toISOString();
+        // Para tipo date
+        dateToUse = value;
       }
     }
+    
+    // Determinar la hora a usar
+    let timeToUse = notificationData.time;
+    if (!timeToUse && value) {
+      if (type === 'datetime-local' || type === 'datetime') {
+        // Si es datetime-local, el value viene como "YYYY-MM-DDTHH:MM"
+        if (value.includes('T')) {
+          timeToUse = value.split('T')[1];
+        } else {
+          // Si viene en otro formato, parsearlo manualmente
+          const date = new Date(value);
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          timeToUse = `${hours}:${minutes}`;
+        }
+      } else {
+        // Para tipo date, usar hora por defecto solo si no hay hora especificada
+        timeToUse = "09:00";
+      }
+    }
+    
+    // Combinar fecha y hora
+    if (dateToUse && timeToUse) {
+      targetDate = `${dateToUse} ${timeToUse}:00`;
+    }
+    
+    console.log('Debug - Valores usados:', {
+      'notificationData.date': notificationData.date,
+      'notificationData.time': notificationData.time,
+      'value': value,
+      'dateToUse': dateToUse,
+      'timeToUse': timeToUse,
+      'targetDate': targetDate
+    });
 
     if (recordId) {
       // Registro existente: crear notificación inmediatamente
@@ -190,10 +251,10 @@ const DateFieldWithNotifications = ({
         {(value || (notificationData.date && notificationData.time)) && (
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={() => setShowNotificationModal(true)}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 border-0"
           >
             <Bell size={14} />
           </Button>
