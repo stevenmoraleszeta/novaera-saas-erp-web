@@ -60,7 +60,7 @@ export default function ColumnForm({
   });
   const DATA_TYPES = [
     { label: "Texto", value: "string" },
-    { label: "Texto largo", value: "text" },
+    { label: "Texto largo", value: "longtext" },
     { label: "Número entero", value: "integer" },
     { label: "Número decimal", value: "decimal" },
     { label: "Checkbox", value: "boolean" },
