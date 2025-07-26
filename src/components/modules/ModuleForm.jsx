@@ -50,7 +50,7 @@ export default function ModuleForm({
         setFormData({
           name: initialData.name || "",
           description: initialData.description || "",
-          icon: initialData.icon || "",
+          icon: initialData.iconUrl || initialData.icon_url || initialData.icon ||  "",   
         });
       } else {
         setFormData({
@@ -177,14 +177,19 @@ export default function ModuleForm({
                       <ChevronDown className="w-4 h-4" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent 
+                    className="w-auto p-0"
+                    side="bottom" 
+                    align="start" 
+                    collisionPadding={{ top: 150, bottom: 100 }}
+                    sideOffset={-100}
+                  >
                     <EmojiPicker
                       onEmojiClick={handleEmojiSelect}
                       searchPlaceholder="Buscar emoji..."
-                      width={350}
+                      width="100%"
                       height={400}
                       lazyLoadEmojis={true}
-                      searchDisabled={false}
                       emojiStyle={EmojiStyle.FACEBOOK} 
                     />
                   </PopoverContent>

@@ -706,14 +706,39 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
       return 0;
     });
   }
-  const filteredRecords = searchTerm
-    ? processedRecords.filter((row) =>
-      Object.values(row.record_data || row)
-        .join(" ")
+  
+  const filteredRecords = useMemo(() => {
+    if (!searchTerm) {
+      return processedRecords;
+    }
+
+    return processedRecords.filter((row) => {
+      const rowData = row.record_data || row;
+      const rowKeys = Object.keys(rowData);
+      const searchableText = rowKeys.map(key => {
+        const rawValue = rowData[key];
+        const column = columns.find(c => c.name === key);
+
+        if (column?.data_type === 'select' && selectOptions[key]) {
+          const option = selectOptions[key].find(opt => opt.value === rawValue);
+          return option ? option.label : ''; 
+        }
+
+        if (typeof rawValue === 'string' || typeof rawValue === 'number') {
+          return rawValue;
+        }
+
+        return '';
+      }).join(" ");
+
+      const normalizedRowText = searchableText
         .toLowerCase()
-        .includes(searchTerm.toLowerCase())
-    )
-    : processedRecords;
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+      return normalizedRowText.includes(searchTerm);
+    });
+  }, [processedRecords, searchTerm, columns, selectOptions]); 
 
   const handleAddFilter = () => {
     if (

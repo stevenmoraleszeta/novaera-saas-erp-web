@@ -24,9 +24,9 @@ function SelectTrigger({ className, size = "default", children, ...props }) {
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        "flex w-fit items-center justify-between gap-2 rounded-none border bg-gray-200 px-3 py-2 text-sm text-black shadow-xs outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
+        "flex w-fit items-center justify-between gap-2 rounded-none border bg-gray-200 px-3 py-2 text-sm text-black shadow-xs outline-none disabled:cursor-not-allowed disabled:opacity-50",  //focus-visible:ring-[3px] 
         "data-[placeholder]:text-muted-foreground",
-        "focus-visible:border-ring focus-visible:ring-ring/50",
+        //"focus-visible:border-ring focus-visible:ring-ring/50",
         className
       )}
       {...props}
