@@ -137,13 +137,41 @@ export default function CustomOptionsManager({
   };
 
   // El drag and drop
-  const handleDragEnd = (event) => {
+  const handleDragEnd = async (event) => {
     const { active, over } = event;
+
     if (active.id !== over.id) {
       const oldIndex = mappedOptions.findIndex(opt => (opt.id || opt.value) === active.id);
       const newIndex = mappedOptions.findIndex(opt => (opt.id || opt.value) === over.id);
       const reorderedOptions = arrayMove(mappedOptions, oldIndex, newIndex);
+
       onChange(reorderedOptions);
+
+      try {
+        let axios;
+        try {
+          axios = require("@/lib/axios").default;
+        } catch {
+          axios = (await import("@/lib/axios")).default;
+        }
+
+        const updatePromises = reorderedOptions.map((option, index) => {
+          if (option.id) {
+            const payload = {
+              option_value: option.value,
+              option_label: option.label,
+              option_order: index
+            };
+            return axios.put(`/options/${option.id}`, payload);
+          }
+          return Promise.resolve();
+        });
+
+        await Promise.all(updatePromises);
+
+      } catch (err) {
+        console.error("Error al guardar el nuevo orden:", err);
+      }
     }
   };
 
