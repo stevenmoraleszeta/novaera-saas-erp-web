@@ -121,25 +121,6 @@ export default function FieldRenderer({
         value={value || "none"}
         onChange={(val) => onChange({ target: { value: val === "none" ? "" : val } })}
       />
-
-      // <Select
-      //   value={value?.toString() || "none"}
-      //   onValueChange={(val) => onChange({ target: { value: val === "none" ? "" : val } })}
-      // >
-      //   <SelectTrigger className={baseClassName}>
-      //     <SelectValue placeholder={`Selecciona ${column.name}`} />
-      //   </SelectTrigger>
-      //   <SelectContent>
-      //     <SelectItem value="none">-- Ninguno --</SelectItem>
-      //     {foreignOptions
-      //       .filter((option) => option.value !== "")
-      //       .map((option) => (
-      //         <SelectItem key={option.value} value={option.value}>
-      //           {option.label}
-      //         </SelectItem>
-      //       ))}
-      //   </SelectContent>
-      // </Select>
     );
   }
 
@@ -160,24 +141,6 @@ export default function FieldRenderer({
         value={value}
         onChange={(val) => onChange({ target: { value: val ? parseInt(val, 10) : null } })}
       />
-
-      // <Select
-      //   value={value?.toString() || ""}
-      //   onValueChange={(val) => onChange({ target: { value: parseInt(val, 10) } })}
-      // >
-      //   <SelectTrigger className={baseClassName}>
-      //     <SelectValue placeholder={`Selecciona ${column.name}`}>
-      //       {selectedLabel}
-      //     </SelectValue>
-      //   </SelectTrigger>
-      //   <SelectContent>
-      //     {options.map((option) => (
-      //       <SelectItem key={option.value} value={option.value}>
-      //         {option.label}
-      //       </SelectItem>
-      //     ))}
-      //   </SelectContent>
-      // </Select>
     );
   }
 
@@ -210,6 +173,19 @@ export default function FieldRenderer({
           onChange={onChange}
           className={baseClassName}
           placeholder={`Ingresa ${column.name}`}
+        />
+      );
+    case "textarea":
+    case "text_long":
+    case "longtext":
+      return (
+        <Textarea
+          id={id}
+          value={value || ""}
+          onChange={onChange}
+          className={baseClassName}
+          placeholder={`Ingresa ${column.name}`}
+          rows={4}
         />
       );
 
@@ -347,22 +323,6 @@ export default function FieldRenderer({
           value={value}
           onChange={(val) => onChange({ target: { value: val } })}
         />
-
-        // <Select
-        //   value={value || ""}
-        //   onValueChange={(val) => onChange({ target: { value: val } })}
-        // >
-        //   <SelectTrigger className={baseClassName}>
-        //     <SelectValue placeholder={`Selecciona ${column.name}`} />
-        //   </SelectTrigger>
-        //   <SelectContent>
-        //     {options.map((option) => (
-        //       <SelectItem key={option.value} value={option.value}>
-        //         {option.label}
-        //       </SelectItem>
-        //     ))}
-        //   </SelectContent>
-        // </Select>
       );
 
     case "file":
