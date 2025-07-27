@@ -258,6 +258,7 @@ export default function DialogsContainer(props) {
         error={null}
         tableId={tableId}
         lastPosition={columns.length}
+        existingColumns={props.columns}
       />
 
       <ConfirmationDialog
@@ -435,6 +436,7 @@ export default function DialogsContainer(props) {
                 error={null}
                 tableId={tableId}
                 lastPosition={columns.length}
+                existingColumns={columns}
               />
             )}
           />
