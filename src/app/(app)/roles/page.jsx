@@ -1,144 +1,107 @@
 "use client";
 
-import React from "react";
-import RolesTable from "@/components/roles/RolesTable";
-import SearchBar from "@/components/common/SearchBar";
-import Pagination from "@/components/common/Pagination";
-import Button from "@/components/common/Button";
-import RoleForm from "@/components/roles/RoleForm";
-import RolePermissionsModal from "@/components/roles/RolePermissionsModal";
-import PermissionsMatrix from "@/components/roles/PermissionsMatrix";
-import { useRoles } from "@/hooks/useRoles";
+import React, { useState, useEffect } from "react";
 import useEditModeStore from "@/stores/editModeStore";
-import MainContent from "@/components/MainContent";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Edit3 } from "lucide-react";
+import LogicalTableDataView from "@/components/tables/LogicalTableDataView";
+import PermissionsMatrix from "@/components/roles/PermissionsMatrix";
+import { getRolesTableId } from "@/services/roleService";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function RolesPage() {
   const { isEditingMode } = useEditModeStore();
-  const {
-    roles,
-    loading,
-    error,
-    page,
-    totalPages,
-    search,
-    setSearch,
-    setPage,
-    handleCreateRole,
-    handleEditRole,
-    handleDeleteRole,
-    modalOpen,
-    setModalOpen,
-    editingRole,
-    handleSaveRole,
-    permissions,
-  } = useRoles();
+  const [rolesTableId, setRolesTableId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshFlag, setRefreshFlag] = useState(false);
+  const [selectedRoleForPermissions, setSelectedRoleForPermissions] = useState(null);
+  const [isPermissionsModalOpen, setIsPermissionsModalOpen] = useState(false);
 
-  const [viewPermsModal, setViewPermsModal] = React.useState(false);
-  const [rolePerms, setRolePerms] = React.useState([]);
-  const [rolePermsLoading, setRolePermsLoading] = React.useState(false);
-  const [rolePermsError, setRolePermsError] = React.useState(null);
-  const [selectedRoleForPermissions, setSelectedRoleForPermissions] = React.useState(null);
-  const { getPermissionsByRole } = require("@/services/permissionsService");
+  useEffect(() => {
+    const fetchRolesTableId = async () => {
+      try {
+        const tableId = await getRolesTableId();
+        setRolesTableId(tableId);
+      } catch (error) {
+        console.error('Error fetching roles table ID:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleViewPermissions = async (role) => {
-    setRolePermsLoading(true);
-    setViewPermsModal(true);
-    setRolePermsError(null);
-    try {
-      const perms = await getPermissionsByRole(role.id);
-      setRolePerms(perms);
-    } catch (e) {
-      setRolePermsError("No se pudieron cargar los permisos");
-      setRolePerms([]);
-    } finally {
-      setRolePermsLoading(false);
-    }
-  };
+    fetchRolesTableId();
+  }, []);
 
-  const handleSelectRoleForPermissions = (role) => {
+  // Función para manejar la selección de un rol desde la tabla
+  const handleRoleSelected = (role) => {
+    console.log('Role selected:', role);
     setSelectedRoleForPermissions(role);
+    setIsPermissionsModalOpen(true);
   };
+
+  const handleClosePermissionsModal = () => {
+    setIsPermissionsModalOpen(false);
+    setSelectedRoleForPermissions(null);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+          <p className="text-sm text-gray-500">Cargando roles...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!rolesTableId) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center text-gray-500">
+          <h3 className="text-lg font-medium mb-2">Error al cargar roles</h3>
+          <p className="text-sm">No se pudo encontrar la tabla de roles</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <MainContent>
-      <div className="roles-page space-y-6">
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Panel izquierdo - Lista de roles */}
-          <div className="lg:w-1/2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  Gestión de Roles
-                  {isEditingMode && (
-                    <Edit3 className="w-4 h-4 text-gray-500" />
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-between items-center mb-4">
-                  <SearchBar
-                    value={search}
-                    onSearch={setSearch}
-                    placeholder="Buscar rol por nombre..."
-                    className="flex-1 mr-4"
-                  />
-                  <Button onClick={handleCreateRole}>Crear nuevo rol</Button>
-                </div>
-                <RolesTable
-                  roles={roles}
-                  loading={loading}
-                  error={error}
-                  onEdit={handleEditRole}
-                  onDelete={handleDeleteRole}
-                  onViewPermissions={handleViewPermissions}
-                  onSelectForPermissions={handleSelectRoleForPermissions}
-                  selectedRole={selectedRoleForPermissions}
-                  isEditingMode={isEditingMode}
-                  searchQuery={search}
-                />
-                <div className="mt-4">
-                  <Pagination
-                    page={page}
-                    totalPages={totalPages}
-                    onPageChange={setPage}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+    <div className="flex-1 overflow-hidden">
+      {/* Tabla de roles */}
+      <LogicalTableDataView 
+        tableId={rolesTableId}
+        refresh={refreshFlag}
+        onRowClick={handleRoleSelected}
+      />
 
-          {/* Panel derecho - Gestión de permisos */}
-          <div className="lg:w-1/2">
-            <PermissionsMatrix
-              selectedRole={selectedRoleForPermissions}
-              onPermissionsChange={() => {
-                // Opcional: recargar datos si es necesario
-                console.log('Permisos actualizados');
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Modales */}
-        <RoleForm
-          open={modalOpen}
-          onOpenChange={(open) => setModalOpen(open)}
-          initialData={editingRole}
-          permissions={permissions}
-          onSubmit={handleSaveRole}
-          onCancel={() => setModalOpen(false)}
-          loading={loading}
-        />
-        <RolePermissionsModal
-          open={viewPermsModal}
-          onOpenChange={(open) => setViewPermsModal(open)}
-          permissions={rolePerms}
-          loading={rolePermsLoading}
-          error={rolePermsError}
-        />
-      </div>
-    </MainContent>
+      {/* Modal de permisos */}
+      <Dialog open={isPermissionsModalOpen} onOpenChange={setIsPermissionsModalOpen}>
+          <DialogContent className="max-w-6xl h-[85vh] flex flex-col z-[9999] top-[5%] translate-y-0 mt-16">
+            <DialogHeader className="flex-shrink-0">
+              <DialogTitle className="text-xl font-semibold">
+                Gestión de Permisos
+                {selectedRoleForPermissions && (
+                  <span className="text-base font-normal text-muted-foreground ml-2">
+                    - {selectedRoleForPermissions.record_data?.nombre || selectedRoleForPermissions.name || 'Rol sin nombre'}
+                  </span>
+                )}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto min-h-0 py-4">
+              <PermissionsMatrix
+                selectedRole={selectedRoleForPermissions}
+                onPermissionsChange={() => {
+                  // Opcional: recargar datos si es necesario
+                  console.log('Permisos actualizados');
+                }}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+    </div>
   );
 }

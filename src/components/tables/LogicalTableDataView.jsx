@@ -62,7 +62,7 @@ import { DndContext, closestCenter } from '@dnd-kit/core';
 import { arrayMove, SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { DraggableViewTab } from "@/components/tables/DraggableViewTab";
 
-export default function LogicalTableDataView({ tableId, refresh, colName, constFilter, hiddenColumns, forcePermissions }) {
+export default function LogicalTableDataView({ tableId, refresh, colName, constFilter, hiddenColumns, forcePermissions, onRowClick }) {
   const { isEditingMode } = useEditModeStore();
   const creatingGeneralViewRef = useRef(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -1275,6 +1275,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
               columns={tableColumnsWithActions}
               rawColumns={columns}
               isDraggableColumnEnabled={true}
+              onRowClick={onRowClick}
               onOrderChange={async (reorderedRecords) => {
                 try {
                   for (let i = 0; i < reorderedRecords.length; i++) {
