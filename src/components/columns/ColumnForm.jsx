@@ -22,6 +22,7 @@ import CustomOptionsManager from "./CustomOptionsManager";
 import { getOrCreateJoinTable } from "@/services/tablesService";
 
 import ReusableCombobox from "@/components/ui/reusableCombobox";
+import ConfirmationDialog from "@/components/common/ConfirmationDialog";
 
 export default function ColumnForm({
   open = false,
@@ -35,12 +36,14 @@ export default function ColumnForm({
   error = null,
   tableId,
   lastPosition = 0,
+  existingColumns = [],
 }) {
   const { user } = useUserStore();
   const { tables, columnsByTable } = useForeignKeyOptions();
   const topRef = useRef(null);
 
   const [formError, setFormError] = useState(null);
+  const [showNameExistsDialog, setShowNameExistsDialog] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -216,6 +219,17 @@ export default function ColumnForm({
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError(null);
+
+    const normalizedNewName = formData.name.trim().toLowerCase();
+    const nameExists = existingColumns.some(col => 
+      col.name.toLowerCase() === normalizedNewName && 
+      col.column_id !== initialData?.column_id
+    );
+
+    if (nameExists) {
+      setShowNameExistsDialog(true);
+      return; 
+    }
 
     try {
       // Si es una relación foránea, intentar crear la tabla intermedia si no existe
@@ -573,6 +587,19 @@ export default function ColumnForm({
             </Button>
           )}
         </DialogFooter>
+        <ConfirmationDialog
+          open={showNameExistsDialog}
+          onClose={() => setShowNameExistsDialog(false)}
+          title="Nombre de Columna Duplicado"
+          message={`El nombre de columna "${formData.name}" ya existe en esta tabla. Los nombres deben ser únicos. Por favor, elige otro nombre.`}
+          actions={[
+            { 
+              label: "Entendido", 
+              onClick: () => setShowNameExistsDialog(false),
+              variant: "default" 
+            }
+          ]}
+        />
       </DialogContent>
     </Dialog>
   );
