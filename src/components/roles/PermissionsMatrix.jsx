@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
-import { Save, AlertCircle } from 'lucide-react';
+import { Save, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAxiosAuth } from '@/hooks/useAxiosAuth';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import ConfirmationDialog from '@/components/common/ConfirmationDialog';
 
 const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
   const axios = useAxiosAuth();
@@ -13,6 +20,7 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   useEffect(() => {
     if (selectedRole) {
@@ -24,13 +32,25 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
     setLoading(true);
     setError(null);
     try {
+      console.log('Loading tables and permissions for role:', selectedRole);
+      console.log('Role object keys:', Object.keys(selectedRole));
+      console.log('Role object values:', selectedRole);
+      
+      // Extraer el ID del rol desde record_data o directamente
+      const roleId = selectedRole.record_data?.id || selectedRole.id || selectedRole.role_id || selectedRole.Id || selectedRole.ID;
+      console.log('Extracted role ID:', roleId);
+      
       // Cargar todas las tablas
       const tablesRes = await axios.get('/tables');
+      console.log('Tables response:', tablesRes.data);
       setTables(tablesRes.data || []);
 
       // Cargar permisos actuales del rol
-      if (selectedRole) {
-        const permsRes = await axios.get(`/permissions/role/${selectedRole.id}`);
+      if (selectedRole && roleId) {
+        console.log('Fetching permissions for role ID:', roleId);
+        const permsRes = await axios.get(`/permissions/role/${roleId}`);
+        console.log('Permissions response:', permsRes.data);
+        
         const rolePermissions = {};
         
         // Inicializar permisos en false para todas las tablas
@@ -45,6 +65,7 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
 
         // Aplicar permisos existentes
         (permsRes.data || []).forEach(perm => {
+          console.log('Processing permission:', perm);
           if (rolePermissions[perm.table_id]) {
             rolePermissions[perm.table_id] = {
               can_create: perm.can_create,
@@ -55,11 +76,15 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
           }
         });
 
+        console.log('Final permissions state:', rolePermissions);
         setPermissions(rolePermissions);
+      } else {
+        console.error('No role ID found in selectedRole:', selectedRole);
+        setError('No se pudo determinar el ID del rol');
       }
     } catch (err) {
-      setError('Error al cargar tablas y permisos');
       console.error('Error loading tables and permissions:', err);
+      setError('Error al cargar tablas y permisos');
     } finally {
       setLoading(false);
     }
@@ -78,23 +103,36 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
   const savePermissions = async () => {
     if (!selectedRole) return;
 
+    // Extraer el ID del rol desde record_data o directamente
+    const roleId = selectedRole.record_data?.id || selectedRole.id || selectedRole.role_id || selectedRole.Id || selectedRole.ID;
+    
+    if (!roleId) {
+      setError('No se pudo determinar el ID del rol');
+      return;
+    }
+
     setSaving(true);
     setError(null);
     try {
+      console.log('Saving permissions for role ID:', roleId);
+      console.log('Permissions to save:', permissions);
+      
       // Use the bulk update endpoint
-      await axios.post(`/permissions/role/${selectedRole.id}/bulk`, { permissions });
+      await axios.post(`/permissions/role/${roleId}/bulk`, { permissions });
       
       // Notificar sobre el cambio
       if (onPermissionsChange) {
         onPermissionsChange();
       }
       
-      // Opcional: mostrar mensaje de éxito
       console.log('Permisos guardados exitosamente');
       
+      // Mostrar modal de éxito
+      setShowSuccessModal(true);
+      
     } catch (err) {
-      setError('Error al guardar permisos');
       console.error('Error saving permissions:', err);
+      setError('Error al guardar permisos');
     } finally {
       setSaving(false);
     }
@@ -145,153 +183,174 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
 
   if (!selectedRole) {
     return (
-      <Card>
-        <CardContent className="text-center py-8">
-          <AlertCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-          <p className="text-gray-500">Selecciona un rol para gestionar sus permisos</p>
-        </CardContent>
-      </Card>
+      <div className="text-center py-8">
+        <AlertCircle className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+        <p className="text-muted-foreground">Selecciona un rol para gestionar sus permisos</p>
+      </div>
     );
   }
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-gray-500">Cargando permisos...</p>
-        </CardContent>
-      </Card>
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        <p className="mt-2 text-muted-foreground">Cargando permisos...</p>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">
-            Permisos para el rol: <Badge variant="outline">{selectedRole.name}</Badge>
-          </CardTitle>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={toggleAll}
-              className="flex items-center gap-2"
-            >
-              Seleccionar/Deseleccionar todo
-            </Button>
-            <Button 
-              onClick={savePermissions} 
-              disabled={saving}
-              className="flex items-center gap-2"
-            >
-              <Save className="h-4 w-4" />
-              {saving ? 'Guardando...' : 'Guardar Permisos'}
-            </Button>
-          </div>
+    <div className="space-y-4">
+      {/* Mensaje de error */}
+      {error && (
+        <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md border border-destructive/20">
+          {error}
         </div>
-        {error && (
-          <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
-            {error}
-          </div>
-        )}
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse border border-gray-200">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="border border-gray-200 px-4 py-2 text-left font-medium"></th>
-                <th
-                  className="border border-gray-200 px-4 py-2 text-center font-medium cursor-pointer select-none hover:bg-gray-100"
-                  onClick={() => toggleColumn('can_create')}
-                  title="Invertir columna Crear"
+      )}
+
+      {/* Tabla de permisos */}
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="font-medium">Tabla</TableHead>
+              <TableHead 
+                className="text-center font-medium cursor-pointer hover:bg-muted/50 w-24"
+                onClick={() => toggleColumn('can_create')}
+                title="Invertir columna Crear"
+              >
+                Crear
+              </TableHead>
+              <TableHead 
+                className="text-center font-medium cursor-pointer hover:bg-muted/50 w-24"
+                onClick={() => toggleColumn('can_read')}
+                title="Invertir columna Leer"
+              >
+                Leer
+              </TableHead>
+              <TableHead 
+                className="text-center font-medium cursor-pointer hover:bg-muted/50 w-24"
+                onClick={() => toggleColumn('can_update')}
+                title="Invertir columna Actualizar"
+              >
+                Actualizar
+              </TableHead>
+              <TableHead 
+                className="text-center font-medium cursor-pointer hover:bg-muted/50 w-24"
+                onClick={() => toggleColumn('can_delete')}
+                title="Invertir columna Eliminar"
+              >
+                Eliminar
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {tables.map(table => (
+              <TableRow key={table.id} className="hover:bg-muted/50">
+                <TableCell 
+                  className="font-medium cursor-pointer py-3"
+                  onClick={() => toggleRow(table.id)}
+                  title="Invertir fila de esta tabla"
                 >
-                  Crear
-                </th>
-                <th
-                  className="border border-gray-200 px-4 py-2 text-center font-medium cursor-pointer select-none hover:bg-gray-100"
-                  onClick={() => toggleColumn('can_read')}
-                  title="Invertir columna Leer"
-                >
-                  Leer
-                </th>
-                <th
-                  className="border border-gray-200 px-4 py-2 text-center font-medium cursor-pointer select-none hover:bg-gray-100"
-                  onClick={() => toggleColumn('can_update')}
-                  title="Invertir columna Actualizar"
-                >
-                  Actualizar
-                </th>
-                <th
-                  className="border border-gray-200 px-4 py-2 text-center font-medium cursor-pointer select-none hover:bg-gray-100"
-                  onClick={() => toggleColumn('can_delete')}
-                  title="Invertir columna Eliminar"
-                >
-                  Eliminar
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {tables.map(table => (
-                <tr key={table.id} className="hover:bg-gray-50">
-                  <td
-                    className="border border-gray-200 px-4 py-2 cursor-pointer select-none hover:bg-gray-100 font-medium"
-                    onClick={() => toggleRow(table.id)}
-                    title="Invertir fila de esta tabla"
-                  >
-                    <div>
-                      <div>{table.name}</div>
-                      {table.description && (
-                        <div className="text-sm text-gray-500">{table.description}</div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="border border-gray-200 px-4 py-2 text-center">
-                    <Checkbox
-                      checked={permissions[table.id]?.can_create || false}
-                      onCheckedChange={(checked) => 
-                        handlePermissionChange(table.id, 'can_create', checked)
-                      }
-                    />
-                  </td>
-                  <td className="border border-gray-200 px-4 py-2 text-center">
-                    <Checkbox
-                      checked={permissions[table.id]?.can_read || false}
-                      onCheckedChange={(checked) => 
-                        handlePermissionChange(table.id, 'can_read', checked)
-                      }
-                    />
-                  </td>
-                  <td className="border border-gray-200 px-4 py-2 text-center">
-                    <Checkbox
-                      checked={permissions[table.id]?.can_update || false}
-                      onCheckedChange={(checked) => 
-                        handlePermissionChange(table.id, 'can_update', checked)
-                      }
-                    />
-                  </td>
-                  <td className="border border-gray-200 px-4 py-2 text-center">
-                    <Checkbox
-                      checked={permissions[table.id]?.can_delete || false}
-                      onCheckedChange={(checked) => 
-                        handlePermissionChange(table.id, 'can_delete', checked)
-                      }
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  <div>
+                    <div className="font-medium text-sm">{table.name}</div>
+                    {table.description && (
+                      <div className="text-xs text-muted-foreground mt-1">{table.description}</div>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell className="text-center py-3">
+                  <Checkbox
+                    checked={permissions[table.id]?.can_create || false}
+                    onCheckedChange={(checked) => 
+                      handlePermissionChange(table.id, 'can_create', checked)
+                    }
+                  />
+                </TableCell>
+                <TableCell className="text-center py-3">
+                  <Checkbox
+                    checked={permissions[table.id]?.can_read || false}
+                    onCheckedChange={(checked) => 
+                      handlePermissionChange(table.id, 'can_read', checked)
+                    }
+                  />
+                </TableCell>
+                <TableCell className="text-center py-3">
+                  <Checkbox
+                    checked={permissions[table.id]?.can_update || false}
+                    onCheckedChange={(checked) => 
+                      handlePermissionChange(table.id, 'can_update', checked)
+                    }
+                  />
+                </TableCell>
+                <TableCell className="text-center py-3">
+                  <Checkbox
+                    checked={permissions[table.id]?.can_delete || false}
+                    onCheckedChange={(checked) => 
+                      handlePermissionChange(table.id, 'can_delete', checked)
+                    }
+                  />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Mensaje cuando no hay tablas */}
+      {tables.length === 0 && (
+        <div className="text-center py-8 text-muted-foreground">
+          No hay tablas disponibles
         </div>
-        {tables.length === 0 && (
-          <div className="text-center py-4 text-gray-500">
-            No hay tablas disponibles
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      )}
+
+      {/* Barra de acciones */}
+      <div className="flex items-center gap-3 pt-4 border-t">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={toggleAll}
+          size="sm"
+        >
+          Seleccionar/Deseleccionar todo
+        </Button>
+        <Button 
+          onClick={savePermissions} 
+          disabled={saving}
+          size="sm"
+        >
+          <Save className="h-4 w-4 mr-2" />
+          {saving ? 'Guardando...' : 'Guardar Permisos'}
+        </Button>
+      </div>
+
+      {/* Modal de confirmación de éxito */}
+      <ConfirmationDialog
+        open={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title="¡Permisos guardados exitosamente!"
+        message={`Los permisos para el rol "${selectedRole?.record_data?.nombre || selectedRole?.name || 'Rol'}" han sido actualizados correctamente.`}
+        actions={[
+          {
+            label: "Aceptar",
+            onClick: () => setShowSuccessModal(false),
+            variant: "default"
+          }
+        ]}
+      />
+
+      {/* Estilos globales para aumentar z-index del modal de confirmación */}
+      {showSuccessModal && (
+        <style>{`
+          [data-slot="dialog-overlay"] {
+            z-index: 99999 !important;
+          }
+          [data-slot="dialog-content"] {
+            z-index: 99999 !important;
+          }
+        `}</style>
+      )}
+    </div>
   );
 };
 
