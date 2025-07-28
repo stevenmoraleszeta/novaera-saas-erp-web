@@ -515,7 +515,7 @@ export default function RolePermissionsModal({
               )}
             </Button>
             
-            {isEditingMode && role && (
+            {role && (
               <Button
                 type="button"
                 variant="outline"
@@ -527,19 +527,7 @@ export default function RolePermissionsModal({
             )}
           </div>
 
-          {/* Derecha: Estado de cambios */}
-          <div className="flex gap-2">
-            {isDirty && (
-              <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
-                Datos modificados
-              </span>
-            )}
-            {permissionsDirty && (
-              <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
-                Permisos modificados
-              </span>
-            )}
-          </div>
+          
         </div>
       </div>
     </div>
