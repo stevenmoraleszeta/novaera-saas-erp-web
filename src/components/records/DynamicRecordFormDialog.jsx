@@ -15,7 +15,7 @@ import { Plus, AlertCircle, Users, History, MessageCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import LogicalTableDataView from "@/components/tables/LogicalTableDataView";
-import AssignedUsersCell from "@/components/tables/AssignedUsersCell";
+import AssignedUsersSelector from "./AssignedUsersSelector";
 import AuditLogModal from "./AuditLogModal";
 import RecordComments from "./RecordComments";
 import { getAssignedUsersByRecord } from "@/services/recordAssignedUsersService";
@@ -737,16 +737,14 @@ export default function DynamicRecordFormDialog({
             </div>
 
             <div className="p-4 overflow-y-auto max-h-[60vh]">
-              <AssignedUsersCell
-                value={assignedUsers}
-                onChange={() => {
+              <AssignedUsersSelector
+                recordId={record.id}
+                selectedUsers={assignedUsers}
+                onChange={(updatedUserIds) => {
                   // Recargar usuarios asignados después de cambios
                   loadAssignedUsers();
                 }}
-                tableId={tableId}
-                recordId={record.id}
-                isEditing={true}
-                className="w-full"
+                creationMode={false}
               />
             </div>
 

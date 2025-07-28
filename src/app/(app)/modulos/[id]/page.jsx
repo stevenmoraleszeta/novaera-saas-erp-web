@@ -14,7 +14,7 @@ import { useLogicalTables } from "@/hooks/useLogicalTables";
 import LogicalTablesSidebar from "@/components/tables/LogicalTablesSidebar";
 import LogicalTableDetails from "@/components/tables/LogicalTableDetails";
 import LogicalTableModal from "@/components/tables/LogicalTableModal";
-import { Package, Edit3 } from "lucide-react";
+import { Package, Edit3, Users } from "lucide-react";
 import { useEditMode } from "@/hooks/useEditMode";
 import UserLinkDialog from "@/components/users/UserLinkDialog";
 import { useColumns } from "@/hooks/useColumns";
@@ -23,6 +23,8 @@ import LogicalTableDataView from "@/components/tables/LogicalTableDataView";
 import useUserPermissions from "@/hooks/useUserPermissions";
 import ProtectedSection from "@/components/common/ProtectedSection";
 import PermissionDenied from "@/components/common/PermissionDenied";
+import { Button } from "@/components/ui/button";
+import TableCollaboratorsModal from "@/components/tables/TableCollaboratorsModal";
 
 export default function ModuleDetailPage() {
   const { modules, getById } = useModules();
@@ -57,6 +59,10 @@ export default function ModuleDetailPage() {
 
   const [showUserLinkDialog, setShowUserLinkDialog] = useState(false);
   const [createdTableId, setCreatedTableId] = useState(null);
+
+  // Estados para gestión de colaboradores
+  const [showCollaboratorsModal, setShowCollaboratorsModal] = useState(false);
+  const [selectedTableForCollaborators, setSelectedTableForCollaborators] = useState(null);
 
   const { handleCreate } = useColumns(createdTableId);
 
@@ -279,6 +285,22 @@ export default function ModuleDetailPage() {
     setRefreshData((prev) => prev + 1); // para que refresque los datos
   };
 
+  // Función para manejar la asignación de colaboradores
+  const handleManageCollaborators = (table) => {
+    setSelectedTableForCollaborators(table);
+    setShowCollaboratorsModal(true);
+  };
+
+  const handleCloseCollaboratorsModal = () => {
+    setShowCollaboratorsModal(false);
+    setSelectedTableForCollaborators(null);
+  };
+
+  const handleCollaboratorsUpdated = () => {
+    // Opcional: actualizar datos si es necesario
+    console.log('Colaboradores actualizados');
+  };
+
   if (loading) return <Loader text="Cargando módulo..." />;
   if (!module) return <p>No se encontró el módulo con ID {id}.</p>;
 
@@ -296,22 +318,26 @@ export default function ModuleDetailPage() {
             No hay tablas lógicas para este módulo.
           </div>
         ) : (
-          <ProtectedSection 
-            tableId={tables[tables.length - 1].id}
-            requiredPermissions={['can_read']}
-            fallback={
-              <PermissionDenied 
-                title="Sin permisos de lectura"
-                message="No tienes permisos para ver los datos de esta tabla."
-                variant="default"
+          <div className="space-y-4">
+            {/* Tabla de datos */}
+            <ProtectedSection 
+              tableId={tables[tables.length - 1].id}
+              requiredPermissions={['can_read']}
+              fallback={
+                <PermissionDenied 
+                  title="Sin permisos de lectura"
+                  message="No tienes permisos para ver los datos de esta tabla."
+                  variant="default"
+                />
+              }
+            >
+              <LogicalTableDataView 
+                tableId={tables[tables.length - 1].id} 
+                refresh={refreshData}
+                onManageCollaborators={() => handleManageCollaborators(tables[tables.length - 1])}
               />
-            }
-          >
-            <LogicalTableDataView 
-              tableId={tables[tables.length - 1].id} 
-              refresh={refreshData} 
-            />
-          </ProtectedSection>
+            </ProtectedSection>
+          </div>
         )}
       </div>
 
@@ -333,6 +359,14 @@ export default function ModuleDetailPage() {
         onConfirm={handleUserLinkConfirm}
         onCancel={() => setShowUserLinkDialog(false)}
         createdBy={user?.id}
+      />
+
+      {/* Modal para gestionar colaboradores */}
+      <TableCollaboratorsModal
+        open={showCollaboratorsModal}
+        onOpenChange={setShowCollaboratorsModal}
+        table={selectedTableForCollaborators}
+        onCollaboratorsUpdated={handleCollaboratorsUpdated}
       />
     </div>
   );

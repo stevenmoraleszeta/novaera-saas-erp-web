@@ -15,7 +15,8 @@ import {
   ArrowUp,
   ArrowDown,
   Eye,
-  Check
+  Check,
+  Users
 } from "lucide-react";
 import useEditModeStore from "@/stores/editModeStore";
 import DynamicRecordFormDialog from "../records/DynamicRecordFormDialog";
@@ -62,7 +63,7 @@ import { DndContext, closestCenter } from '@dnd-kit/core';
 import { arrayMove, SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { DraggableViewTab } from "@/components/tables/DraggableViewTab";
 
-export default function LogicalTableDataView({ tableId, refresh, colName, constFilter, hiddenColumns, forcePermissions, onRowClick }) {
+export default function LogicalTableDataView({ tableId, refresh, colName, constFilter, hiddenColumns, forcePermissions, onRowClick, onManageCollaborators }) {
   const { isEditingMode } = useEditModeStore();
   const creatingGeneralViewRef = useRef(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -1177,6 +1178,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
                 onClick={() => handleSelectView(null)}
               >
                 Vista General
+
               </button>
             )}
 
@@ -1219,6 +1221,19 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
           >
             <Eye className="w-5 h-5" />
           </Button>
+
+          {onManageCollaborators && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-9 h-9"
+              onClick={onManageCollaborators}
+              title="Gestionar colaboradores"
+            >
+              <Users className="w-5 h-5" />
+            </Button>
+          )}
+
           <div className="flex items-center gap-2">
             <SearchBar
               onSearch={setSearchTerm}
