@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/table';
 import ConfirmationDialog from '@/components/common/ConfirmationDialog';
 import { updateRole } from '@/services/roleService'
+import { useRoles } from '@/hooks/useRoles';
+
 
 const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
   const axios = useAxiosAuth();
@@ -23,6 +25,7 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
   const [error, setError] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const { roles, fetchRoles } = useRoles();
 
 
   useEffect(() => {
@@ -137,6 +140,9 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
 
       // Mostrar modal de éxito
       await updateRole({ id: roleId, name: selectedRole.name, is_admin: isAdmin });
+      console.log("issue 11111111111111111111111111111111111111")
+      fetchRoles();
+      console.log("issue 222222222222222222222222222222222222222")
       setShowSuccessModal(true);
 
     } catch (err) {

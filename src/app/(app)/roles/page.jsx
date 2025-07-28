@@ -95,6 +95,7 @@ export default function RolesPage() {
               <PermissionsMatrix
                 selectedRole={selectedRoleForPermissions}
                 onPermissionsChange={() => {
+                  setRefreshFlag((prev) => !prev);
                   // Opcional: recargar datos si es necesario
                   console.log('Permisos actualizados');
                 }}

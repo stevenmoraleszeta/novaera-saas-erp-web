@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Settings,
   Edit3,
@@ -42,11 +42,14 @@ export default function Header() {
 
   const { roles, fetchRoles } = useRoles();
 
-  const isUserAdmin = roles.some(role =>
-    user.roles.includes(role.name) && role.is_admin
-  );
+  const isUserAdmin = useMemo(() => {
+    return roles.some(role =>
+      user.roles.includes(role.name) && role.is_admin
+    );
 
-  console.log("issue: ", roles)
+  }, [roles, user.roles])
+
+  console.log("issue:  isUserAdmin", isUserAdmin)
 
   // Debug: Log del modo edición en el header
   console.log("🔧 Header - Modo edición:", isEditingMode, "Hidratado:", isHydrated);
