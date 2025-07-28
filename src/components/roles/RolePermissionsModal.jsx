@@ -515,7 +515,7 @@ export default function RolePermissionsModal({
               )}
             </Button>
             
-            {isEditingMode && role && (
+            {role && (
               <Button
                 type="button"
                 variant="outline"
