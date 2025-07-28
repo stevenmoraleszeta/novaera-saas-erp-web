@@ -644,7 +644,7 @@ export default function DynamicRecordFormDialog({
 
       {/* Modal de tabla relacionada (tipo foreign) */}
       {foreignModalOpen && (
-        <div className="bg-white rounded-lg shadow-lg w-[900px] min-h-[80vh] overflow-y-auto p-4 ml-4 relative z-10">
+        <div className="bg-white rounded-lg shadow-lg w-[900px] min-h-[80vh] overflow-y-auto p-4 ml-4 relative z-0">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">
               {foreignModalColumn
@@ -655,11 +655,7 @@ export default function DynamicRecordFormDialog({
             </h2>
             <button
               onClick={() => {
-                if (isDirty) {
-                  setShowExitConfirm(true);
-                } else {
-                  onOpenChange(false);
-                }
+                setForeignModalOpen(false);
               }}
               className="bg-black text-white ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
               aria-label="Cerrar modal"
