@@ -22,13 +22,16 @@ export function useRoles() {
   }, [page, search]);
 
   const fetchRoles = async () => {
+    console.log("issue heeeeeeeeeeeeeeeelp")
     setLoading(true);
     setError(null);
     try {
       const res = await axios.get('/roles', { params: { page, search } });
+      console.log("issue heeeeeeeeeeeeeeeelp222", res.data)
       setRoles((res.data || []).map(r => ({
         id: r.id,
-        name: r.name
+        name: r.name,
+        is_admin: r.is_admin
       })));
       setTotalPages(res.data.totalPages || 1);
     } catch (err) {
@@ -133,6 +136,7 @@ export function useRoles() {
     editingRole,
     handleSaveRole,
     getRoleById,
-    permissions
+    permissions,
+    fetchRoles
   };
 }

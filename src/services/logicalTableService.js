@@ -63,6 +63,7 @@ export async function updateLogicalTableRecord(recordId, recordData, positionNum
     position_num: positionNum,
     updatedBy: userId,
   });
+  console.log("issues RESPUESTAAAAAAAAAAAAAAAAAAAA", response)
   return response;
 }
 

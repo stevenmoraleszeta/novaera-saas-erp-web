@@ -52,6 +52,15 @@ export const sincronizarTablaRoles = async ({
                     created_by: userId,
                     column_position: 1,
                 });
+
+                await handleCreate({
+                    name: "is_admin",
+                    data_type: "boolean",
+                    is_required: true,
+                    table_id: tabla.id,
+                    created_by: userId,
+                    column_position: 2,
+                });
             }
 
 
@@ -73,16 +82,19 @@ export const sincronizarTablaRoles = async ({
         for (const rol of roles) {
             const existente = registrosMap.get(rol.id);
             const nombreActual = rol.name;
+            const is_adminActual = rol.is_admin;
 
             if (!existente) {
                 await createLogicalTableRecord(tablaId, {
                     id: rol.id,
                     nombre: nombreActual,
+                    is_admin : is_adminActual
                 });
-            } else if (existente.record_data.nombre !== nombreActual) {
+            } else if (existente.record_data.nombre !== nombreActual || existente.record_data.is_admin !== is_adminActual) {
                 await updateLogicalTableRecord(existente.id, {
                     id: rol.id,
                     nombre: nombreActual,
+                    is_admin: is_adminActual
                 });
             }
         }

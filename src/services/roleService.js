@@ -13,8 +13,8 @@ export async function createRole({ name, description }) {
   return res.data;
 }
 
-export async function updateRole({ id, name, description }) {
-  const res = await axios.put(`/roles/${id}`, { name, description });
+export async function updateRole({ id, name, description,  is_admin}) {
+  const res = await axios.put(`/roles/${id}`, { name, description, is_admin });
   return res.data;
 }
 
