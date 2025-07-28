@@ -3,128 +3,182 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Shield, Save, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { XIcon, AlertCircle } from "lucide-react";
 
 export default function RoleModal({
   open = false,
   onOpenChange,
+  role = null,
   onSave,
-  initialData = null,
+  onDelete,
+  loading = false,
+  showDeleteButton = false,
 }) {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [error, setError] = useState(null);
+  const [formData, setFormData] = useState({
+    nombre: "",
+  });
+  const [errors, setErrors] = useState({});
+  const [submitError, setSubmitError] = useState(null);
+  const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
-    if (open) {
-      setName(initialData?.name || "");
-      setDescription(initialData?.description || "");
-      setError(null);
+    if (open && role) {
+      // Editing existing role
+      setFormData({
+        nombre: role.name || "",
+      });
+    } else if (open) {
+      // Creating new role
+      setFormData({
+        nombre: "",
+      });
     }
-  }, [initialData, open]);
+    setErrors({});
+    setSubmitError(null);
+    setIsDirty(false);
+  }, [open, role]);
 
-  const handleSubmit = (e) => {
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: ""
+      }));
+    }
+    setIsDirty(true);
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.nombre.trim()) {
+      newErrors.nombre = "El nombre del rol es requerido";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim()) {
-      setError("El nombre es obligatorio");
+    
+    if (!validateForm()) {
       return;
     }
-    onSave({ name: name.trim(), description: description.trim() });
+
+    setSubmitError(null);
+
+    try {
+      onSave && await onSave(formData);
+      setIsDirty(false);
+    } catch (error) {
+      setSubmitError(error?.response?.data?.message || "Error al guardar el rol");
+    }
   };
 
   const handleCancel = () => {
-    onOpenChange?.(false);
+    if (!loading) {
+      onOpenChange?.(false);
+    }
   };
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
-              <Shield className="w-6 h-6 text-white" />
+    <div className="fixed inset-0 z-10 bg-black/30 flex items-start justify-center px-4 py-28">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-[600px] relative z-10 flex flex-col overflow-hidden h-auto min-h-[400px]">
+        {/* Header */}
+        <div className="flex justify-between items-center p-4 border-b">
+          <h2 className="text-2xl font-bold">
+            {role ? "Editar Rol" : "Nuevo Rol"}
+          </h2>
+          <button
+            onClick={handleCancel}
+            className="bg-black text-white ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+            aria-label="Cerrar modal"
+          >
+            <XIcon />
+          </button>
+        </div>
+
+        {/* Scrollable form */}
+        <div className="overflow-y-auto px-4 py-2 flex-1">
+          <form onSubmit={handleSubmit} noValidate className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="nombre">
+                Nombre del Rol
+                <Badge className="ml-1 text-xs text-destructive bg-transparent">
+                  *Requerido
+                </Badge>
+              </Label>
+              <Input
+                id="nombre"
+                type="text"
+                value={formData.nombre}
+                onChange={(e) => handleInputChange("nombre", e.target.value)}
+                placeholder="Ej: Administrador, Usuario, Editor..."
+                className={`h-11 ${errors.nombre ? "border-red-500" : ""}`}
+                disabled={loading}
+                autoFocus
+              />
+              {errors.nombre && (
+                <div className="text-sm text-red-600 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.nombre}
+                </div>
+              )}
             </div>
-            <div>
-              <DialogTitle className="text-xl font-semibold text-gray-900">
-                {initialData ? "Editar Rol" : "Crear Rol"}
-              </DialogTitle>
-              <DialogDescription className="text-sm text-gray-500 mt-1">
-                {initialData
-                  ? "Modifica la información del rol"
-                  : "Define un nuevo rol para el sistema"}
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
+            
+            {submitError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{submitError}</AlertDescription>
+              </Alert>
+            )}
+          </form>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-red-600 text-sm">{error}</p>
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Label htmlFor="name" className="text-sm font-medium text-gray-700">
-              Nombre del Rol *
-            </Label>
-            <Input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ej: Administrador, Usuario, Editor..."
-              className="h-11"
-              autoFocus
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label
-              htmlFor="description"
-              className="text-sm font-medium text-gray-700"
-            >
-              Descripción
-            </Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe las responsabilidades y permisos de este rol..."
-              rows={3}
-              className="resize-none"
-            />
-          </div>
-
-          <DialogFooter className="flex gap-3 pt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCancel}
-              className="h-11 px-6"
-            >
-              <X className="w-4 h-4 mr-2" />
-              Cancelar
+        {/* Footer con botones */}
+        <div className="border-t p-4 flex justify-between">
+          {/* Izquierda: Guardar y Eliminar */}
+          <div className="flex gap-2">
+            <Button type="submit" onClick={handleSubmit} disabled={loading}>
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Guardando...
+                </>
+              ) : (
+                <>Guardar</>
+              )}
             </Button>
-            <Button
-              type="submit"
-              className="bg-black hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 h-11 px-6"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              Guardar
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            
+            {showDeleteButton && role && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onDelete && onDelete(role)}
+                disabled={loading}
+              >
+                Eliminar
+              </Button>
+            )}
+          </div>
+
+          {/* Derecha: vacío por ahora, pero mantiene la estructura */}
+          <div className="flex gap-2">
+            {/* Aquí se pueden agregar más botones en el futuro si es necesario */}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
