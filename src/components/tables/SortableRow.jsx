@@ -59,14 +59,15 @@ export default function SortableRow({
       </TableCell>
 
       {/* Resto de columnas */}
-      {visibleColumnsList.map((column) => {
+      {visibleColumnsList.map((column, index) => {
+        const dataKey = column.key || column.name;
         return (
-          <TableCell key={column.key || column.name}>
-            {typeof row[column.key] === "boolean"
-              ? row[column.key] ? "Sí" : "No"
+          <TableCell key={`${column.key || column.name}-${index}`}>
+            {typeof row[dataKey] === "boolean"
+              ? row[dataKey] ? "Sí" : "No"
               : column.render
-                ? column.render(row[column.key], row)
-                : row[column.key]}
+                ? column.render(row[dataKey], row)
+                : row[dataKey]}
           </TableCell>
         );
       })}

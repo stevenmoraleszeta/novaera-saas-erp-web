@@ -1,442 +1,130 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import useUserStore from "@/stores/userStore";
 import useEditModeStore from "@/stores/editModeStore";
-import { Badge } from "@/components/ui/badge";
-import { Edit3 } from "lucide-react";
-import Alert from "@/components/common/Alert";
-import UserForm from "@/components/users/UserForm";
-import UserList from "@/components/users/UserList";
-import MainContent from "@/components/MainContent";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  getUsers, 
-  createUser, 
-  updateUser, 
-  deleteUser, 
-  fetchRoles, 
-  assignRoleToUser, 
-  getUserRoles 
-} from "@/services/userService";
+import UserRoleModal from "@/components/users/UserRoleModal";
+import DeleteConfirmationModal from "@/components/common/DeleteConfirmationModal";
+import UsersTableView from "@/components/users/UsersTableView";
+import { createUser, updateUser, deleteUser } from "@/services/userService";
 
 export default function UsuariosPage() {
-  const { user } = useUserStore();
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalUsers, setTotalUsers] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [roles, setRoles] = useState([]);
-
   const { isEditingMode } = useEditModeStore();
+  const [refreshFlag, setRefreshFlag] = useState(false);
+  
+  // Estados para el modal unificado
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isUserRoleModalOpen, setIsUserRoleModalOpen] = useState(false);
+  
+  // Estados para eliminación
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [saving, setSaving] = useState(false);
 
-  const [modalState, setModalState] = React.useState({
-    showModal: false,
-    selectedUser: null,
-    formLoading: false,
-    formError: null,
-  });
-
-  // Fetch users and roles
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Fetch users - getUsers returns an object with users array
-        const usersResponse = await getUsers();
-        console.log('Fetched users response:', usersResponse);
-        
-        // Extract users array from response
-        const usersData = usersResponse.users || [];
-        console.log('Extracted users data:', usersData);
-        
-        // Fetch roles
-        const rolesData = await fetchRoles();
-        console.log('Fetched roles:', rolesData);
-        
-        // Enrich users with their roles
-        const enrichedUsers = await Promise.all(
-          usersData.map(async (user) => {
-            try {
-              console.log(`Fetching roles for user ${user.id}:`, user.name);
-              const userRoles = await getUserRoles(user.id);
-              console.log(`Roles for user ${user.id}:`, userRoles);
-              
-              // getUserRoles returns an array - could be role names or role objects
-              let primaryRole = 'Sin rol';
-              if (userRoles && userRoles.length > 0) {
-                // Check if it's an array of strings or objects
-                if (typeof userRoles[0] === 'string') {
-                  primaryRole = userRoles[0];
-                } else if (userRoles[0] && userRoles[0].name) {
-                  primaryRole = userRoles[0].name;
-                } else if (userRoles[0]) {
-                  primaryRole = userRoles[0].toString();
-                }
-              }
-              
-              return {
-                ...user,
-                role: primaryRole,
-                roles: userRoles || []
-              };
-            } catch (err) {
-              console.warn(`Error fetching roles for user ${user.id}:`, err);
-              return {
-                ...user,
-                role: 'Sin rol',
-                roles: []
-              };
-            }
-          })
-        );
-        
-        setUsers(enrichedUsers);
-        setRoles(rolesData);
-        setTotalUsers(enrichedUsers.length);
-        setTotalPages(Math.ceil(enrichedUsers.length / itemsPerPage));
-        
-      } catch (err) {
-        console.error("Error fetching data:", err);
-        setError("Error al cargar los datos: " + err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [itemsPerPage]);
-
-  const handleSearch = (query) => {
-    setSearchQuery(query);
-    setCurrentPage(1);
+  // Función para gestionar roles (placeholder)
+  const handleManageRoles = () => {
+    console.log('Gestionar roles - funcionalidad pendiente');
+    // Aquí puedes agregar la lógica para gestionar roles globalmente
   };
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
+  // Función para manejar la selección de un usuario desde la tabla
+  const handleUserSelected = (user) => {
+    console.log('User selected:', user);
+    setSelectedUser(user);
+    setIsUserRoleModalOpen(true);
   };
 
-  // Filter users based on search query
-  const filteredUsers = users.filter((user) => {
-    if (!searchQuery) return true;
-    
-    const query = searchQuery.toLowerCase();
-    return (
-      (user.name && user.name.toLowerCase().includes(query)) ||
-      (user.email && user.email.toLowerCase().includes(query)) ||
-      (user.role && user.role.toLowerCase().includes(query))
-    );
-  });
+  // Funciones para CRUD de usuarios
+  const handleCreateUser = () => {
+    setSelectedUser(null);
+    setIsUserRoleModalOpen(true);
+  };
 
-  // Reset to first page if search results change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery]);
-
-  // Paginate filtered users
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
-  const totalFilteredPages = Math.ceil(filteredUsers.length / itemsPerPage);
-
-  const handleCreateUser = async (data) => {
+  const handleSaveUser = async (userData) => {
+    setSaving(true);
     try {
-      setModalState((prev) => ({
-        ...prev,
-        formLoading: true,
-        formError: null,
-      }));
-
-      console.log('Creating user with data:', data);
-      
-      // Create user
-      const result = await createUser(data);
-      console.log('User created:', result);
-      
-      // If role is provided, assign it
-      if (data.role && data.role !== 'Sin rol') {
-        await assignRoleToUser(result.id, data.role);
-      }
-      
-      // Refresh users list
-      const usersResponse = await getUsers();
-      const usersData = usersResponse.users || [];
-      const enrichedUsers = await Promise.all(
-        usersData.map(async (user) => {
-          try {
-            const userRoles = await getUserRoles(user.id);
-            console.log(`Roles for user ${user.id} after create:`, userRoles);
-            
-            // getUserRoles returns an array - could be role names or role objects
-            let primaryRole = 'Sin rol';
-            if (userRoles && userRoles.length > 0) {
-              // Check if it's an array of strings or objects
-              if (typeof userRoles[0] === 'string') {
-                primaryRole = userRoles[0];
-              } else if (userRoles[0] && userRoles[0].name) {
-                primaryRole = userRoles[0].name;
-              } else if (userRoles[0]) {
-                primaryRole = userRoles[0].toString();
-              }
-            }
-            
-            return {
-              ...user,
-              role: primaryRole,
-              roles: userRoles || []
-            };
-          } catch (err) {
-            return {
-              ...user,
-              role: 'Sin rol',
-              roles: []
-            };
-          }
-        })
-      );
-      
-      setUsers(enrichedUsers);
-      setSuccess("Usuario creado exitosamente");
-      closeModal();
-      
-    } catch (err) {
-      console.error('Error creating user:', err);
-      setModalState((prev) => ({
-        ...prev,
-        formError: err.message || "Error al crear usuario",
-        formLoading: false,
-      }));
-    }
-  };
-
-  const handleUpdateUser = async (id, data) => {
-    try {
-      setModalState((prev) => ({
-        ...prev,
-        formLoading: true,
-        formError: null,
-      }));
-
-      console.log('Updating user with data:', data);
-      
-      // Update user
-      const result = await updateUser(id, data);
-      console.log('User updated:', result);
-      
-      // If role is provided, assign it
-      if (data.role && data.role !== 'Sin rol') {
-        await assignRoleToUser(id, data.role);
-      }
-      
-      // Refresh users list
-      const usersResponse = await getUsers();
-      const usersData = usersResponse.users || [];
-      const enrichedUsers = await Promise.all(
-        usersData.map(async (user) => {
-          try {
-            const userRoles = await getUserRoles(user.id);
-            console.log(`Roles for user ${user.id} after update:`, userRoles);
-            
-            // getUserRoles returns an array - could be role names or role objects
-            let primaryRole = 'Sin rol';
-            if (userRoles && userRoles.length > 0) {
-              // Check if it's an array of strings or objects
-              if (typeof userRoles[0] === 'string') {
-                primaryRole = userRoles[0];
-              } else if (userRoles[0] && userRoles[0].name) {
-                primaryRole = userRoles[0].name;
-              } else if (userRoles[0]) {
-                primaryRole = userRoles[0].toString();
-              }
-            }
-            
-            return {
-              ...user,
-              role: primaryRole,
-              roles: userRoles || []
-            };
-          } catch (err) {
-            return {
-              ...user,
-              role: 'Sin rol',
-              roles: []
-            };
-          }
-        })
-      );
-      
-      setUsers(enrichedUsers);
-      setSuccess("Usuario actualizado exitosamente");
-      closeModal();
-      
-    } catch (err) {
-      console.error('Error updating user:', err);
-      setModalState((prev) => ({
-        ...prev,
-        formError: err.message || "Error al actualizar usuario",
-        formLoading: false,
-      }));
-    }
-  };
-
-  const handleDeleteUser = async (user) => {
-    try {
-      console.log('Deleting user:', user);
-      
-      // Eliminar físicamente el usuario con tipo 'fisica'
-      await deleteUser(user.id, 'fisica');
-      
-      // Refresh users list
-      const usersResponse = await getUsers();
-      const usersData = usersResponse.users || [];
-      const enrichedUsers = await Promise.all(
-        usersData.map(async (user) => {
-          try {
-            const userRoles = await getUserRoles(user.id);
-            let primaryRole = 'Sin rol';
-            if (userRoles && userRoles.length > 0) {
-              if (typeof userRoles[0] === 'string') {
-                primaryRole = userRoles[0];
-              } else if (userRoles[0] && userRoles[0].name) {
-                primaryRole = userRoles[0].name;
-              } else if (userRoles[0]) {
-                primaryRole = userRoles[0].toString();
-              }
-            }
-            
-            return {
-              ...user,
-              role: primaryRole,
-              roles: userRoles || []
-            };
-          } catch (err) {
-            return {
-              ...user,
-              role: 'Sin rol',
-              roles: []
-            };
-          }
-        })
-      );
-      
-      setUsers(enrichedUsers);
-      setSuccess("Usuario eliminado exitosamente");
-      closeModal(); // Cerrar el modal después de eliminar
-      
-    } catch (err) {
-      console.error('Error deleting user:', err);
-      setError(err.message || "Error al eliminar usuario");
-    }
-  };
-
-  const openCreateModal = () =>
-    setModalState({
-      showModal: true,
-      selectedUser: null,
-      formLoading: false,
-      formError: null,
-    });
-
-  const openEditModal = (user) => {
-    console.log('Opening edit modal for user:', user);
-    setModalState({
-      showModal: true,
-      selectedUser: user,
-      formLoading: false,
-      formError: null,
-    });
-  };
-
-  const closeModal = () =>
-    setModalState({
-      showModal: false,
-      selectedUser: null,
-      formLoading: false,
-      formError: null,
-    });
-
-  const handleFormSubmit = async (data) => {
-    try {
-      if (modalState.selectedUser) {
-        await handleUpdateUser(modalState.selectedUser.id, data);
+      let result;
+      if (selectedUser) {
+        // Editar usuario existente
+        const userId = selectedUser.record_data?.id || selectedUser.id;
+        result = await updateUser(userId, userData);
       } else {
-        await handleCreateUser(data);
+        // Crear nuevo usuario
+        result = await createUser(userData);
       }
-    } catch (err) {
-      console.error("Error in form submit:", err);
+      
+      // Refrescar tabla
+      setRefreshFlag(!refreshFlag);
+      return result; // Retornar el resultado para que el modal pueda obtener el ID
+    } catch (error) {
+      console.error('Error saving user:', error);
+      throw error; // Re-lanzar el error para que el modal lo maneje
+    } finally {
+      setSaving(false);
     }
   };
 
-  const clearMessages = () => {
-    setError(null);
-    setSuccess(null);
+  const handleDeleteUser = (user) => {
+    setUserToDelete(user);
+    setIsDeleteModalOpen(true);
+    
+    // Cerrar el modal de usuario si está abierto
+    if (isUserRoleModalOpen) {
+      setIsUserRoleModalOpen(false);
+      setSelectedUser(null);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return;
+    
+    setSaving(true);
+    try {
+      const userId = userToDelete.record_data?.id || userToDelete.id;
+      await deleteUser(userId, 'fisica'); // Eliminar físicamente
+      
+      // Refrescar tabla
+      setRefreshFlag(!refreshFlag);
+      setIsDeleteModalOpen(false);
+      setUserToDelete(null);
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      // Aquí podrías mostrar un mensaje de error
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <MainContent>
-      <div className="usuarios-page space-y-6">
-        {error && <Alert type="error" message={error} onClose={clearMessages} />}
-        {success && (
-          <Alert type="success" message={success} onClose={clearMessages} />
-        )}
+    <div className="flex-1 overflow-hidden">
+      {/* Componente de tabla de usuarios */}
+      <UsersTableView
+        refresh={refreshFlag}
+        onRowClick={handleUserSelected}
+        onManageRoles={handleManageRoles}
+        onCreateUser={handleCreateUser}
+        showCreateButton={true}
+        showActionButtons={isEditingMode}
+      />
 
-        {isEditingMode && (
-          <div className="mb-4">
-            <Badge
-              variant="default"
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              <Edit3 className="w-5 h-5 mr-2" />
-              Modo edición
-            </Badge>
-          </div>
-        )}
+      {/* Modal unificado para usuario y roles */}
+      <UserRoleModal
+        open={isUserRoleModalOpen}
+        onOpenChange={setIsUserRoleModalOpen}
+        user={selectedUser}
+        onSaveUser={handleSaveUser}
+        onDeleteUser={handleDeleteUser}
+        loading={saving}
+      />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Gestión de Usuarios</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <UserList
-              users={paginatedUsers}
-              loading={loading}
-              onAdd={openCreateModal}
-              onEdit={openEditModal}
-              currentPage={currentPage}
-              totalPages={totalFilteredPages}
-              totalItems={filteredUsers.length}
-              itemsPerPage={itemsPerPage}
-              onPageChange={handlePageChange}
-              isEditingMode={isEditingMode}
-              searchQuery={searchQuery}
-              onSearch={handleSearch}
-              roles={roles}
-            />
-          </CardContent>
-        </Card>
-
-        <UserForm
-          open={modalState.showModal}
-          onOpenChange={(open) => {
-            if (!open) closeModal();
-          }}
-          mode={modalState.selectedUser ? "edit" : "create"}
-          initialData={modalState.selectedUser}
-          onSubmit={handleFormSubmit}
-          onCancel={closeModal}
-          onDelete={handleDeleteUser}
-          loading={modalState.formLoading}
-          error={modalState.formError}
-          roles={roles}
-        />
-      </div>
-    </MainContent>
+      {/* Modal de confirmación para eliminar */}
+      <DeleteConfirmationModal
+        open={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
+        title="Eliminar Usuario"
+        message={`¿Estás seguro de que deseas eliminar al usuario "${userToDelete?.name || userToDelete?.record_data?.name || 'Sin nombre'}"?`}
+        onConfirm={handleConfirmDelete}
+        loading={saving}
+      />
+    </div>
   );
 }
