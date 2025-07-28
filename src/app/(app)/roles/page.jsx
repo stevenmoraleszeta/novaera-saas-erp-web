@@ -132,7 +132,7 @@ export default function RolesPage() {
         onRowClick={handleRoleSelected}
         onManageCollaborators={handleManageCollaborators}
         onCreateRole={handleCreateRole}
-        showCreateButton={isEditingMode}
+        showCreateButton={true}
         showActionButtons={isEditingMode}
       />
 
