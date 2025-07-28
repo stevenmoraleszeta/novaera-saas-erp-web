@@ -208,6 +208,18 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
         </div>
       )}
 
+      {/* Botón de seleccionar/deseleccionar todo justo arriba de la tabla */}
+      <div className="flex items-center mb-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={toggleAll}
+          size="sm"
+        >
+          Seleccionar/Deseleccionar todo
+        </Button>
+      </div>
+
       {/* Tabla de permisos */}
       <div className="border rounded-lg">
         <Table>
@@ -304,16 +316,8 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
         </div>
       )}
 
-      {/* Barra de acciones */}
-      <div className="flex items-center gap-3 pt-4 border-t">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={toggleAll}
-          size="sm"
-        >
-          Seleccionar/Deseleccionar todo
-        </Button>
+      {/* Botón de guardar abajo a la izquierda */}
+      <div className="flex items-center pt-4 border-t">
         <Button 
           onClick={savePermissions} 
           disabled={saving}
