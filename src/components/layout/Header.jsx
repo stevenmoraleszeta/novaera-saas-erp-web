@@ -49,14 +49,12 @@ export default function Header() {
 
   }, [roles, user.roles])
 
-  console.log("issue:  isUserAdmin", isUserAdmin)
 
   // Debug: Log del modo edición en el header
   console.log("🔧 Header - Modo edición:", isEditingMode, "Hidratado:", isHydrated);
 
   // Desactivar modo edición al cambiar de página
   useEffect(() => {
-    console.log("issue: CHEEEEEEEEEEEEEEEEEEEEERUPPP", user.roles)
     if (isEditingMode) {
       resetEditMode();
     }

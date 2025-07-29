@@ -14,9 +14,12 @@ import {
 import ConfirmationDialog from '@/components/common/ConfirmationDialog';
 import { updateRole } from '@/services/roleService'
 import { useRoles } from '@/hooks/useRoles';
+import { useLogicalTables } from "@/hooks/useLogicalTables";
+import { useColumns } from "@/hooks/useColumns";
+import { sincronizarTablaRoles } from "@/services/rolesTableManager";
 
 
-const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
+const PermissionsMatrix = ({ selectedRole, onPermissionsChange, setRefreshFlag }) => {
   const axios = useAxiosAuth();
   const [tables, setTables] = useState([]);
   const [permissions, setPermissions] = useState({});
@@ -25,7 +28,10 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
   const [error, setError] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const { roles, fetchRoles } = useRoles();
+  const { roles, getAllRoles } = useRoles();
+  const { createOrUpdateTable } = useLogicalTables(null);
+  const { handleCreate } = useColumns(null);
+
 
 
   useEffect(() => {
@@ -140,9 +146,11 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
 
       // Mostrar modal de éxito
       await updateRole({ id: roleId, name: selectedRole.name, is_admin: isAdmin });
-      console.log("issue 11111111111111111111111111111111111111")
-      fetchRoles();
-      console.log("issue 222222222222222222222222222222222222222")
+
+
+      const updatedRoles = await getAllRoles()
+      syncRoles(updatedRoles)
+
       setShowSuccessModal(true);
 
     } catch (err) {
@@ -152,6 +160,16 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
       setSaving(false);
     }
   };
+
+  const syncRoles = async (rolesToSync) => {
+    await sincronizarTablaRoles({
+      roles: rolesToSync,
+      userId: null,
+      createOrUpdateTable,
+      handleCreate,
+    });
+    setRefreshFlag((prev) => !prev);
+  }
 
   // Invierte todos los permisos de una columna
   const toggleColumn = (permissionType) => {

@@ -94,8 +94,9 @@ export default function RolesPage() {
             <div className="flex-1 overflow-y-auto min-h-0 py-4">
               <PermissionsMatrix
                 selectedRole={selectedRoleForPermissions}
+                setRefreshFlag= {setRefreshFlag}
                 onPermissionsChange={() => {
-                  setRefreshFlag((prev) => !prev);
+                  //setRefreshFlag((prev) => !prev);
                   // Opcional: recargar datos si es necesario
                   console.log('Permisos actualizados');
                 }}

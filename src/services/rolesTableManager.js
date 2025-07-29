@@ -88,7 +88,7 @@ export const sincronizarTablaRoles = async ({
                 await createLogicalTableRecord(tablaId, {
                     id: rol.id,
                     nombre: nombreActual,
-                    is_admin : is_adminActual
+                    is_admin: is_adminActual
                 });
             } else if (existente.record_data.nombre !== nombreActual || existente.record_data.is_admin !== is_adminActual) {
                 await updateLogicalTableRecord(existente.id, {

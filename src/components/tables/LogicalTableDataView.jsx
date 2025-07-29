@@ -62,6 +62,8 @@ import { useViewSorts } from "@/hooks/useViewSorts";
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { arrayMove, SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { DraggableViewTab } from "@/components/tables/DraggableViewTab";
+import useUserStore from "../../stores/userStore";
+
 
 export default function LogicalTableDataView({ tableId, refresh, colName, constFilter, hiddenColumns, forcePermissions, onRowClick, onManageCollaborators }) {
   const { isEditingMode } = useEditModeStore();
@@ -162,9 +164,19 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
 
   const [formInitialValues, setFormInitialValues] = useState({});
 
+  const { user } = useUserStore();
+
 
   const { users } = useUsers();
   const { roles } = useRoles();
+
+  const isUserAdmin = useMemo(() => {
+    return roles.some(role =>
+      user.roles.includes(role.name) && role.is_admin
+    );
+
+  }, [roles, user.roles])
+
 
   const {
     sorts: viewSorts,
@@ -290,7 +302,6 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
   }, [users]);
 
   useEffect(() => {
-    console.log("issue ()())()()())()()()()()()()))))))))(((((((((((()")
     if (roles.length > 0) {
       sincronizarTablaRoles({
         roles,
@@ -708,7 +719,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
       return 0;
     });
   }
-  
+
   const filteredRecords = useMemo(() => {
     if (!searchTerm) {
       return processedRecords;
@@ -723,7 +734,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
 
         if (column?.data_type === 'select' && selectOptions[key]) {
           const option = selectOptions[key].find(opt => opt.value === rawValue);
-          return option ? option.label : ''; 
+          return option ? option.label : '';
         }
 
         if (typeof rawValue === 'string' || typeof rawValue === 'number') {
@@ -740,7 +751,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
 
       return normalizedRowText.includes(searchTerm);
     });
-  }, [processedRecords, searchTerm, columns, selectOptions]); 
+  }, [processedRecords, searchTerm, columns, selectOptions]);
 
   const handleAddFilter = () => {
     if (
@@ -1214,14 +1225,16 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
             <ArrowUpDown className="w-5 h-5" />
           </Button>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="w-9 h-9"
-            onClick={() => setShowColumnVisibilityDialog(true)}
-          >
-            <Eye className="w-5 h-5" />
-          </Button>
+          {isUserAdmin && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-9 h-9"
+              onClick={() => setShowColumnVisibilityDialog(true)}
+            >
+              <Eye className="w-5 h-5" />
+            </Button>
+          )}
 
           {onManageCollaborators && (
             <Button
@@ -1362,7 +1375,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
                   mode={mode}
                   onDelete={effectiveCanDelete ? handleDeleteRecord : undefined}
                   onSubmitSuccess={async (createdOrUpdatedRecord) => {
-                    if (mode === "create" ) {
+                    if (mode === "create") {
                       const userColumn = columns.find((col) => col.data_type === "user");
                       const userId = userColumn
                         ? createdOrUpdatedRecord.message.record.record_data?.[userColumn.name]
