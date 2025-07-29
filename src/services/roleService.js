@@ -8,8 +8,10 @@ export async function getRoles({ page = 1, search = '' } = {}) {
   return res.data;
 }
 
-export async function createRole({ name, description }) {
-  const res = await axios.post('/roles', { name, description });
+export async function createRole(roleData) {
+  const res = await axios.post('/roles', { 
+    name: roleData.nombre
+  });
   return res.data;
 }
 

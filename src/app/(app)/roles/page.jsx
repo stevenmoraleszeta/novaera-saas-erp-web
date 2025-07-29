@@ -2,108 +2,129 @@
 
 import React, { useState, useEffect } from "react";
 import useEditModeStore from "@/stores/editModeStore";
-import LogicalTableDataView from "@/components/tables/LogicalTableDataView";
-import PermissionsMatrix from "@/components/roles/PermissionsMatrix";
-import { getRolesTableId } from "@/services/roleService";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import RolePermissionsModal from "@/components/roles/RolePermissionsModal";
+import DeleteConfirmationModal from "@/components/common/DeleteConfirmationModal";
+import RolesTableView from "@/components/roles/RolesTableView";
+import { createRole, updateRole, deleteRole } from "@/services/roleService";
 
 export default function RolesPage() {
   const { isEditingMode } = useEditModeStore();
-  const [rolesTableId, setRolesTableId] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [refreshFlag, setRefreshFlag] = useState(false);
-  const [selectedRoleForPermissions, setSelectedRoleForPermissions] = useState(null);
-  const [isPermissionsModalOpen, setIsPermissionsModalOpen] = useState(false);
+  
+  // Estados para el modal unificado
+  const [selectedRole, setSelectedRole] = useState(null);
+  const [isRolePermissionsModalOpen, setIsRolePermissionsModalOpen] = useState(false);
+  
+  // Estados para eliminación
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState(null);
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    const fetchRolesTableId = async () => {
-      try {
-        const tableId = await getRolesTableId();
-        setRolesTableId(tableId);
-      } catch (error) {
-        console.error('Error fetching roles table ID:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRolesTableId();
-  }, []);
+  // Función para gestionar colaboradores (placeholder)
+  const handleManageCollaborators = () => {
+    console.log('Gestionar colaboradores - funcionalidad pendiente');
+    // Aquí puedes agregar la lógica para gestionar colaboradores
+  };
 
   // Función para manejar la selección de un rol desde la tabla
   const handleRoleSelected = (role) => {
     console.log('Role selected:', role);
-    setSelectedRoleForPermissions(role);
-    setIsPermissionsModalOpen(true);
+    setSelectedRole(role);
+    setIsRolePermissionsModalOpen(true);
   };
 
-  const handleClosePermissionsModal = () => {
-    setIsPermissionsModalOpen(false);
-    setSelectedRoleForPermissions(null);
+  // Funciones para CRUD de roles
+  const handleCreateRole = () => {
+    setSelectedRole(null);
+    setIsRolePermissionsModalOpen(true);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p className="text-sm text-gray-500">Cargando roles...</p>
-        </div>
-      </div>
-    );
-  }
+  const handleSaveRole = async (roleData) => {
+    setSaving(true);
+    try {
+      let result;
+      if (selectedRole) {
+        // Editar rol existente
+        const roleId = selectedRole.record_data?.id || selectedRole.id;
+        result = await updateRole(roleId, roleData);
+      } else {
+        // Crear nuevo rol
+        result = await createRole(roleData);
+      }
+      
+      // Refrescar tabla
+      setRefreshFlag(!refreshFlag);
+      return result; // Retornar el resultado para que el modal pueda obtener el ID
+    } catch (error) {
+      console.error('Error saving role:', error);
+      throw error; // Re-lanzar el error para que el modal lo maneje
+    } finally {
+      setSaving(false);
+    }
+  };
 
-  if (!rolesTableId) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center text-gray-500">
-          <h3 className="text-lg font-medium mb-2">Error al cargar roles</h3>
-          <p className="text-sm">No se pudo encontrar la tabla de roles</p>
-        </div>
-      </div>
-    );
-  }
+  const handleDeleteRole = (role) => {
+    setRoleToDelete(role);
+    setIsDeleteModalOpen(true);
+    
+    // Cerrar el modal de permisos si está abierto
+    if (isRolePermissionsModalOpen) {
+      setIsRolePermissionsModalOpen(false);
+      setSelectedRole(null);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!roleToDelete) return;
+    
+    setSaving(true);
+    try {
+      const roleId = roleToDelete.record_data?.id || roleToDelete.id;
+      await deleteRole(roleId);
+      
+      // Refrescar tabla
+      setRefreshFlag(!refreshFlag);
+      setIsDeleteModalOpen(false);
+      setRoleToDelete(null);
+    } catch (error) {
+      console.error('Error deleting role:', error);
+      // Aquí podrías mostrar un mensaje de error
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="flex-1 overflow-hidden">
-      {/* Tabla de roles */}
-      <LogicalTableDataView 
-        tableId={rolesTableId}
+      {/* Componente de tabla de roles */}
+      <RolesTableView
         refresh={refreshFlag}
         onRowClick={handleRoleSelected}
+        onManageCollaborators={handleManageCollaborators}
+        onCreateRole={handleCreateRole}
+        showCreateButton={true}
+        showActionButtons={isEditingMode}
       />
 
-      {/* Modal de permisos */}
-      <Dialog open={isPermissionsModalOpen} onOpenChange={setIsPermissionsModalOpen}>
-          <DialogContent className="max-w-6xl h-[85vh] flex flex-col z-[9999] top-[5%] translate-y-0 mt-16">
-            <DialogHeader className="flex-shrink-0">
-              <DialogTitle className="text-xl font-semibold">
-                Gestión de Permisos
-                {selectedRoleForPermissions && (
-                  <span className="text-base font-normal text-muted-foreground ml-2">
-                    - {selectedRoleForPermissions.record_data?.nombre || selectedRoleForPermissions.name || 'Rol sin nombre'}
-                  </span>
-                )}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="flex-1 overflow-y-auto min-h-0 py-4">
-              <PermissionsMatrix
-                selectedRole={selectedRoleForPermissions}
-                setRefreshFlag= {setRefreshFlag}
-                onPermissionsChange={() => {
-                  //setRefreshFlag((prev) => !prev);
-                  // Opcional: recargar datos si es necesario
-                  console.log('Permisos actualizados');
-                }}
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
+      {/* Modal unificado para rol y permisos */}
+      <RolePermissionsModal
+        open={isRolePermissionsModalOpen}
+        onOpenChange={setIsRolePermissionsModalOpen}
+        role={selectedRole}
+        onSaveRole={handleSaveRole}
+        onDeleteRole={handleDeleteRole}
+        loading={saving}
+      />
+
+      {/* Modal de confirmación para eliminar */}
+      <DeleteConfirmationModal
+        open={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
+        title="Eliminar Rol"
+        message={`¿Estás seguro de que deseas eliminar el rol "${roleToDelete?.name || roleToDelete?.record_data?.name || 'Sin nombre'}"?`}
+        onConfirm={handleConfirmDelete}
+        loading={saving}
+      />
     </div>
   );
 }

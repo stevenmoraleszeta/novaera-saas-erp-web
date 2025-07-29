@@ -65,7 +65,7 @@ import { DraggableViewTab } from "@/components/tables/DraggableViewTab";
 import useUserStore from "../../stores/userStore";
 
 
-export default function LogicalTableDataView({ tableId, refresh, colName, constFilter, hiddenColumns, forcePermissions, onRowClick, onManageCollaborators }) {
+export default function LogicalTableDataView({ tableId, refresh, colName, constFilter, hiddenColumns, forcePermissions, onRowClick, onManageCollaborators, isChildModal = false }) {
   const { isEditingMode } = useEditModeStore();
   const creatingGeneralViewRef = useRef(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -183,7 +183,6 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     loading: loadingSort,
     loadViewSorts
   } = useViewSorts(selectedView?.id);
-
 
   constFilter = constFilter || null;
 
@@ -1364,6 +1363,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
               renderForm={({ mode, item, open, onClose, onSubmit }) => (
                 <DynamicRecordFormDialog
                   open={open}
+                  isChildModal={isChildModal}
                   colName={colName}
                   foreignForm={!!(constFilter && hiddenColumns)}
                   onOpenChange={(val) => {
@@ -1480,6 +1480,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         getDefaultValuesFromFilters={getDefaultValuesFromFilters}
         formInitialValues={formInitialValues}
         setFormInitialValues={setFormInitialValues}
+        isChildModal={isChildModal}
       />
     </div>
   );

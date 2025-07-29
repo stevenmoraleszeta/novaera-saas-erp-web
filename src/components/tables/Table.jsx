@@ -252,13 +252,13 @@ export default function Table({
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[1px]">&nbsp;</TableHead>
-                  {orderedColumns.map((key) => {
+                  {orderedColumns.map((key, index) => {
                     const column = columns.find((c) => c.key === key);
 
                     if (!column || !visibleColumns[column.key]) return null;
                     return (
                       <SortableColumnHeader
-                        key={column.key}
+                        key={`${column.key}-header-${index}`}
                         column={column}
                         columnWidths={columnWidths}
                         resizingColumn={resizingColumn}
@@ -277,9 +277,10 @@ export default function Table({
                 {internalData.length > 0 ? (
                   internalData.map((row, index) => {
                     const key = getRowKey(row);
+                    const uniqueKey = `row-${key}-${index}`;
                     return (
                       <SortableRow
-                        key={key}
+                        key={uniqueKey}
                         id={key}
                         idRow={key}
                         rowIndex={index}

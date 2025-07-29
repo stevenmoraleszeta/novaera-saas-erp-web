@@ -105,7 +105,8 @@ export default function DialogsContainer(props) {
     setShowSortManager,
     getDefaultValuesFromFilters,
     formInitialValues,
-    setFormInitialValues
+    setFormInitialValues,
+    isChildModal
   } = props;
 
   // Función para aplicar cambios de orden cuando se cierre el modal
@@ -204,6 +205,7 @@ export default function DialogsContainer(props) {
       <DynamicRecordFormDialog
         open={showAddRecordDialog}
         defaultValues={formInitialValues}
+        isChildModal={isChildModal}
         onOpenChange={setShowAddRecordDialog}
         tableId={tableId}
         colName={colName}
