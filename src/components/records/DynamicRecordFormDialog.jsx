@@ -41,9 +41,10 @@ export default function DynamicRecordFormDialog({
   colName,
   foreignForm = false,
   lastPosition = 0,
-  defaultValues
+  defaultValues,
+  isChildModal = false
 }) {
-
+  
   const [columns, setColumns] = useState([]);
   const [values, setValues] = useState({});
   const [errors, setErrors] = useState({});
@@ -405,11 +406,19 @@ export default function DynamicRecordFormDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-10 bg-black/30 flex items-start justify-center px-4 py-28">
+    <div className={isChildModal
+      ? "fixed inset-0 z-10 flex items-start justify-end px-4 py-28"
+      : "fixed inset-0 z-10 bg-black/30 flex items-start justify-center px-4 py-28"
+    }>
       <div
-        className={`bg-white rounded-lg shadow-lg ${(foreignModalOpen || relatedTableModalOpen || fileModalOpen)
-          ? "w-1/2" : "w-full max-w-[1150px]"
-          } relative z-10 flex flex-col overflow-hidden h-[80vh]`}
+        className={`bg-white rounded-lg shadow-lg
+          ${foreignModalOpen || relatedTableModalOpen || fileModalOpen
+                  ? "w-1/2"
+                  : isChildModal
+                    ? "w-[50%]"  // ancho específico cuando isChildModal es true
+                    : "w-full max-w-[1150px]"
+                }
+          relative z-0 flex flex-col overflow-hidden h-[80vh]`}
       >
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b">
@@ -644,7 +653,7 @@ export default function DynamicRecordFormDialog({
 
       {/* Modal de tabla relacionada (tipo foreign) */}
       {foreignModalOpen && (
-        <div className="bg-white rounded-lg shadow-lg w-[900px] min-h-[80vh] overflow-y-auto p-4 ml-4 relative z-0">
+        <div className="bg-white rounded-lg shadow-lg w-1/2 min-h-[80vh] overflow-y-auto p-4 ml-4 relative z-0">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">
               {foreignModalColumn
@@ -666,6 +675,7 @@ export default function DynamicRecordFormDialog({
           {foreignModalColumn && intermediateTableId && (
             <LogicalTableDataView
               tableId={intermediateTableId}
+              isChildModal={true}
               colName={columnName}
               constFilter={{
                 column: "original_record_id",
@@ -704,6 +714,7 @@ export default function DynamicRecordFormDialog({
           {relatedTableModalColumn.foreign_table_id && (
             <LogicalTableDataView
               tableId={relatedTableModalColumn.foreign_table_id}
+              isChildModal={true}
               forcePermissions={{
                 can_create: true,
                 can_read: true,
