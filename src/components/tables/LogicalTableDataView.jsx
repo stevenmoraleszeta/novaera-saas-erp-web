@@ -63,7 +63,18 @@ import { DndContext, closestCenter } from '@dnd-kit/core';
 import { arrayMove, SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { DraggableViewTab } from "@/components/tables/DraggableViewTab";
 
-export default function LogicalTableDataView({ tableId, refresh, colName, constFilter, hiddenColumns, forcePermissions, onRowClick, onManageCollaborators, isChildModal = false }) {
+export default function LogicalTableDataView({ 
+  tableId, 
+  refresh, 
+  colName, 
+  constFilter, 
+  hiddenColumns, 
+  forcePermissions, 
+  onRowClick, 
+  onManageCollaborators, 
+  isChildModal = false, 
+  preProcessedRecords = null 
+}) {
   const { isEditingMode } = useEditModeStore();
   const creatingGeneralViewRef = useRef(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -299,6 +310,86 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     }
   }, [roles]);
 
+  // Función para procesar registros y resolver foreign_record_id a texto descriptivo
+  const processRecordsWithForeignText = async (records, columns) => {
+    console.log('🔄 Iniciando procesamiento de registros:', {
+      totalRecords: records.length,
+      columnsAvailable: columns.length
+    });
+    
+    if (!records || records.length === 0 || !columns || columns.length === 0) {
+      console.log('⚠️ No hay registros o columnas para procesar');
+      return records;
+    }
+    
+    const processedRecords = [];
+    
+    for (const record of records) {
+      const processedRecord = { ...record };
+      
+      // Si el registro tiene foreign_record_id, intentar resolver el texto
+      if (record.record_data?.foreign_record_id) {
+        console.log('🔍 Encontrado registro con foreign_record_id:', {
+          recordId: record.id,
+          foreignRecordId: record.record_data.foreign_record_id
+        });
+        
+        try {
+          // Buscar la columna que define la tabla foránea
+          const foreignColumn = columns.find(col => col.foreign_table_id);
+          console.log('📋 Columna foránea encontrada:', foreignColumn);
+          
+          if (foreignColumn && foreignColumn.foreign_table_id) {
+            console.log('🌐 Obteniendo registros de tabla foránea ID:', foreignColumn.foreign_table_id);
+            
+            // Obtener el registro foráneo real
+            const foreignRecords = await getLogicalTableRecords(foreignColumn.foreign_table_id);
+            const foreignRecord = foreignRecords.find(r => r.id === parseInt(record.record_data.foreign_record_id));
+            
+            console.log('📝 Registro foráneo encontrado:', foreignRecord);
+            
+            if (foreignRecord) {
+              // Obtener el texto descriptivo del registro foráneo
+              const foreignColumnName = foreignColumn.foreign_column_name || 'name';
+              const displayText = foreignRecord.record_data?.[foreignColumnName] || 
+                                foreignRecord[foreignColumnName] || 
+                                foreignRecord.name || 
+                                `Registro ${record.record_data.foreign_record_id}`;
+              
+              console.log('✅ Texto descriptivo generado:', {
+                originalId: record.record_data.foreign_record_id,
+                displayText: displayText,
+                columnName: foreignColumnName
+              });
+              
+              // Reemplazar el foreign_record_id con el texto descriptivo
+              processedRecord.record_data = {
+                ...processedRecord.record_data,
+                foreign_record_id: displayText
+              };
+            } else {
+              console.log('❌ No se encontró el registro foráneo con ID:', record.record_data.foreign_record_id);
+            }
+          } else {
+            console.log('❌ No se encontró columna foránea válida');
+          }
+        } catch (error) {
+          console.error('💥 Error procesando foreign_record_id:', error);
+        }
+      }
+      
+      processedRecords.push(processedRecord);
+    }
+    
+    console.log('🎉 Procesamiento completado:', {
+      originalCount: records.length,
+      processedCount: processedRecords.length,
+      recordsWithForeignId: records.filter(r => r.record_data?.foreign_record_id).length
+    });
+    
+    return processedRecords;
+  };
+
   useEffect(() => {
 
     const fetchData = async () => {
@@ -308,11 +399,34 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
         setLoading(false);
         return;
       }
+      
+      // Si tenemos registros pre-procesados, usarlos directamente
+      if (preProcessedRecords) {
+        console.log('📦 Usando registros pre-procesados:', preProcessedRecords);
+        setRecords(preProcessedRecords);
+        
+        // Todavía necesitamos cargar las columnas
+        try {
+          const cols = await getLogicalTableStructure(tableId);
+          console.log('📋 Columnas cargadas para registros pre-procesados:', cols);
+          setColumns(cols);
+          setTotal(preProcessedRecords.length);
+        } catch (err) {
+          console.error("💥 Error cargando estructura de tabla:", err);
+        }
+        setLoading(false);
+        return;
+      }
+      
       loadViews();
       loadViewSorts();
       setLoading(true);
+      
+      console.log('🚀 Iniciando carga de datos para tabla ID:', tableId);
+      
       try {
         const cols = await getLogicalTableStructure(tableId);
+        console.log('📋 Columnas cargadas:', cols);
         setColumns(cols);
 
         const data = await getLogicalTableRecords(tableId, {
@@ -320,7 +434,15 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
           pageSize,
         });
 
-        setRecords(data.records || data);
+        const rawRecords = data.records || data;
+        console.log('📊 Registros crudos obtenidos:', rawRecords);
+        
+        // Procesar registros para resolver foreign_record_id a texto descriptivo
+        console.log('🔄 Iniciando procesamiento de registros...');
+        const processedRecords = await processRecordsWithForeignText(rawRecords, cols);
+        console.log('✅ Registros procesados:', processedRecords);
+        
+        setRecords(processedRecords);
         setTotal(
           data.total || (data.records ? data.records.length : data.length)
         );
@@ -329,7 +451,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
           handleSelectView(selectedView)
         }
       } catch (err) {
-        console.error("Error fetching table data:", err);
+        console.error("💥 Error fetching table data:", err);
         setRecords([]);
         setTotal(0);
       } finally {
@@ -338,7 +460,7 @@ export default function LogicalTableDataView({ tableId, refresh, colName, constF
     };
 
     fetchData();
-  }, [tableId, page, pageSize, refresh, localRefreshFlag]);
+  }, [tableId, page, pageSize, refresh, localRefreshFlag, preProcessedRecords]);
 
   useEffect(() => {
     const fetchMeta = async () => {

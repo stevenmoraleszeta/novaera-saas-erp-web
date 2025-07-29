@@ -56,6 +56,7 @@ export default function DynamicRecordFormDialog({
   const [columnName, setcolumnName] = useState(null);
   const [tables, setTables] = useState([]);
   const [pendingNotifications, setPendingNotifications] = useState([]);
+  const [preProcessedRecords, setPreProcessedRecords] = useState(null); // Para almacenar registros procesados
 
   const [showAssignedUsersModal, setShowAssignedUsersModal] = useState(false);
   const [assignedUsers, setAssignedUsers] = useState([]);
@@ -150,6 +151,61 @@ export default function DynamicRecordFormDialog({
   // Obtener usuario autenticado
   const currentUser = useCurrentUser();
 
+  // Función para cargar el texto correspondiente a un ID foráneo
+  const loadForeignDisplayText = async (column, recordId) => {
+    try {
+      if (!recordId) return '';
+      
+      // Primero, verificar si estamos trabajando con una tabla intermedia
+      if (intermediateTableId) {
+        // Obtener el registro de la tabla intermedia
+        const intermediateRecords = await getLogicalTableRecords(intermediateTableId);
+        const intermediateRecord = intermediateRecords.find(r => r.id === parseInt(recordId));
+        
+        if (intermediateRecord && intermediateRecord.record_data?.foreign_record_id) {
+          // Es una tabla intermedia, obtener el texto del registro foráneo real
+          const foreignRecordId = intermediateRecord.record_data.foreign_record_id;
+          
+          if (column.foreign_table_id && foreignRecordId) {
+            const foreignRecords = await getLogicalTableRecords(column.foreign_table_id);
+            const foreignRecord = foreignRecords.find(r => r.id === parseInt(foreignRecordId));
+            
+            if (foreignRecord) {
+              const foreignColumnName = column.foreign_column_name || 'name';
+              return foreignRecord.record_data?.[foreignColumnName] || 
+                     foreignRecord[foreignColumnName] || 
+                     foreignRecord.name || 
+                     `Registro ${foreignRecordId}`;
+            }
+          }
+        }
+      }
+      
+      // Si no es tabla intermedia o no se encontró, usar la lógica original
+      if (!column.foreign_table_id) return '';
+      
+      // Obtener todos los registros de la tabla foránea
+      const records = await getLogicalTableRecords(column.foreign_table_id);
+      
+      // Buscar el registro correspondiente al ID
+      const foreignRecord = records.find(r => r.id === parseInt(recordId));
+      
+      if (!foreignRecord) return '';
+      
+      // Obtener el texto usando la misma lógica que en el modal
+      const foreignColumnName = column.foreign_column_name || 'name';
+      const textValue = foreignRecord.record_data?.[foreignColumnName] || 
+                       foreignRecord[foreignColumnName] || 
+                       foreignRecord.name || 
+                       `Registro ${recordId}`;
+      
+      return textValue;
+    } catch (error) {
+      console.error('Error cargando texto foráneo:', error);
+      return '';
+    }
+  };
+
   useEffect(() => {
     if (!tableId || !open) return;
     (async () => {
@@ -157,22 +213,34 @@ export default function DynamicRecordFormDialog({
         const cols = await getLogicalTableStructure(tableId);
         setColumns(cols);
         const initialValues = {};
-        cols.forEach((col) => {
+        
+        // Procesar cada columna
+        for (const col of cols) {
           if (foreignForm && col.name === "original_record_id") {
             initialValues[col.name] = colName.column_id;
-            return;
+            continue;
           }
+          
           if (mode === "edit" && record?.record_data?.[col.name] !== undefined) {
-            initialValues[col.name] = castValueByDataType(col.data_type, record.record_data[col.name]);
+            const value = castValueByDataType(col.data_type, record.record_data[col.name]);
+            initialValues[col.name] = value;
+            
+            // Si es una columna foránea y tiene un valor, cargar el texto correspondiente
+            if ((col.data_type === "foreign" || col.data_type === "tabla") && value) {
+              const displayText = await loadForeignDisplayText(col, value);
+              if (displayText) {
+                initialValues[col.name + '_display'] = displayText;
+              }
+            }
           } else {
             // Valores por defecto según el tipo de dato
             switch (col.data_type) {
               case "boolean":
-                initialValues[col.name] = defaultValues[col.name];
+                initialValues[col.name] = defaultValues?.[col.name] || false;
                 break;
               case "integer":
               case "number":
-                initialValues[col.name] = defaultValues[col.name];
+                initialValues[col.name] = defaultValues?.[col.name] || 0;
                 break;
               case "file":
                 initialValues[col.name] = null;
@@ -181,10 +249,11 @@ export default function DynamicRecordFormDialog({
                 initialValues[col.name] = [];
                 break;
               default:
-                initialValues[col.name] = defaultValues[col.name];
+                initialValues[col.name] = defaultValues?.[col.name] || "";
             }
           }
-        });
+        }
+        
         setValues(initialValues);
         setErrors({});
         setSubmitError(null);
@@ -289,9 +358,18 @@ export default function DynamicRecordFormDialog({
     try {
       let result;
       const userId = currentUser?.id;
+      
+      // Filtrar los valores para enviar solo los campos reales (no los _display)
+      const cleanValues = {};
+      Object.keys(values).forEach(key => {
+        if (!key.endsWith('_display')) {
+          cleanValues[key] = values[key];
+        }
+      });
+      
       if (mode === "create") {
         const userId = currentUser?.id;
-        result = await createLogicalTableRecord(tableId, values, userId);
+        result = await createLogicalTableRecord(tableId, cleanValues, userId);
 
         if (pendingNotifications.length > 0 && result?.id) {
           console.log('Registro creado con ID:', result.id, 'Procesando notificaciones...');
@@ -299,7 +377,7 @@ export default function DynamicRecordFormDialog({
         }
       } else if (mode === "edit" && record) {
         const userId = currentUser?.id;
-        result = await updateLogicalTableRecord(record.id, values, lastPosition, userId);
+        result = await updateLogicalTableRecord(record.id, cleanValues, lastPosition, userId);
       }
 
       if (onSubmitSuccess) onSubmitSuccess(result);
@@ -361,19 +439,83 @@ export default function DynamicRecordFormDialog({
   );
 
 
-  const handleOpenForeignModal = (col) => {
+  const handleOpenForeignModal = async (col) => {
+    console.log('🚀 Abriendo modal foráneo para columna:', col);
+    
     const interTable = tables.find(t =>
       (t.original_table_id === tableId && t.foreign_table_id === col.foreign_table_id) ||
       (t.original_table_id === col.foreign_table_id && t.foreign_table_id === tableId)
     );
+    
+    console.log('📋 Tabla intermedia encontrada:', interTable);
+    
     setcolumnName(col);
     //solo para que esté abierto un modal!
     setRelatedTableModalOpen(false);
     setFileModalOpen(false);
+    
+    // Limpiar registros procesados anteriores
+    setPreProcessedRecords(null);
 
     setForeignModalOpen(true);
     setForeignModalColumn(col);
     setIntermediateTableId(interTable ? interTable.id : null);
+    
+    // Pre-procesar datos si hay tabla intermedia
+    if (interTable?.id) {
+      console.log('🔄 Pre-procesando datos para tabla intermedia ID:', interTable.id);
+      
+      try {
+        // Obtener la estructura de la tabla intermedia
+        const intermediateTableStructure = await getLogicalTableStructure(interTable.id);
+        console.log('📊 Estructura de tabla intermedia:', intermediateTableStructure);
+        
+        // Obtener los registros de la tabla intermedia
+        const intermediateRecords = await getLogicalTableRecords(interTable.id);
+        console.log('📝 Registros de tabla intermedia (sin procesar):', intermediateRecords);
+        
+        const processedRecords = [];
+        for (const record of intermediateRecords) {
+          const processedRecord = { ...record };
+          
+          if (record.record_data?.foreign_record_id) {
+            
+            try {
+              if (col.foreign_table_id) {
+                const foreignRecords = await getLogicalTableRecords(col.foreign_table_id);
+                const foreignRecord = foreignRecords.find(r => r.id === parseInt(record.record_data.foreign_record_id));
+                
+                if (foreignRecord) {
+                  const foreignColumnName = col.foreign_column_name || 'name';
+                  const displayText = foreignRecord.record_data?.[foreignColumnName] || 
+                                    foreignRecord[foreignColumnName] || 
+                                    foreignRecord.name || 
+                                    `Registro ${record.record_data.foreign_record_id}`;
+                  
+                  
+                  processedRecord.record_data = {
+                    ...processedRecord.record_data,
+                    foreign_record_id: displayText
+                  };
+                }
+              }
+            } catch (error) {
+              console.error(' Error procesando foreign_record_id:', error);
+            }
+          }
+          
+          processedRecords.push(processedRecord);
+        }
+        
+        console.log('🎉 Registros procesados para tabla intermedia:', processedRecords);
+        
+        // Almacenar los registros procesados
+        setPreProcessedRecords(processedRecords);
+        
+      } catch (error) {
+        console.error('💥 Error pre-procesando datos de tabla intermedia:', error);
+      }
+    }
   };
 
   // Detectar columnas de notificaciones y cargar usuarios asignados
@@ -472,7 +614,7 @@ export default function DynamicRecordFormDialog({
                     {col.data_type === "foreign" ? (
                       <Button
                         type="button"
-                        onClick={() => handleOpenForeignModal(col)}
+                        onClick={async () => await handleOpenForeignModal(col)}
                       >
                         Abrir tabla
                       </Button>
@@ -489,27 +631,54 @@ export default function DynamicRecordFormDialog({
                       </Button>
                       // ----------------------------
                     ) : (
-                      <FieldRenderer
-                        colName={colName?.foreign_column_name}
-                        id={`field-${col.name}`}
-                        column={col}
-                        value={values[col.name]}
-                        onChange={(e) =>
-                          handleChange(
-                            col.name,
-                            e.target.type === "checkbox"
-                              ? e.target.checked
-                              : e.target.value
-                          )
-                        }
-                        error={errors[col.name]}
-                        // Agregar props para notificaciones si es campo de fecha
-                        tableId={tableId}
-                        recordId={record?.id}
-                        pendingNotifications={pendingNotifications}
-                        onAddPendingNotification={handleAddPendingNotification}
-                        onRemovePendingNotification={handleRemovePendingNotification}
-                      />
+                      <div className="space-y-2">
+                        <FieldRenderer
+                          colName={colName?.foreign_column_name}
+                          id={`field-${col.name}`}
+                          column={col}
+                          value={values[col.name]}
+                          onChange={(e) =>
+                            handleChange(
+                              col.name,
+                              e.target.type === "checkbox"
+                                ? e.target.checked
+                                : e.target.value
+                            )
+                          }
+                          error={errors[col.name]}
+                          // Agregar props para notificaciones si es campo de fecha
+                          tableId={tableId}
+                          recordId={record?.id}
+                          pendingNotifications={pendingNotifications}
+                          onAddPendingNotification={handleAddPendingNotification}
+                          onRemovePendingNotification={handleRemovePendingNotification}
+                        />
+                        {/* Mostrar el texto seleccionado para campos foráneos */}
+                        {(col.data_type === "foreign" || col.data_type === "tabla") && values[col.name + '_display'] && (
+                          <div className="text-sm text-green-700 bg-green-50 p-2 rounded border border-green-200">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <strong>✓ Seleccionado:</strong> {values[col.name + '_display']}
+                                <div className="text-xs text-green-600 mt-1">
+                                  ID en BD: {values[col.name]}
+                                </div>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  handleChange(col.name, "");
+                                  handleChange(col.name + '_display', "");
+                                }}
+                                className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                              >
+                                Limpiar
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     )}
                     {errors[col.name] && (
                       <div className="text-sm text-red-600 flex items-center gap-1">
@@ -689,6 +858,68 @@ export default function DynamicRecordFormDialog({
                 can_update: true,
                 can_delete: true
               }}
+              preProcessedRecords={preProcessedRecords} // Pasar registros pre-procesados
+              key={`foreign-modal-${intermediateTableId}-${Date.now()}`} // Fuerza re-render
+              onRowClick={async (selectedRecord) => {
+                // Para tablas intermedias, necesitamos obtener el texto del registro foráneo
+                let textValue = '';
+                let recordIdToSave = selectedRecord.id;
+                
+                // Si el registro tiene foreign_record_id, obtener el texto del registro foráneo
+                if (selectedRecord.record_data?.foreign_record_id) {
+                  try {
+                    // Obtener el registro foráneo real usando su ID
+                    const foreignRecordId = selectedRecord.record_data.foreign_record_id;
+                    
+                    // Determinar la tabla foránea de donde obtener el texto
+                    const foreignTableId = foreignModalColumn.foreign_table_id;
+                    
+                    if (foreignTableId && foreignRecordId) {
+                      // Obtener todos los registros de la tabla foránea
+                      const foreignRecords = await getLogicalTableRecords(foreignTableId);
+                      
+                      // Buscar el registro específico
+                      const foreignRecord = foreignRecords.find(r => r.id === parseInt(foreignRecordId));
+                      
+                      if (foreignRecord) {
+                        // Obtener el texto usando la columna especificada
+                        const foreignColumnName = foreignModalColumn.foreign_column_name || 'name';
+                        textValue = foreignRecord.record_data?.[foreignColumnName] || 
+                                  foreignRecord[foreignColumnName] || 
+                                  foreignRecord.name || 
+                                  `Registro ${foreignRecordId}`;
+                        
+                        // Para tablas intermedias, guardamos el ID del registro intermedio
+                        recordIdToSave = selectedRecord.id;
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Error obteniendo texto del registro foráneo:', error);
+                    textValue = `Registro ${selectedRecord.record_data.foreign_record_id}`;
+                  }
+                } else {
+                  // Si no es tabla intermedia, usar la lógica original
+                  const foreignColumnName = foreignModalColumn.foreign_column_name || 'name';
+                  textValue = selectedRecord.record_data?.[foreignColumnName] || 
+                            selectedRecord[foreignColumnName] || 
+                            selectedRecord.name || 
+                            `Registro ${selectedRecord.id}`;
+                }
+                
+                // Guardar el ID para la relación en la base de datos (para integridad referencial)
+                handleChange(foreignModalColumn.name, recordIdToSave);
+                
+                // También guardar el texto en una propiedad separada para mostrar en la UI
+                handleChange(foreignModalColumn.name + '_display', textValue);
+                
+                // Cerrar el modal
+                setForeignModalOpen(false);
+                
+                console.log('Registro seleccionado:', selectedRecord);
+                console.log('ID guardado para BD:', recordIdToSave);
+                console.log('Texto guardado para UI:', textValue);
+                console.log('Tipo de relación:', selectedRecord.record_data?.foreign_record_id ? 'Tabla intermedia' : 'Relación directa');
+              }}
             />
           )}
         </div>
@@ -720,6 +951,39 @@ export default function DynamicRecordFormDialog({
                 can_read: true,
                 can_update: true,
                 can_delete: true
+              }}
+              onRowClick={(selectedRecord) => {
+                // Obtener el valor de texto de la primera columna visible del registro
+                // Excluir columnas típicamente de ID y metadatos
+                const excludeColumns = ['id', 'created_at', 'updated_at', 'table_id'];
+                const recordData = selectedRecord.record_data || selectedRecord;
+                
+                // Buscar la primera columna que no sea un ID o timestamp
+                let textValue = '';
+                for (const [key, value] of Object.entries(recordData)) {
+                  if (!excludeColumns.includes(key) && value !== null && value !== undefined) {
+                    textValue = String(value);
+                    break;
+                  }
+                }
+                
+                // Si no encontramos nada, usar 'name' como fallback o el ID
+                if (!textValue) {
+                  textValue = recordData.name || recordData.id || 'Registro seleccionado';
+                }
+                
+                // Guardar el ID para la relación en la base de datos (para integridad referencial)
+                handleChange(relatedTableModalColumn.name, selectedRecord.id);
+                
+                // También guardar el texto en una propiedad separada para mostrar en la UI
+                handleChange(relatedTableModalColumn.name + '_display', textValue);
+                
+                // Cerrar el modal
+                setRelatedTableModalOpen(false);
+                
+                console.log('Registro relacionado seleccionado:', selectedRecord);
+                console.log('ID guardado para BD:', selectedRecord.id);
+                console.log('Texto guardado para UI:', textValue);
               }}
             />
           )}
