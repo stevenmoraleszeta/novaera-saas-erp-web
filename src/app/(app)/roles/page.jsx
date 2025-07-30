@@ -6,19 +6,27 @@ import RolePermissionsModal from "@/components/roles/RolePermissionsModal";
 import DeleteConfirmationModal from "@/components/common/DeleteConfirmationModal";
 import RolesTableView from "@/components/roles/RolesTableView";
 import { createRole, updateRole, deleteRole } from "@/services/roleService";
+import { sincronizarTablaRoles } from "@/services/rolesTableManager";
+import { useLogicalTables } from "@/hooks/useLogicalTables";
+import { useColumns } from "@/hooks/useColumns";
+import { useRoles } from '@/hooks/useRoles';
 
 export default function RolesPage() {
   const { isEditingMode } = useEditModeStore();
   const [refreshFlag, setRefreshFlag] = useState(false);
-  
+
   // Estados para el modal unificado
   const [selectedRole, setSelectedRole] = useState(null);
   const [isRolePermissionsModalOpen, setIsRolePermissionsModalOpen] = useState(false);
-  
+
   // Estados para eliminación
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState(null);
   const [saving, setSaving] = useState(false);
+
+  const { createOrUpdateTable } = useLogicalTables(null);
+  const { handleCreate } = useColumns(null);
+  const { roles, getAllRoles } = useRoles();
 
   // Función para gestionar colaboradores (placeholder)
   const handleManageCollaborators = () => {
@@ -46,12 +54,21 @@ export default function RolesPage() {
       if (selectedRole) {
         // Editar rol existente
         const roleId = selectedRole.record_data?.id || selectedRole.id;
-        result = await updateRole(roleId, roleData);
+        const fullRoleData = {
+          id: roleId,
+          name: roleData.nombre,
+          description: roleData.description || "",
+          is_admin: roleData.is_admin,
+        };
+        result = await updateRole(fullRoleData);
+        const updatedRoles = await getAllRoles()
+        syncRoles(updatedRoles)
+
       } else {
         // Crear nuevo rol
         result = await createRole(roleData);
       }
-      
+
       // Refrescar tabla
       setRefreshFlag(!refreshFlag);
       return result; // Retornar el resultado para que el modal pueda obtener el ID
@@ -63,10 +80,20 @@ export default function RolesPage() {
     }
   };
 
+  const syncRoles = async (rolesToSync) => {
+    await sincronizarTablaRoles({
+      roles: rolesToSync,
+      userId: null,
+      createOrUpdateTable,
+      handleCreate,
+    });
+    setRefreshFlag((prev) => !prev);
+  }
+
   const handleDeleteRole = (role) => {
     setRoleToDelete(role);
     setIsDeleteModalOpen(true);
-    
+
     // Cerrar el modal de permisos si está abierto
     if (isRolePermissionsModalOpen) {
       setIsRolePermissionsModalOpen(false);
@@ -76,12 +103,12 @@ export default function RolesPage() {
 
   const handleConfirmDelete = async () => {
     if (!roleToDelete) return;
-    
+
     setSaving(true);
     try {
       const roleId = roleToDelete.record_data?.id || roleToDelete.id;
       await deleteRole(roleId);
-      
+
       // Refrescar tabla
       setRefreshFlag(!refreshFlag);
       setIsDeleteModalOpen(false);

@@ -31,13 +31,13 @@ import { Input } from "../ui/input";
 import GenericCRUDTable from "../common/GenericCRUDTable";
 import ProtectedSection from "../common/ProtectedSection";
 
-export default function RolesTableView({ 
-  refresh, 
-  onRowClick, 
-  onManageCollaborators, 
+export default function RolesTableView({
+  refresh,
+  onRowClick,
+  onManageCollaborators,
   showCreateButton = true,
   showActionButtons = true,
-  onCreateRole 
+  onCreateRole
 }) {
   const { isEditingMode } = useEditModeStore();
   const [isEditingName, setIsEditingName] = useState(false);
@@ -106,6 +106,7 @@ export default function RolesTableView({
   const columns = [
     { name: "id", data_type: "int", column_id: 1 },
     { name: "name", data_type: "text", column_id: 2 },
+    { name: "is_admin", data_type: "boolean", column_id: 3 },
   ];
 
   useEffect(() => {
@@ -121,6 +122,7 @@ export default function RolesTableView({
       setLoading(true);
       try {
         const rolesData = await getRoles();
+        console.log("Roles data:", rolesData); // <-- valida aquí
         setRoles(rolesData || []);
         setTotal(rolesData?.length || 0);
       } catch (err) {
@@ -132,7 +134,7 @@ export default function RolesTableView({
     };
 
     fetchData();
-  }, [page, pageSize, refresh, localRefreshFlag]);
+  }, [page, pageSize, refresh, localRefreshFlag])
 
   const handleDeleteRecord = async (record) => {
     setDeleteConfirmRecord(record);
@@ -177,7 +179,7 @@ export default function RolesTableView({
       .filter((col) => columnVisibility[col.name] !== false)
       .map((col) => ({
         key: col.name,
-        header: col.name === "id" ? "ID" : "Nombre",
+        header: col.name === "id" ? "ID" : col.name === "name" ? "Nombre": "is_admin" ,
         width: col.data_type === "int" ? "80px" : "auto",
         render: (value, row) => {
           const cellValue = row[col.name];
@@ -249,11 +251,11 @@ export default function RolesTableView({
     processedRecords = [...processedRecords].sort((a, b) => {
       const aVal = a[activeSort.column];
       const bVal = b[activeSort.column];
-      
+
       if (aVal === bVal) return 0;
       if (aVal === null || aVal === undefined) return 1;
       if (bVal === null || bVal === undefined) return -1;
-      
+
       const comparison = aVal < bVal ? -1 : 1;
       return activeSort.direction === "desc" ? -comparison : comparison;
     });
@@ -387,7 +389,7 @@ export default function RolesTableView({
       {nameError && (
         <span className="text-red-500 text-sm mt-1">{nameError}</span>
       )}
-      
+
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-6">
           <div className="flex gap-2">
@@ -398,7 +400,7 @@ export default function RolesTableView({
             </button>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -446,7 +448,7 @@ export default function RolesTableView({
               placeholder="Buscar..."
             />
           </div>
-          
+
           {showCreateButton && (
             <Button
               onClick={() => {
@@ -471,10 +473,10 @@ export default function RolesTableView({
           )}
         </div>
       </div>
-      
+
       <div className="flex flex-wrap mb-2 items-center">
       </div>
-      
+
       <div
         className="flex-1 overflow-hidden bg-white relative"
         style={{ borderRadius: 0 }}

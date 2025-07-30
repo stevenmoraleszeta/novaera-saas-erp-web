@@ -12,8 +12,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import ConfirmationDialog from '@/components/common/ConfirmationDialog';
+import { updateRole } from '@/services/roleService'
+import { useRoles } from '@/hooks/useRoles';
+import { useLogicalTables } from "@/hooks/useLogicalTables";
+import { useColumns } from "@/hooks/useColumns";
+import { sincronizarTablaRoles } from "@/services/rolesTableManager";
 
-const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
+
+const PermissionsMatrix = ({ selectedRole, onPermissionsChange, setRefreshFlag }) => {
   const axios = useAxiosAuth();
   const [tables, setTables] = useState([]);
   const [permissions, setPermissions] = useState({});
@@ -21,10 +27,21 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const { roles, getAllRoles } = useRoles();
+  const { createOrUpdateTable } = useLogicalTables(null);
+  const { handleCreate } = useColumns(null);
+
+
 
   useEffect(() => {
     if (selectedRole) {
       loadTablesAndPermissions();
+      setIsAdmin(
+        selectedRole?.record_data?.is_admin ??
+        selectedRole?.is_admin ??
+        false
+      );
     }
   }, [selectedRole]);
 
@@ -35,11 +52,11 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
       console.log('Loading tables and permissions for role:', selectedRole);
       console.log('Role object keys:', Object.keys(selectedRole));
       console.log('Role object values:', selectedRole);
-      
+
       // Extraer el ID del rol desde record_data o directamente
       const roleId = selectedRole.record_data?.id || selectedRole.id || selectedRole.role_id || selectedRole.Id || selectedRole.ID;
       console.log('Extracted role ID:', roleId);
-      
+
       // Cargar todas las tablas
       const tablesRes = await axios.get('/tables');
       console.log('Tables response:', tablesRes.data);
@@ -50,9 +67,9 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
         console.log('Fetching permissions for role ID:', roleId);
         const permsRes = await axios.get(`/permissions/role/${roleId}`);
         console.log('Permissions response:', permsRes.data);
-        
+
         const rolePermissions = {};
-        
+
         // Inicializar permisos en false para todas las tablas
         (tablesRes.data || []).forEach(table => {
           rolePermissions[table.id] = {
@@ -105,7 +122,7 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
 
     // Extraer el ID del rol desde record_data o directamente
     const roleId = selectedRole.record_data?.id || selectedRole.id || selectedRole.role_id || selectedRole.Id || selectedRole.ID;
-    
+
     if (!roleId) {
       setError('No se pudo determinar el ID del rol');
       return;
@@ -116,20 +133,26 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
     try {
       console.log('Saving permissions for role ID:', roleId);
       console.log('Permissions to save:', permissions);
-      
+
       // Use the bulk update endpoint
       await axios.post(`/permissions/role/${roleId}/bulk`, { permissions });
-      
+
       // Notificar sobre el cambio
       if (onPermissionsChange) {
         onPermissionsChange();
       }
-      
+
       console.log('Permisos guardados exitosamente');
-      
+
       // Mostrar modal de éxito
+      await updateRole({ id: roleId, name: selectedRole.name, is_admin: isAdmin });
+
+
+      const updatedRoles = await getAllRoles()
+      syncRoles(updatedRoles)
+
       setShowSuccessModal(true);
-      
+
     } catch (err) {
       console.error('Error saving permissions:', err);
       setError('Error al guardar permisos');
@@ -137,6 +160,16 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
       setSaving(false);
     }
   };
+
+  const syncRoles = async (rolesToSync) => {
+    await sincronizarTablaRoles({
+      roles: rolesToSync,
+      userId: null,
+      createOrUpdateTable,
+      handleCreate,
+    });
+    setRefreshFlag((prev) => !prev);
+  }
 
   // Invierte todos los permisos de una columna
   const toggleColumn = (permissionType) => {
@@ -207,6 +240,16 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
           {error}
         </div>
       )}
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="isAdmin"
+          checked={isAdmin}
+          onCheckedChange={(checked) => setIsAdmin(!!checked)}
+        />
+        <label htmlFor="isAdmin" className="text-sm font-medium leading-none">
+          ¿Es administrador?
+        </label>
+      </div>
 
       {/* Botón de seleccionar/deseleccionar todo justo arriba de la tabla */}
       <div className="flex items-center mb-2">
@@ -226,28 +269,28 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
           <TableHeader>
             <TableRow>
               <TableHead className="font-medium">Tabla</TableHead>
-              <TableHead 
+              <TableHead
                 className="text-center font-medium cursor-pointer hover:bg-muted/50 w-24"
                 onClick={() => toggleColumn('can_create')}
                 title="Invertir columna Crear"
               >
                 Crear
               </TableHead>
-              <TableHead 
+              <TableHead
                 className="text-center font-medium cursor-pointer hover:bg-muted/50 w-24"
                 onClick={() => toggleColumn('can_read')}
                 title="Invertir columna Leer"
               >
                 Leer
               </TableHead>
-              <TableHead 
+              <TableHead
                 className="text-center font-medium cursor-pointer hover:bg-muted/50 w-24"
                 onClick={() => toggleColumn('can_update')}
                 title="Invertir columna Actualizar"
               >
                 Actualizar
               </TableHead>
-              <TableHead 
+              <TableHead
                 className="text-center font-medium cursor-pointer hover:bg-muted/50 w-24"
                 onClick={() => toggleColumn('can_delete')}
                 title="Invertir columna Eliminar"
@@ -259,7 +302,7 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
           <TableBody>
             {tables.map(table => (
               <TableRow key={table.id} className="hover:bg-muted/50">
-                <TableCell 
+                <TableCell
                   className="font-medium cursor-pointer py-3"
                   onClick={() => toggleRow(table.id)}
                   title="Invertir fila de esta tabla"
@@ -274,7 +317,7 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
                 <TableCell className="text-center py-3">
                   <Checkbox
                     checked={permissions[table.id]?.can_create || false}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={(checked) =>
                       handlePermissionChange(table.id, 'can_create', checked)
                     }
                   />
@@ -282,7 +325,7 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
                 <TableCell className="text-center py-3">
                   <Checkbox
                     checked={permissions[table.id]?.can_read || false}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={(checked) =>
                       handlePermissionChange(table.id, 'can_read', checked)
                     }
                   />
@@ -290,7 +333,7 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
                 <TableCell className="text-center py-3">
                   <Checkbox
                     checked={permissions[table.id]?.can_update || false}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={(checked) =>
                       handlePermissionChange(table.id, 'can_update', checked)
                     }
                   />
@@ -298,7 +341,7 @@ const PermissionsMatrix = ({ selectedRole, onPermissionsChange }) => {
                 <TableCell className="text-center py-3">
                   <Checkbox
                     checked={permissions[table.id]?.can_delete || false}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={(checked) =>
                       handlePermissionChange(table.id, 'can_delete', checked)
                     }
                   />

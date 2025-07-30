@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Settings,
   Edit3,
@@ -31,6 +31,7 @@ import NotificationDropdown from "../navbar/NotificationDropdown";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { logout as authServiceLogout } from "@/services/authService";
+import { useRoles } from '@/hooks/useRoles';
 
 export default function Header() {
   const { user, clearUser } = useUserStore();
@@ -38,6 +39,17 @@ export default function Header() {
   const { clearTabs } = useTabStore();
   const router = useRouter();
   const pathname = usePathname();
+
+  const { roles } = useRoles();
+
+  const isUserAdmin = useMemo(() => {
+    return roles.some(role =>
+      user.roles.includes(role.name) && role.is_admin
+    );
+
+  }, [roles, user.roles])
+
+
 
   // Debug: Log del modo edición en el header
   console.log("🔧 Header - Modo edición:", isEditingMode, "Hidratado:", isHydrated);
@@ -89,14 +101,16 @@ export default function Header() {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant={isEditingMode ? "default" : "ghost"}
-                size="icon"
-                onClick={handleToggleEditMode}
-                className={isEditingMode ? "bg-black" : ""}
-              >
-                <Edit3 className="w-5 h-5" />
-              </Button>
+              {isUserAdmin && (
+                <Button
+                  variant={isEditingMode ? "default" : "ghost"}
+                  size="icon"
+                  onClick={handleToggleEditMode}
+                  className={isEditingMode ? "bg-black" : ""}
+                >
+                  <Edit3 className="w-5 h-5" />
+                </Button>
+              )}
             </TooltipTrigger>
             <TooltipContent>
               <p>
