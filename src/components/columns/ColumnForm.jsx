@@ -179,6 +179,7 @@ export default function ColumnForm({
         name: "",
         data_type: "string",
         is_required: false,
+        is_unique: false,
         is_foreign_key: false,
         relation_type: "",
         foreign_table_id: null,
