@@ -9,13 +9,14 @@ export async function getRoles({ page = 1, search = '' } = {}) {
 }
 
 export async function createRole(roleData) {
+  console.log("cage se va a crear: ", roleData)
   const res = await axios.post('/roles', { 
     name: roleData.nombre
   });
   return res.data;
 }
 
-export async function updateRole({ id, name, description,  is_admin}) {
+export async function updateRole({ id, name, description, is_admin}) {
   const res = await axios.put(`/roles/${id}`, { name, description, is_admin });
   return res.data;
 }

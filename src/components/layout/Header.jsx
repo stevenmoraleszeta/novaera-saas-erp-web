@@ -40,7 +40,7 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const { roles, fetchRoles } = useRoles();
+  const { roles } = useRoles();
 
   const isUserAdmin = useMemo(() => {
     return roles.some(role =>
@@ -48,6 +48,7 @@ export default function Header() {
     );
 
   }, [roles, user.roles])
+
 
 
   // Debug: Log del modo edición en el header
