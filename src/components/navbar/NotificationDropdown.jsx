@@ -128,16 +128,45 @@ const NotificationDropdown = () => {
                   <div className="flex-1">
                     <div className="font-medium flex flex-wrap gap-1 items-center">
                       {n.notification_title || n.title}
-                      {(n.link_to_module || n.table_id) && (
-                        <button
-                          className="ml-2 text-xs text-blue-600 hover:underline"
-                          onClick={() => {
-                            setOpen(false);
-                            router.push(n.link_to_module ? n.link_to_module : `/modulos/${n.table_id}`);
-                          }}
-                        >
-                          Ver módulo
-                        </button>
+                      {(n.link_to_module || n.table_id || n.module_id) && (
+                        <div className="ml-2 flex gap-1">
+                          {/* Botón para ir al módulo */}
+                          <button
+                            className="text-xs text-blue-600 hover:underline"
+                            onClick={() => {
+                              setOpen(false);
+                              if (n.module_id) {
+                                router.push(`/modulos/${n.module_id}`);
+                              } else if (n.table_id) {
+                                router.push(`/modulos/${n.table_id}`);
+                              } else if (n.link_to_module) {
+                                router.push(n.link_to_module);
+                              }
+                            }}
+                          >
+                            Ver módulo
+                          </button>
+                          
+                          {/* Botón para ir al registro específico (solo si hay record_id) */}
+                          {n.record_id && (
+                            <>
+                              <span className="text-xs text-gray-400">|</span>
+                              <button
+                                className="text-xs text-green-600 hover:underline"
+                                onClick={() => {
+                                  setOpen(false);
+                                  if (n.module_id && n.record_id) {
+                                    router.push(`/modulos/${n.module_id}?openRecord=${n.record_id}`);
+                                  } else if (n.table_id && n.record_id) {
+                                    router.push(`/modulos/${n.table_id}?openRecord=${n.record_id}`);
+                                  }
+                                }}
+                              >
+                                Ver registro
+                              </button>
+                            </>
+                          )}
+                        </div>
                       )}
                     </div>
                     <div className="text-xs text-muted-foreground">{n.notification_message || n.message}</div>
