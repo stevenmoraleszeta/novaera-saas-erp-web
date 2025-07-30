@@ -12,6 +12,7 @@ const mapColumnFromBackend = (c) => ({
   column_position: c.column_position,
   relation_type: c.relation_type,
   validations:  c.validations,
+  is_unique: c.is_unique,
   ...c,
 });
 
@@ -26,6 +27,7 @@ const mapColumnToBackend = (c) => {
     column_position: c.column_position,
     relation_type: c.relation_type,
     validations:  c.validations,
+    is_unique: c.is_unique,
   };
 
   const makePosition = (c) => ({
