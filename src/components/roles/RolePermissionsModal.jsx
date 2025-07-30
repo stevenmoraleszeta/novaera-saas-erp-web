@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import useEditModeStore from "@/stores/editModeStore";
 
+
 export default function RolePermissionsModal({
   open = false,
   onOpenChange,
@@ -28,7 +29,7 @@ export default function RolePermissionsModal({
 }) {
   const { isEditingMode } = useEditModeStore();
   const axios = useAxiosAuth();
-  
+
   // Estados para el rol
   const [formData, setFormData] = useState({
     nombre: "",
@@ -36,24 +37,30 @@ export default function RolePermissionsModal({
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
-  
+
   // Estados para permisos
   const [tables, setTables] = useState([]);
   const [permissions, setPermissions] = useState({});
   const [permissionsLoading, setPermissionsLoading] = useState(false);
   const [permissionsDirty, setPermissionsDirty] = useState(false);
   const [savingPermissions, setSavingPermissions] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (open) {
       // Cargar tablas y permisos siempre que se abra el modal
       loadTablesAndPermissions();
-      
+
       if (role) {
         // Cargar datos del rol existente
         setFormData({
           nombre: role.name || role.record_data?.name || "",
         });
+        setIsAdmin(
+          role?.record_data?.is_admin ??
+          role?.is_admin ??
+          false
+        );
       } else {
         // Reset para nuevo rol
         setFormData({
@@ -72,7 +79,7 @@ export default function RolePermissionsModal({
     try {
       // Extraer el ID del rol
       const roleId = role?.record_data?.id || role?.id || role?.role_id || role?.Id || role?.ID;
-      
+
       // Cargar todas las tablas
       const tablesRes = await axios.get('/tables');
       setTables(tablesRes.data || []);
@@ -80,9 +87,9 @@ export default function RolePermissionsModal({
       // Cargar permisos actuales del rol si existe
       if (roleId) {
         const permsRes = await axios.get(`/permissions/role/${roleId}`);
-        
+
         const rolePermissions = {};
-        
+
         // Inicializar permisos en false para todas las tablas
         (tablesRes.data || []).forEach(table => {
           rolePermissions[table.id] = {
@@ -132,7 +139,7 @@ export default function RolePermissionsModal({
       ...prev,
       [field]: value
     }));
-    
+
     if (errors[field]) {
       setErrors(prev => ({
         ...prev,
@@ -237,11 +244,11 @@ export default function RolePermissionsModal({
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.nombre.trim()) {
       newErrors.nombre = "El nombre del rol es requerido";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -255,16 +262,20 @@ export default function RolePermissionsModal({
 
     try {
       let roleId = role?.record_data?.id || role?.id || role?.role_id || role?.Id || role?.ID;
-      
+
+      const formDataWithAdmin = {
+        ...formData,
+        is_admin: isAdmin,
+      };
       // Guardar datos del rol si hay cambios
+      const savedRole = await onSaveRole(formDataWithAdmin);
       if (isDirty) {
-        const savedRole = await onSaveRole(formData);
         // Si es un nuevo rol, obtener el ID del rol creado
         if (!roleId && savedRole) {
           roleId = savedRole.id || savedRole.record_data?.id;
         }
       }
-      
+
       // Guardar permisos si hay cambios y tenemos un roleId
       if (permissionsDirty && roleId) {
         setSavingPermissions(true);
@@ -279,7 +290,7 @@ export default function RolePermissionsModal({
           setSavingPermissions(false);
         }
       }
-      
+
       setIsDirty(false);
       onOpenChange?.(false);
     } catch (error) {
@@ -340,6 +351,16 @@ export default function RolePermissionsModal({
                 </div>
               )}
             </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isAdmin"
+                checked={isAdmin}
+                onCheckedChange={(checked) => setIsAdmin(!!checked)}
+              />
+              <label htmlFor="isAdmin" className="text-sm font-medium leading-none">
+                ¿Es administrador?
+              </label>
+            </div>
 
             {/* Sección de permisos */}
             <div className="space-y-4">
@@ -360,7 +381,7 @@ export default function RolePermissionsModal({
                   <div className="text-sm text-gray-600 mb-4">
                     Configura los permisos de acceso para este rol en cada tabla del sistema.
                   </div>
-                  
+
                   {/* Botón para seleccionar/deseleccionar todos los permisos */}
                   <div className="flex items-center mb-2">
                     <Button
@@ -372,7 +393,7 @@ export default function RolePermissionsModal({
                       Seleccionar/Deseleccionar todo
                     </Button>
                   </div>
-                  
+
                   <div className="border rounded-lg overflow-hidden">
                     <Table>
                       <TableHeader>
@@ -439,7 +460,7 @@ export default function RolePermissionsModal({
                       <TableBody>
                         {tables.map((table) => (
                           <TableRow key={table.id} className="hover:bg-gray-50">
-                            <TableCell 
+                            <TableCell
                               className="font-medium cursor-pointer"
                               onClick={() => toggleRow(table.id)}
                               title="Click para seleccionar/deseleccionar todos los permisos de esta tabla"
@@ -449,7 +470,7 @@ export default function RolePermissionsModal({
                             <TableCell className="text-center">
                               <Checkbox
                                 checked={permissions[table.id]?.can_create || false}
-                                onCheckedChange={(checked) => 
+                                onCheckedChange={(checked) =>
                                   handlePermissionChange(table.id, 'can_create', checked)
                                 }
                               />
@@ -457,7 +478,7 @@ export default function RolePermissionsModal({
                             <TableCell className="text-center">
                               <Checkbox
                                 checked={permissions[table.id]?.can_read || false}
-                                onCheckedChange={(checked) => 
+                                onCheckedChange={(checked) =>
                                   handlePermissionChange(table.id, 'can_read', checked)
                                 }
                               />
@@ -465,7 +486,7 @@ export default function RolePermissionsModal({
                             <TableCell className="text-center">
                               <Checkbox
                                 checked={permissions[table.id]?.can_update || false}
-                                onCheckedChange={(checked) => 
+                                onCheckedChange={(checked) =>
                                   handlePermissionChange(table.id, 'can_update', checked)
                                 }
                               />
@@ -473,7 +494,7 @@ export default function RolePermissionsModal({
                             <TableCell className="text-center">
                               <Checkbox
                                 checked={permissions[table.id]?.can_delete || false}
-                                onCheckedChange={(checked) => 
+                                onCheckedChange={(checked) =>
                                   handlePermissionChange(table.id, 'can_delete', checked)
                                 }
                               />
@@ -500,9 +521,9 @@ export default function RolePermissionsModal({
         <div className="border-t p-4 flex justify-between">
           {/* Izquierda: Guardar y Eliminar */}
           <div className="flex gap-2">
-            <Button 
-              type="submit" 
-              onClick={handleSave} 
+            <Button
+              type="submit"
+              onClick={handleSave}
               disabled={loading || savingPermissions}
             >
               {loading || savingPermissions ? (
@@ -514,7 +535,7 @@ export default function RolePermissionsModal({
                 <>Guardar</>
               )}
             </Button>
-            
+
             {role && (
               <Button
                 type="button"
@@ -527,7 +548,7 @@ export default function RolePermissionsModal({
             )}
           </div>
 
-          
+
         </div>
       </div>
     </div>

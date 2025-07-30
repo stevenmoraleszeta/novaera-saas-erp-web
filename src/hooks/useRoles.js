@@ -28,7 +28,8 @@ export function useRoles() {
       const res = await axios.get('/roles', { params: { page, search } });
       setRoles((res.data || []).map(r => ({
         id: r.id,
-        name: r.name
+        name: r.name,
+        is_admin: r.is_admin
       })));
       setTotalPages(res.data.totalPages || 1);
     } catch (err) {
@@ -36,6 +37,17 @@ export function useRoles() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getAllRoles = async () => {
+    const res = await axios.get('/roles');
+    const newRoles = (res.data || []).map(r => ({
+      id: r.id,
+      name: r.name,
+      is_admin: r.is_admin
+    }));
+    setRoles(newRoles);
+    return newRoles;
   };
 
   const fetchPermissions = async () => {
@@ -133,6 +145,8 @@ export function useRoles() {
     editingRole,
     handleSaveRole,
     getRoleById,
-    permissions
+    permissions,
+    fetchRoles,
+    getAllRoles
   };
 }
