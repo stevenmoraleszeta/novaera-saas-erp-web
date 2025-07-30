@@ -86,3 +86,10 @@ export async function getRecordsByTableId (tableId) {
   return res.data; // o lo que devuelva el backend
 }
 
+export const validateUniqueValue = (tableId, column, value, excludeId) => {
+  let url = `/tables/${tableId}/validate-unique?column=${encodeURIComponent(column)}&value=${encodeURIComponent(value)}`;
+  if (excludeId) {
+    url += `&excludeId=${excludeId}`;
+  }
+  return axios.get(url);
+};
