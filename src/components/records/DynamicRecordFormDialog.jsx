@@ -7,6 +7,7 @@ import {
   createLogicalTableRecord,
   updateLogicalTableRecord,
   getLogicalTableRecords,
+  validateUniqueValue,
 } from "@/services/logicalTableService";
 import FieldRenderer from "../common/FieldRenderer";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,8 @@ export default function DynamicRecordFormDialog({
   const [showAuditLogModal, setShowAuditLogModal] = useState(false);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
   const [commentsCount, setCommentsCount] = useState(0);
+  const [showUniqueErrorDialog, setShowUniqueErrorDialog] = useState(false);
+  const [uniqueErrorInfo, setUniqueErrorInfo] = useState({ fieldName: '', value: '' });
 
   // Estado y función para el modal de tabla relacionada tipo 'tabla'
   const [relatedTableModalOpen, setRelatedTableModalOpen] = useState(false);
@@ -325,16 +328,46 @@ export default function DynamicRecordFormDialog({
     }
   }
 
-  const validate = useCallback(() => {
+  const validate = useCallback(async () => {
     const errs = {};
-    columns.forEach((col) => {
-      if (col.is_required && (values[col.name] === "" || values[col.name] == null)) {
+    
+    for (const col of columns) {
+      const currentValue = values[col.name];
+
+      if (col.is_required && (currentValue === "" || currentValue == null)) {
         errs[col.name] = "Este campo es requerido";
+        continue; // Pasa a la siguiente columna
       }
-    });
+
+      if (col.is_unique && currentValue) {
+        try {
+          const response = await validateUniqueValue(
+            tableId,
+            col.name,
+            currentValue,
+            mode === "edit" ? record.id : null
+          );
+          const isValueUnique = response.data.isUnique; 
+
+          if (isValueUnique === false) {
+            setUniqueErrorInfo({
+              fieldName: col.foreign_column_name || col.name,
+              value: currentValue
+            });
+            setShowUniqueErrorDialog(true);
+            return false;
+          }
+        } catch (error) {
+
+          console.error("Error validando campo único:", error);
+          errs[col.name] = "No se pudo verificar la unicidad.";
+        }
+      }
+    }
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
-  }, [columns, values]);
+  }, [columns, values, tableId, mode, record]);
 
   const handleChange = useCallback((name, value) => {
     setValues((prev) => ({ ...prev, [name]: value }));
@@ -352,7 +385,9 @@ export default function DynamicRecordFormDialog({
 
   const saveRecord = useCallback(async () => {
     setSubmitError(null);
-    if (!validate()) return;
+
+    const isValid = await validate();
+    if (!isValid) return;
     setLoading(true);
 
     try {
@@ -608,6 +643,11 @@ export default function DynamicRecordFormDialog({
                       {col.is_required && (
                         <Badge className="ml-1 text-xs text-destructive bg-transparent">
                           *Requerido
+                        </Badge>
+                      )}
+                      {col.is_unique && (
+                        <Badge className="ml-1 text-xs text-destructive bg-transparent">
+                          *Único
                         </Badge>
                       )}
                     </Label>
@@ -1081,6 +1121,19 @@ export default function DynamicRecordFormDialog({
           </div>
         </div>
       )}
+      <ConfirmationDialog
+      open={showUniqueErrorDialog}
+      onClose={() => setShowUniqueErrorDialog(false)}
+      title="Valor Duplicado"
+      message={`El valor "${uniqueErrorInfo.value}" ya existe en el campo "${uniqueErrorInfo.fieldName}". Este campo debe ser único.`}
+      actions={[
+        {
+          label: "Entendido",
+          onClick: () => setShowUniqueErrorDialog(false),
+          variant: "default"
+        }
+      ]}
+    />
     </div>
   );
 }

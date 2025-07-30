@@ -49,6 +49,7 @@ export default function ColumnForm({
     name: "",
     data_type: "string",
     is_required: false,
+    is_unique: false,
     is_foreign_key: false,
     relation_type: "",
     foreign_table_id: null,
@@ -274,7 +275,7 @@ export default function ColumnForm({
         payload.relation_type = "";
       }
 
-      // --- NUEVO: En edición, si es tipo select y custom, enviar opciones a /columns/:columnId/options ---
+      // --- En edición, si es tipo select y custom, enviar opciones a /columns/:columnId/options ---
       if (
         mode === "edit" &&
         formData.data_type === "select" &&
@@ -302,7 +303,7 @@ export default function ColumnForm({
         }
       }
 
-      // --- NUEVO: En edición, si es tipo select y selectionType es 'table', actualizar la columna en la base de datos ---
+      // --- En edición, si es tipo select y selectionType es 'table', actualizar la columna en la base de datos ---
       if (
         mode === "edit" &&
         formData.data_type === "select" &&
@@ -320,7 +321,6 @@ export default function ColumnForm({
           console.error("Error al actualizar la columna (tabla/columna de origen):", err);
         }
       }
-
       await onSubmit(payload);
     } catch (err) {
       const msg = err?.response?.data?.error || "Error al guardar la columna";
@@ -445,7 +445,7 @@ export default function ColumnForm({
               </div>
             )}
 
-            {/* --- NUEVO: Lógica para tipo select con opciones personalizadas --- */}
+            {/* --- Lógica para tipo select con opciones personalizadas --- */}
             {formData.data_type === "select" && (
               <div className="space-y-4">
                 {/* Selector de tipo de selección */}
@@ -532,8 +532,19 @@ export default function ColumnForm({
                 />
                 ¿Requerida?
               </label>
+              {formData.data_type !== "foreign" && (
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <Checkbox
+                    checked={formData.is_unique || false}
+                    onCheckedChange={(checked) => handleChange("is_unique", checked)}
+                    className="data-[state=checked]:bg-black data-[state=checked]:border-black"
+                    disabled={loading}
+                  />
+                  ¿Dato único?
+                </label>
+              )}
             </div>
-
+            
             {/* Validaciones */}
             <div className="space-y-2">
               <Label htmlFor="validations">Validaciones</Label>
