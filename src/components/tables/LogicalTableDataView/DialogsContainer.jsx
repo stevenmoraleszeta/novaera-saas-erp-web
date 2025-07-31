@@ -740,7 +740,7 @@ export default function DialogsContainer(props) {
       </Dialog>
 
       <Dialog open={showColumnVisibilityDialog} onOpenChange={setShowColumnVisibilityDialog}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" onInteractOutside={(e) => {
+        <DialogContent className="max-w-3xl max-h-[90vh]" onInteractOutside={(e) => {
           e.preventDefault();
         }}>
           <DialogHeader>

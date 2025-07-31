@@ -83,7 +83,12 @@ export default function Table({
         externalColumnWidths && Object.keys(externalColumnWidths).length > 0;
 
       if (!hasWidths) {
-        setColumnWidths(columns.reduce((acc, col) => ({ ...acc, [col.key]: "200px" }), {}));
+        setColumnWidths(
+          columns.reduce((acc, col) => {
+            acc[col.key] = `${100 / columns.length}%`;
+            return acc;
+          }, {})
+        );
       }
     }
   }, [columns]);
@@ -248,13 +253,12 @@ export default function Table({
               </DragOverlay>
             )}
 
-            <TableUI>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[1px]">&nbsp;</TableHead>
+            <table className="">
+              <thead>
+                <tr>
+                  <th className="w-[1px]">&nbsp;</th>
                   {orderedColumns.map((key, index) => {
                     const column = columns.find((c) => c.key === key);
-
                     if (!column || !visibleColumns[column.key]) return null;
                     return (
                       <SortableColumnHeader
@@ -270,10 +274,10 @@ export default function Table({
                       />
                     );
                   })}
-                </TableRow>
-              </TableHeader>
+                </tr>
+              </thead>
 
-              <TableBody>
+              <tbody>
                 {internalData.length > 0 ? (
                   internalData.map((row, index) => {
                     const key = getRowKey(row);
@@ -292,17 +296,14 @@ export default function Table({
                     );
                   })
                 ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={visibleColumnsList.length + 1}
-                      className="text-center text-gray-400"
-                    >
+                  <tr>
+                    <td colSpan={visibleColumnsList.length + 1} className="text-center text-gray-400">
                       Sin datos
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                  </tr>
                 )}
-              </TableBody>
-            </TableUI>
+              </tbody>
+            </table>
           </SortableContext>
         </DndContext>
       </div>
