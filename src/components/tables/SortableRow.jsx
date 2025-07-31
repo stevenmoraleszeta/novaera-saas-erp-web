@@ -15,7 +15,6 @@ export default function SortableRow({
   getRowKey,
   idRow,
 }) {
-
   let id;
   if (idRow) {
     id = idRow;
@@ -41,36 +40,50 @@ export default function SortableRow({
     ...(isDragging && { opacity: 0.5 }),
   };
 
-
   return (
     <TableRow
       ref={setNodeRef}
       style={style}
       {...attributes}
       onClick={() => onRowClick?.(row)}
-      className={`${onRowClick ? "cursor-pointer hover:bg-[#f0f0f0]" : ""
-        } ${rowIndex % 2 === 0 ? "bg-[#FFFFFF]" : "bg-[#f7f3f2]"}`}
+      className={`${onRowClick ? "cursor-pointer hover:bg-[#f0f0f0]" : ""}
+        ${rowIndex % 2 === 0 ? "bg-[#FFFFFF]" : "bg-[#f7f3f2]"}`}
     >
-      {/* Handle de drag a la izquierda */}
+      {/* Columna del handle */}
       <TableCell className="w-4 px-2 cursor-grab text-gray-400 select-none">
         <div {...listeners}>
           <GripVertical className="h-4 w-4" />
         </div>
       </TableCell>
 
-      {/* Resto de columnas */}
-      {visibleColumnsList.map((column, index) => {
-        const dataKey = column.key || column.name;
-        return (
-          <TableCell key={`${column.key || column.name}-${index}`}>
-            {typeof row[dataKey] === "boolean"
-              ? row[dataKey] ? "Sí" : "No"
-              : column.render
-                ? column.render(row[dataKey], row)
-                : row[dataKey]}
-          </TableCell>
-        );
-      })}
+      {/* Contenedor FLEX de celdas */}
+      <TableCell colSpan={visibleColumnsList.length} className="p-0" >
+        <div className="flex">
+          {visibleColumnsList.map((column, index) => {
+            const dataKey = column.key || column.name;
+            const width = columnWidths[column.key] || "200px";
+
+            return (
+              <div
+                key={`${column.key || column.name}-${index}`}
+                className="px-4 py-2 border-r"
+                style={{
+                  width,
+                  minWidth: width,
+                  maxWidth: width,
+                  flexShrink: 0,
+                }}
+              >
+                {typeof row[dataKey] === "boolean"
+                  ? row[dataKey] ? "Sí" : "No"
+                  : column.render
+                    ? column.render(row[dataKey], row)
+                    : row[dataKey]}
+              </div>
+            );
+          })}
+        </div>
+      </TableCell>
     </TableRow>
   );
 }

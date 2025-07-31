@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Loader from "@/components/common/Loader";
 import StatusBadge from "@/components/modules/ModuleStatusBadge";
 import { useModules } from "@/hooks/useModules";
@@ -25,10 +25,14 @@ import ProtectedSection from "@/components/common/ProtectedSection";
 import PermissionDenied from "@/components/common/PermissionDenied";
 import { Button } from "@/components/ui/button";
 import TableCollaboratorsModal from "@/components/tables/TableCollaboratorsModal";
+import DynamicRecordFormDialog from "@/components/records/DynamicRecordFormDialog";
+import { getLogicalTableRecords } from "@/services/logicalTableService";
 
 export default function ModuleDetailPage() {
   const { modules, getById } = useModules();
   const { isEditingMode, isHydrated } = useEditMode();
+  const searchParams = useSearchParams();
+  const openRecordId = searchParams.get('openRecord'); // Obtener el ID del registro a abrir
 
   // Debug: Log del modo edición en la página del módulo
   console.log("🔧 ModuleDetailPage - Modo edición:", isEditingMode, "Hidratado:", isHydrated);
@@ -38,6 +42,11 @@ export default function ModuleDetailPage() {
   const [loading, setLoading] = useState(true);
   const [moduleData, setModuleData] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
+
+  // Estados para el modal de registro
+  const [showRecordModal, setShowRecordModal] = useState(false);
+  const [selectedRecordId, setSelectedRecordId] = useState(null);
+  const [recordToEdit, setRecordToEdit] = useState(null);
 
   // Logical tables state
   const [tables, setTables] = useState([]);
@@ -158,6 +167,51 @@ export default function ModuleDetailPage() {
     };
     if (id) fetchTables();
   }, [id, getAllTables]);
+
+  // Efecto para abrir automáticamente el modal del registro desde notificaciones
+  useEffect(() => {
+    const openRecordFromNotification = async () => {
+      if (openRecordId && tables.length > 0) {
+        console.log('🔔 Abriendo registro desde notificación:', openRecordId);
+        
+        try {
+          // Buscar en todas las tablas del módulo para encontrar el registro
+          for (const table of tables) {
+            try {
+              const records = await getLogicalTableRecords(table.id);
+              const foundRecord = records.find(r => r.id === parseInt(openRecordId));
+              
+              if (foundRecord) {
+                console.log('📝 Registro encontrado en tabla:', table.id, foundRecord);
+                setSelectedRecordId(parseInt(openRecordId));
+                setRecordToEdit(foundRecord);
+                setSelectedTable(table); // Asegurar que la tabla correcta esté seleccionada
+                setShowRecordModal(true);
+                
+                // Limpiar el parámetro de la URL sin recargar la página
+                if (typeof window !== 'undefined') {
+                  const url = new URL(window.location);
+                  url.searchParams.delete('openRecord');
+                  window.history.replaceState({}, '', url);
+                }
+                break;
+              }
+            } catch (error) {
+              console.error(`Error buscando registro en tabla ${table.id}:`, error);
+            }
+          }
+          
+          if (!recordToEdit) {
+            console.warn('⚠️ No se encontró el registro con ID:', openRecordId);
+          }
+        } catch (error) {
+          console.error('Error abriendo registro desde notificación:', error);
+        }
+      }
+    };
+
+    openRecordFromNotification();
+  }, [openRecordId, tables]);
 
   // Form validation
   const validateTable = (values) => {
@@ -368,6 +422,25 @@ export default function ModuleDetailPage() {
         table={selectedTableForCollaborators}
         onCollaboratorsUpdated={handleCollaboratorsUpdated}
       />
+
+      {/* Modal para editar registro desde notificación */}
+      {selectedTable && recordToEdit && (
+        <DynamicRecordFormDialog
+          open={showRecordModal}
+          onOpenChange={setShowRecordModal}
+          tableId={selectedTable.id}
+          mode="edit"
+          record={recordToEdit}
+          onSubmitSuccess={(result) => {
+            console.log('✅ Registro actualizado:', result);
+            setShowRecordModal(false);
+            setRecordToEdit(null);
+            setSelectedRecordId(null);
+            // Opcional: refrescar los datos
+            setRefreshData(prev => prev + 1);
+          }}
+        />
+      )}
     </div>
   );
 }
