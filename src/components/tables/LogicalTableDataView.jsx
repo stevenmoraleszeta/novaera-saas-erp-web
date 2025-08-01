@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
+import { useRouter, useSearchParams } from 'next/navigation'; 
+import useTabStore from '@/stores/tabStore';
 import {
   getLogicalTableStructure,
   getLogicalTableRecords,
@@ -77,6 +79,9 @@ export default function LogicalTableDataView({
   isChildModal = false, 
   preProcessedRecords = null 
 }) {
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { isEditingMode } = useEditModeStore();
   const creatingGeneralViewRef = useRef(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -462,17 +467,29 @@ export default function LogicalTableDataView({
         if (selectedView) {
           handleSelectView(selectedView)
         }
+
+        const recordIdToOpen = searchParams.get('openRecord');
+        if (recordIdToOpen) {
+          const recordToOpen = processedRecords.find(r => r.id == recordIdToOpen);
+          if (recordToOpen) {
+            setRecordToEdit(recordToOpen);
+            setShowEditRecordDialog(true);
+            
+            const newPath = window.location.pathname;
+            router.replace(newPath, { scroll: false });
+          }
+        }
       } catch (err) {
         console.error("💥 Error fetching table data:", err);
         setRecords([]);
         setTotal(0);
       } finally {
         setLoading(false);
+        useTabStore.getState().clearLoadingTab();
       }
     };
-
     fetchData();
-  }, [tableId, page, pageSize, refresh, localRefreshFlag, preProcessedRecords]);
+  }, [tableId, page, pageSize, refresh, localRefreshFlag, preProcessedRecords, searchParams, router]);
 
   useEffect(() => {
     const fetchMeta = async () => {

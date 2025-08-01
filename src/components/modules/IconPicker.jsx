@@ -28,8 +28,7 @@ export function IconPicker({ onSelect }) {
     let emojis = emojiList;
 
     if (activeCategory !== "all") {
-      // emojis = emojis.filter(emoji => emoji.category === activeCategory);
-      let emojis = search ? emojiList : emojiList.filter(emoji => activeCategory === 'all' || emoji.category === activeCategory);
+      emojis = emojis.filter(emoji => emoji.category === activeCategory);
     }
 
     if (search) {
@@ -39,12 +38,12 @@ export function IconPicker({ onSelect }) {
         (emoji.name_es && emoji.name_es.toLowerCase().includes(lowercasedSearch))
       );
     }
+
     return emojis;
   }, [search, activeCategory]);
 
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
-    // Cada vez que escribes, se resetea la categoría a "todos"
     setActiveCategory("all");
   };
 
