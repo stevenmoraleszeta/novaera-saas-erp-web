@@ -116,6 +116,7 @@ const useTabStore = create(
       },
 
       setLoadingTab: (tabId) => set({ loadingTab: tabId }),
+      clearLoadingTab: () => set({ loadingTab: null }),
 
       // Initialize tabs from localStorage
       initializeTabs: () => {
@@ -160,9 +161,13 @@ const useTabStore = create(
       },
 
       // Add tab for a module
-      addModuleTab: (moduleId, moduleName) => {
+      addModuleTab: (moduleId, moduleName, recordIdToOpen) => {
         const { tabs, setActiveTab, setLoadingTab } = get();
-        const path = `/modulos/${moduleId}`;
+        let path = `/modulos/${moduleId}`;
+
+        if (recordIdToOpen){
+          path += `?openRecord=${recordIdToOpen}`;
+        }
 
         // Check if tab already exists for this module
         const existingTab = tabs.find((tab) => tab.path === path);

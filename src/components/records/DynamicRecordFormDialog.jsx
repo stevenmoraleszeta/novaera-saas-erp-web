@@ -12,7 +12,7 @@ import {
 import FieldRenderer from "../common/FieldRenderer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, AlertCircle, Users, History, MessageCircle } from "lucide-react";
+import { Plus, AlertCircle, Users, History, MessageCircle, X, XIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import LogicalTableDataView from "@/components/tables/LogicalTableDataView";
@@ -22,14 +22,15 @@ import RecordComments from "./RecordComments";
 import { getAssignedUsersByRecord } from "@/services/recordAssignedUsersService";
 import { getCommentsCount } from "@/services/recordCommentsService";
 import axios from "@/lib/axios";
-import { X } from "lucide-react";
 import ConfirmationDialog from "../common/ConfirmationDialog";
 import { toast } from 'sonner';
 import { setAssignedUsersForRecord } from '@/services/recordAssignedUsersService';
-import { XIcon } from "lucide-react";
 
 import FileUpload from '@/components/common/FileUpload';
 import scheduledNotificationsService from '@/services/scheduledNotificationsService';
+
+import { useRouter } from "next/navigation";
+import useTabStore from "@/stores/tabStore";
 
 export default function DynamicRecordFormDialog({
   open = false,
@@ -46,6 +47,8 @@ export default function DynamicRecordFormDialog({
   isChildModal = false
 }) {
   
+  const router = useRouter();  
+  const { addModuleTab, navigateToTab } = useTabStore();
   const [columns, setColumns] = useState([]);
   const [values, setValues] = useState({});
   const [errors, setErrors] = useState({});
@@ -582,6 +585,22 @@ export default function DynamicRecordFormDialog({
 
   if (!open) return null;
 
+  const handleRedirect = (col, recordId) => {
+    if (!recordId || !col.foreign_table_id) return;
+    const targetTable = tables.find(t => t.id === col.foreign_table_id);
+
+    if (targetTable && targetTable.module_id) {
+      const newTabId = addModuleTab(targetTable.module_id, targetTable.name || 'Módulo', recordId);
+      
+      if (newTabId) {
+        navigateToTab(newTabId, router);
+        onOpenChange(false); // Cierra el modal actual
+      }
+    } else {
+      toast.error("No se pudo encontrar el módulo para la tabla de destino.");
+    }
+  };
+
   return (
     <div className={isChildModal
       ? "fixed inset-0 z-10 flex items-start justify-end px-4 py-28"
@@ -636,6 +655,10 @@ export default function DynamicRecordFormDialog({
             <form onSubmit={handleSubmit} noValidate className="space-y-6">
               {columns.map((col) => {
                 if (foreignForm && col.name === "original_record_id") return null;
+                const redirectHandler = 
+                  (col.data_type === 'select' || col.data_type === 'user' || col.is_foreign_key)
+                    ? () => handleRedirect(col, values[col.name])
+                    : null;
                 return (
                   <div key={col.column_id} className="space-y-2">
                     <Label htmlFor={`field-${col.name}`}>
@@ -677,6 +700,11 @@ export default function DynamicRecordFormDialog({
                           id={`field-${col.name}`}
                           column={col}
                           value={values[col.name]}
+                          onRedirectClick={
+                            ((col.data_type === 'select' && col.foreign_table_id) || col.data_type === 'user')
+                              ? () => handleRedirect(col, values[col.name])
+                              : null
+                          }
                           onChange={(e) =>
                             handleChange(
                               col.name,

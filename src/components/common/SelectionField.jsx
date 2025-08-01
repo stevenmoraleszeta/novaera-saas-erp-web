@@ -13,9 +13,10 @@ export default function SelectionField({
   disabled = false,
   label,
   placeholder = "Selecciona una opción",
+  onRedirectClick,
 }) {
   const { options, loading, error } = useColumnOptions(columnId);
-
+  
   // Muestra un estado deshabilitado si no hay columnId
   if (!columnId) {
     return (
@@ -42,6 +43,7 @@ export default function SelectionField({
         value={value || "clear-selection"}
         onChange={(val) => onChange(val === "clear-selection" ? "" : val)}
         disabled={disabled || loading || !!error}
+        onRedirectClick={onRedirectClick}
         error={error} // Pasa el mensaje de error al combobox si tiene esa prop
       />
     </div>
