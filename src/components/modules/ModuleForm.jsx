@@ -18,7 +18,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import EmojiPicker , { EmojiStyle } from "emoji-picker-react";
+import { IconPicker } from "@/components/modules/IconPicker";
 
 import { X, Save, Trash2, Smile, ChevronDown, AlertTriangle } from "lucide-react";
 
@@ -42,7 +42,7 @@ export default function ModuleForm({
   });
 
   const [validationError, setValidationError] = useState(null);
-  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     if(open){
@@ -87,10 +87,10 @@ export default function ModuleForm({
       setValidationError(null);
     }
   };
-
-  const handleEmojiSelect = (emojiObject) => {
-    handleChange("icon", emojiObject.imageUrl);
-    setEmojiPickerOpen(false);
+  
+  const handleIconSelect = (fullUrl) => {
+    handleChange("icon", fullUrl);
+    setPickerOpen(false);
   };
 
   const handleDelete = () => {
@@ -104,6 +104,14 @@ export default function ModuleForm({
       onCancel();
     }
     onOpenChange?.(false);
+  };
+
+  const handleEmojiSelect = (emojiObject) => {
+    const emojiName = emojiObject;
+    const fileName = `${emojiName.replace(/_/g, '-')}`;
+    const finalUrl = `${fileName}`;    
+    handleChange("icon", finalUrl);
+    setPickerOpen(false);
   };
 
   return (
@@ -147,54 +155,30 @@ export default function ModuleForm({
             {/* Emoji Selection Field */}
             <div className="space-y-2">
               <Label>Ícono</Label>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 {formData.icon && (
-                  // CAMBIO CLAVE 2: La vista previa ahora es una etiqueta <img>
-                  <img 
-                    src={formData.icon} 
-                    alt="ícono seleccionado" 
-                    className="w-10 h-10"
-                  />
+                  <img src={formData.icon} alt="ícono seleccionado" className="w-12 h-12 object-contain" />
                 )}
-
-                {/* {formData.icon && (
-                  <div className="text-2xl w-10 h-10 flex items-center justify-center border border-gray-200 rounded-lg bg-gray-50">
-                    {formData.icon}
-                  </div>
-                )} */}
-                <Popover
-                  open={emojiPickerOpen}
-                  onOpenChange={setEmojiPickerOpen}
-                >
+                <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
                   <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="flex bg-gray-200 items-center gap-2"
-                      disabled={loading}
-                    >
+                    <Button type="button" variant="outline" className="flex items-center gap-2" disabled={loading}>
                       {formData.icon ? "Cambiar ícono" : "Seleccionar ícono"}
                       <ChevronDown className="w-4 h-4" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent 
                     className="w-auto p-0"
-                    side="bottom" 
-                    align="start" 
-                    collisionPadding={{ top: 150, bottom: 100 }}
-                    sideOffset={-100}
-                  >
-                    <EmojiPicker
-                      onEmojiClick={handleEmojiSelect}
-                      searchPlaceholder="Buscar emoji..."
-                      width="100%"
-                      height={400}
-                      lazyLoadEmojis={true}
-                      emojiStyle={EmojiStyle.FACEBOOK} 
+                    side="bottom"
+                    align="start"
+                    collisionPadding={{ top: 100, bottom: 100 }}
+                    sideOffset={-20}
+                    >
+                    <IconPicker  
+                    onSelect={handleEmojiSelect} 
                     />
                   </PopoverContent>
                 </Popover>
-                {formData.icon && (
+               {formData.icon && (
                   <Button
                     type="button"
                     variant="ghost"

@@ -48,8 +48,7 @@ export default function ModuleCard({ module, onClick, isEditingMode = false }) {
   if (LucideIcon) {
     iconToRender = <LucideIcon className="w-2/3 h-2/3" />;
   } else if (isEmoji) {
-    // Mostramos directamente la imagen del emoji
-    iconToRender = <img src={module.iconUrl} alt="ícono del módulo" className="w-24 h-24" />;
+    iconToRender = <img src={module.iconUrl} alt="ícono del módulo" className="w-30 h-30" />;
   } else {
     iconToRender = <GripVertical className="w-2/3 h-2/3" />;
   }

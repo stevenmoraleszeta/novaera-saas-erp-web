@@ -28,14 +28,15 @@ export default function FieldRenderer({
   pendingNotifications = [],
   onAddPendingNotification,
   onRemovePendingNotification,
-  createdRecordId
+  createdRecordId,
+  onRedirectClick,
 }) {
   const baseClassName = `w-full ${error ? "border-red-500 focus:border-red-500" : ""}`;
   const [foreignOptions, setForeignOptions] = useState([]);
   const { users, loadUsers } = useUsers();
   const [showForeignModal, setShowForeignModal] = useState(false);
   const [foreignDisplay, setForeignDisplay] = useState("");
-
+  
   useEffect(() => {
     async function loadOptions() {
       try {
@@ -89,6 +90,7 @@ export default function FieldRenderer({
         onChange={(val) => onChange({ target: { value: val === "none" ? "" : val } })}
         required={column.is_required}
         placeholder={`Selecciona ${column.name}`}
+        onRedirectClick={onRedirectClick}
       />
     );
   }
@@ -103,6 +105,7 @@ export default function FieldRenderer({
         required={column.is_required}
         label={column.name}
         placeholder={`Selecciona ${column.name}`}
+        onRedirectClick={onRedirectClick}
       />
     );
   }
@@ -140,6 +143,7 @@ export default function FieldRenderer({
         options={userOptions}
         value={value}
         onChange={(val) => onChange({ target: { value: val ? parseInt(val, 10) : null } })}
+        onRedirectClick={onRedirectClick} 
       />
     );
   }
@@ -322,6 +326,7 @@ export default function FieldRenderer({
           options={customOptions}
           value={value}
           onChange={(val) => onChange({ target: { value: val } })}
+          onRedirectClick={onRedirectClick} 
         />
       );
 
