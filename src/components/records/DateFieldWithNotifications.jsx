@@ -269,7 +269,7 @@ const DateFieldWithNotifications = ({
 
       {showNotificationModal && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center pt-30 z-[5000]"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center pt-30 z-[5000] px-4 py-8 "
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowNotificationModal(false);

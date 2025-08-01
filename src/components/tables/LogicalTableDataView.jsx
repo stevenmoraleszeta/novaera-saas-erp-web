@@ -75,7 +75,8 @@ export default function LogicalTableDataView({
   onRowClick, 
   onManageCollaborators, 
   isChildModal = false, 
-  preProcessedRecords = null 
+  preProcessedRecords = null,
+  original_record_Id = null
 }) {
   const { isEditingMode } = useEditModeStore();
   const creatingGeneralViewRef = useRef(false);
@@ -324,13 +325,14 @@ export default function LogicalTableDataView({
 
   // Función para procesar registros y resolver foreign_record_id a texto descriptivo
   const processRecordsWithForeignText = async (records, columns) => {
-    console.log('🔄 Iniciando procesamiento de registros:', {
+    console.log('🐀🔄 Iniciando procesamiento de ', records, columns)
+    console.log('🤖🔄 Iniciando procesamiento de registros:', {
       totalRecords: records.length,
       columnsAvailable: columns.length
     });
     
     if (!records || records.length === 0 || !columns || columns.length === 0) {
-      console.log('⚠️ No hay registros o columnas para procesar');
+      console.log('🤖⚠️ No hay registros o columnas para procesar');
       return records;
     }
     
@@ -341,7 +343,7 @@ export default function LogicalTableDataView({
       
       // Si el registro tiene foreign_record_id, intentar resolver el texto
       if (record.record_data?.foreign_record_id) {
-        console.log('🔍 Encontrado registro con foreign_record_id:', {
+        console.log('🤖🔍 Encontrado registro con foreign_record_id:', {
           recordId: record.id,
           foreignRecordId: record.record_data.foreign_record_id
         });
@@ -349,16 +351,16 @@ export default function LogicalTableDataView({
         try {
           // Buscar la columna que define la tabla foránea
           const foreignColumn = columns.find(col => col.foreign_table_id);
-          console.log('📋 Columna foránea encontrada:', foreignColumn);
+          console.log('🤖📋 Columna foránea encontrada:', foreignColumn);
           
           if (foreignColumn && foreignColumn.foreign_table_id) {
-            console.log('🌐 Obteniendo registros de tabla foránea ID:', foreignColumn.foreign_table_id);
+            console.log('🤖🌐 Obteniendo registros de tabla foránea ID:', foreignColumn.foreign_table_id);
             
             // Obtener el registro foráneo real
             const foreignRecords = await getLogicalTableRecords(foreignColumn.foreign_table_id);
             const foreignRecord = foreignRecords.find(r => r.id === parseInt(record.record_data.foreign_record_id));
             
-            console.log('📝 Registro foráneo encontrado:', foreignRecord);
+            console.log('🤖📝 Registro foráneo encontrado:', foreignRecord);
             
             if (foreignRecord) {
               // Obtener el texto descriptivo del registro foráneo
@@ -368,7 +370,7 @@ export default function LogicalTableDataView({
                                 foreignRecord.name || 
                                 `Registro ${record.record_data.foreign_record_id}`;
               
-              console.log('✅ Texto descriptivo generado:', {
+              console.log('🤖✅ Texto descriptivo generado:', {
                 originalId: record.record_data.foreign_record_id,
                 displayText: displayText,
                 columnName: foreignColumnName
@@ -380,20 +382,20 @@ export default function LogicalTableDataView({
                 foreign_record_id: displayText
               };
             } else {
-              console.log('❌ No se encontró el registro foráneo con ID:', record.record_data.foreign_record_id);
+              console.log('🤖❌ No se encontró el registro foráneo con ID:', record.record_data.foreign_record_id);
             }
           } else {
-            console.log('❌ No se encontró columna foránea válida');
+            console.log('🤖❌ No se encontró columna foránea válida');
           }
         } catch (error) {
-          console.error('💥 Error procesando foreign_record_id:', error);
+          console.error('🤖💥 Error procesando foreign_record_id:', error);
         }
       }
       
       processedRecords.push(processedRecord);
     }
     
-    console.log('🎉 Procesamiento completado:', {
+    console.log('🤖🎉 Procesamiento completado:', {
       originalCount: records.length,
       processedCount: processedRecords.length,
       recordsWithForeignId: records.filter(r => r.record_data?.foreign_record_id).length
@@ -413,6 +415,7 @@ export default function LogicalTableDataView({
       }
       
       // Si tenemos registros pre-procesados, usarlos directamente
+      /*
       if (preProcessedRecords) {
         console.log('📦 Usando registros pre-procesados:', preProcessedRecords);
         setRecords(preProcessedRecords);
@@ -428,7 +431,7 @@ export default function LogicalTableDataView({
         }
         setLoading(false);
         return;
-      }
+      } */
       
       loadViews();
       loadViewSorts();
@@ -451,8 +454,8 @@ export default function LogicalTableDataView({
         
         // Procesar registros para resolver foreign_record_id a texto descriptivo
         console.log('🔄 Iniciando procesamiento de registros...');
-        const processedRecords = await processRecordsWithForeignText(rawRecords, cols);
-        console.log('✅ Registros procesados:', processedRecords);
+        const processedRecords = await processRecordsWithForeignText(rawRecords, cols);;
+        
         
         setRecords(processedRecords);
         setTotal(
@@ -722,6 +725,7 @@ export default function LogicalTableDataView({
 
   // Add column management actions to table headers when edit mode changes
   const tableColumnsWithActions = useMemo(() => {
+
     let sortedCols = [...tableColumns];
 
     if (orderedViewColumnNames.length > 0) {
@@ -1486,6 +1490,7 @@ export default function LogicalTableDataView({
                 <DynamicRecordFormDialog
                   open={open}
                   isChildModal={isChildModal}
+                  original_record_Id = {original_record_Id}
                   colName={colName}
                   foreignForm={!!(constFilter && hiddenColumns)}
                   onOpenChange={(val) => {
@@ -1603,6 +1608,7 @@ export default function LogicalTableDataView({
         formInitialValues={formInitialValues}
         setFormInitialValues={setFormInitialValues}
         isChildModal={isChildModal}
+        original_record_Id = {original_record_Id}
       />
     </div>
   );

@@ -22,6 +22,7 @@ export default function SortableRow({
     id = getRowKey?.(row) ?? row.id ?? rowIndex;
   }
 
+
   const {
     attributes,
     listeners,
