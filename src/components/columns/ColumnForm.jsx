@@ -409,7 +409,7 @@ export default function ColumnForm({
                 <Label htmlFor="related_table_description">Descripción de la nueva tabla (opcional)</Label>
                 <Textarea
                   id="related_table_description"
-                  value={formData.related_table_description}
+                  value={formData.related_table_description || ""}
                   onChange={(e) => handleChange("related_table_description", e.target.value)}
                   placeholder="Describe el propósito de la nueva tabla"
                   rows={2}
@@ -551,7 +551,7 @@ export default function ColumnForm({
               <Label htmlFor="validations">Validaciones</Label>
               <Textarea
                 id="validations"
-                value={formData.validations}
+                value={formData.validations || ""}
                 onChange={(e) => handleChange("validations", e.target.value)}
                 placeholder="Ej: min:0, max:100, email, unique..."
                 rows={3}
