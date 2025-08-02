@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Check, ChevronsUpDown, ChevronDown  } from "lucide-react";
+import { Check, ChevronsUpDown, ChevronDown, SquareArrowOutUpRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,8 @@ export default function ReusableCombobox({
   error,
   required = false,
   disabled = false,
-  triggerClassName = ""
+  triggerClassName = "",
+  onRedirectClick,
 }) {
   const [open, setOpen] = useState(false);
 
@@ -42,7 +43,7 @@ export default function ReusableCombobox({
           {label} {required && <span className="text-red-500">*</span>}
         </Label>
       )}
-      
+      <div className="flex items-center gap-2">
       <Popover open={open} onOpenChange={setOpen} modal={true}>
         <PopoverTrigger asChild>
           <Button
@@ -51,7 +52,7 @@ export default function ReusableCombobox({
             disabled={disabled}
             aria-expanded={open}
             className={cn(
-             "flex h-11 w-full items-center justify-between border border-transparent bg-gray-200 hover:bg-gray-200 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800 dark:hover:bg-gray-800",   //focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+             "flex h-11 flex-1 items-center justify-between border border-transparent bg-gray-200 hover:bg-gray-200 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800 dark:hover:bg-gray-800",
               triggerClassName
             )}
           >
@@ -116,6 +117,19 @@ export default function ReusableCombobox({
           </Command>
         </PopoverContent>
       </Popover>
+      {onRedirectClick && (
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          disabled={!value}
+          onClick={onRedirectClick}
+          className="h-11 w-11 flex-shrink-0 border-gray-300" 
+        >
+          <SquareArrowOutUpRight className="w-5 h-5" />
+        </Button>
+      )}
+      </div>
       {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
     </div>
   );
