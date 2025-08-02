@@ -297,7 +297,7 @@ export default function GenericCRUDTable({
           onOrderChange={onOrderChange}
           onOrderColumnChange={onOrderColumnChange}
           pagination={true}
-          onRowClick={onRowClick || handleEdit}
+          onRowClick={handleEdit}
           columnWidths={columnWidths}
           isDraggableColumnEnabled = {isDraggableColumnEnabled}
           onColumnResize={(columnKey, newWidth) => {
