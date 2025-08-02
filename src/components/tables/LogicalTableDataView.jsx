@@ -354,7 +354,7 @@ export default function LogicalTableDataView({
 
         try {
           // Buscar la columna que define la tabla foránea
-          const foreignColumn = columns.find(col => col.foreign_table_id);
+          const foreignColumn = columns.find(col => col.name === "foreign_record_id");
           console.log('📋 Columna foránea encontrada:', foreignColumn);
 
           if (foreignColumn && foreignColumn.foreign_table_id) {
@@ -409,6 +409,7 @@ export default function LogicalTableDataView({
   };
 
   useEffect(() => {
+
     const fetchData = async () => {
       if (!tableId) {
         setColumns([]);
@@ -417,9 +418,29 @@ export default function LogicalTableDataView({
         return;
       }
 
-      setLoading(true);
+      // Si tenemos registros pre-procesados, usarlos directamente
+      /*
+      if (preProcessedRecords) {
+        console.log('📦 Usando registros pre-procesados:', preProcessedRecords);
+        setRecords(preProcessedRecords);
+        
+        // Todavía necesitamos cargar las columnas
+        try {
+          const cols = await getLogicalTableStructure(tableId);
+          console.log('📋 Columnas cargadas para registros pre-procesados:', cols);
+          setColumns(cols);
+          setTotal(preProcessedRecords.length);
+        } catch (err) {
+          console.error("💥 Error cargando estructura de tabla:", err);
+        }
+        setLoading(false);
+        return;
+      }
+      } */
+
       loadViews();
       loadViewSorts();
+      setLoading(true);
 
       console.log('🚀 Iniciando carga de datos para tabla ID:', tableId);
 
@@ -428,61 +449,52 @@ export default function LogicalTableDataView({
         console.log('📋 Columnas cargadas:', cols);
         setColumns(cols);
 
-        let recordsToUse = null;
+        const data = await getLogicalTableRecords(tableId, {
+          page,
+          pageSize,
+        });
 
-        if (preProcessedRecords) {
-          console.log('📦 Usando registros pre-procesados:', preProcessedRecords);
-          recordsToUse = preProcessedRecords;
-          setTotal(preProcessedRecords.length);
-        } else {
-          const data = await getLogicalTableRecords(tableId, {
-            page,
-            pageSize,
-          });
+        const rawRecords = data.records || data;
+        console.log('📊 Registros crudos obtenidos:', rawRecords);
 
-          const rawRecords = data.records || data;
-          console.log('📊 Registros crudos obtenidos:', rawRecords);
+        // Procesar registros para resolver foreign_record_id a texto descriptivo
+        console.log('🔄 Iniciando procesamiento de registros...');
+        const processedRecords = await processRecordsWithForeignText(rawRecords, cols);
+        console.log('sevala:✅ Registros procesados:', processedRecords);
 
-          console.log('🔄 Iniciando procesamiento de registros...');
-          const processedRecords = await processRecordsWithForeignText(rawRecords, cols);
-          console.log('✅ Registros procesados:', processedRecords);
+        setRecords(processedRecords);
 
-          recordsToUse = processedRecords;
-          setTotal(
-            data.total || (data.records ? data.records.length : data.length)
-          );
-        }
 
-        setRecords(recordsToUse);
+        setTotal(
+          data.total || (data.records ? data.records.length : data.length)
+        );
 
         if (selectedView) {
-          handleSelectView(selectedView);
+          handleSelectView(selectedView)
         }
 
         const recordIdToOpen = searchParams.get('openRecord');
         if (recordIdToOpen) {
-          const recordToOpen = recordsToUse.find(r => r.id == recordIdToOpen);
+          const recordToOpen = processedRecords.find(r => r.id == recordIdToOpen);
           if (recordToOpen) {
             setRecordToEdit(recordToOpen);
             setShowEditRecordDialog(true);
+
             const newPath = window.location.pathname;
             router.replace(newPath, { scroll: false });
           }
         }
-
       } catch (err) {
         console.error("💥 Error fetching table data:", err);
         setRecords([]);
         setTotal(0);
       } finally {
         setLoading(false);
-        // useTabStore.getState().clearLoadingTab();
+        //useTabStore.getState().clearLoadingTab();
       }
     };
-
     fetchData();
   }, [tableId, page, pageSize, refresh, localRefreshFlag, preProcessedRecords, searchParams, router]);
-
 
   useEffect(() => {
     const fetchMeta = async () => {
