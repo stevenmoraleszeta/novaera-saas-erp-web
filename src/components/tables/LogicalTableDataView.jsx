@@ -77,7 +77,8 @@ export default function LogicalTableDataView({
   onRowClick, 
   onManageCollaborators, 
   isChildModal = false, 
-  preProcessedRecords = null 
+  preProcessedRecords = null,
+  original_record_Id = null
 }) {
 
   const router = useRouter();
@@ -418,6 +419,7 @@ export default function LogicalTableDataView({
       }
       
       // Si tenemos registros pre-procesados, usarlos directamente
+      /*
       if (preProcessedRecords) {
         console.log('📦 Usando registros pre-procesados:', preProcessedRecords);
         setRecords(preProcessedRecords);
@@ -433,7 +435,7 @@ export default function LogicalTableDataView({
         }
         setLoading(false);
         return;
-      }
+      } */
       
       loadViews();
       loadViewSorts();
@@ -485,7 +487,7 @@ export default function LogicalTableDataView({
         setTotal(0);
       } finally {
         setLoading(false);
-        useTabStore.getState().clearLoadingTab();
+        //useTabStore.getState().clearLoadingTab();
       }
     };
     fetchData();
@@ -1503,6 +1505,7 @@ export default function LogicalTableDataView({
                 <DynamicRecordFormDialog
                   open={open}
                   isChildModal={isChildModal}
+                  original_record_Id = {original_record_Id}
                   colName={colName}
                   foreignForm={!!(constFilter && hiddenColumns)}
                   onOpenChange={(val) => {
@@ -1620,6 +1623,7 @@ export default function LogicalTableDataView({
         formInitialValues={formInitialValues}
         setFormInitialValues={setFormInitialValues}
         isChildModal={isChildModal}
+        original_record_Id = {original_record_Id}
       />
     </div>
   );

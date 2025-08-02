@@ -31,11 +31,11 @@ import ReusableCombobox from "@/components/ui/reusableCombobox";
 export default function DialogsContainer(props) {
 
   const { handleUpdatePosition, handleDelete } = useColumns(null);
-  
+
   // Estados para rastrear cambios de posición de columnas en el diálogo
   const [hasColumnOrderChanges, setHasColumnOrderChanges] = useState(false);
   const [pendingColumnOrder, setPendingColumnOrder] = useState([]);
-  
+
   const {
     showFilterDialog,
     setShowFilterDialog,
@@ -106,7 +106,8 @@ export default function DialogsContainer(props) {
     getDefaultValuesFromFilters,
     formInitialValues,
     setFormInitialValues,
-    isChildModal
+    isChildModal,
+    original_record_Id
   } = props;
 
   // Función para aplicar cambios de orden cuando se cierre el modal
@@ -121,7 +122,7 @@ export default function DialogsContainer(props) {
         console.error("Error al guardar el orden de columnas:", err);
       }
     }
-    
+
     // Resetear estados
     setHasColumnOrderChanges(false);
     setPendingColumnOrder([]);
@@ -206,6 +207,7 @@ export default function DialogsContainer(props) {
         open={showAddRecordDialog}
         defaultValues={formInitialValues}
         isChildModal={isChildModal}
+        original_record_Id={original_record_Id}
         onOpenChange={setShowAddRecordDialog}
         tableId={tableId}
         colName={colName}
