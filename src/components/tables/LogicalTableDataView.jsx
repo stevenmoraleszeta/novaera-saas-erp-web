@@ -476,7 +476,7 @@ export default function LogicalTableDataView({
         setTotal(0);
       } finally {
         setLoading(false);
-        useTabStore.getState().clearLoadingTab();
+        // useTabStore.getState().clearLoadingTab();
       }
     };
 
