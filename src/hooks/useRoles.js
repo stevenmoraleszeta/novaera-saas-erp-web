@@ -2,9 +2,11 @@
 import { useState, useEffect } from 'react';
 import { useAxiosAuth } from '../hooks/useAxiosAuth';
 import { getPermissionsByRole } from '../services/permissionsService';
+import useUserStore from '../stores/userStore';
 
 export function useRoles() {
   const axios = useAxiosAuth();
+  const { user } = useUserStore();
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -16,12 +18,21 @@ export function useRoles() {
   const [permissions, setPermissions] = useState([]);
 
   useEffect(() => {
-    fetchRoles();
-    fetchPermissions();
+    // Only fetch data if user is authenticated
+    if (user) {
+      fetchRoles();
+      fetchPermissions();
+    }
     // eslint-disable-next-line
-  }, [page, search]);
+  }, [page, search, user]);
 
   const fetchRoles = async () => {
+    // Only fetch roles if user is authenticated
+    if (!user) {
+      console.log('useRoles: User not authenticated, skipping roles fetch');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -40,6 +51,12 @@ export function useRoles() {
   };
 
   const getAllRoles = async () => {
+    // Only fetch roles if user is authenticated
+    if (!user) {
+      console.log('useRoles: User not authenticated, skipping getAllRoles');
+      return [];
+    }
+
     const res = await axios.get('/roles');
     const newRoles = (res.data || []).map(r => ({
       id: r.id,
@@ -51,6 +68,12 @@ export function useRoles() {
   };
 
   const fetchPermissions = async () => {
+    // Only fetch permissions if user is authenticated
+    if (!user) {
+      console.log('useRoles: User not authenticated, skipping permissions fetch');
+      return;
+    }
+
     try {
       const res = await axios.get('/permissions');
       setPermissions(res.data || []);

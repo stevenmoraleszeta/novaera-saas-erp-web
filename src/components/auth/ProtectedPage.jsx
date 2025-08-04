@@ -4,7 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { useAuthValidation } from "@/hooks/useAuthValidation";
 
-export default function AuthGuard({ children }) {
+export default function ProtectedPage({ children }) {
   const { isLoading, isAuthenticated, hasCheckedAuth } = useAuthValidation();
   const router = useRouter();
 
@@ -22,17 +22,17 @@ export default function AuthGuard({ children }) {
 
   // Si ya se verificó la autenticación y no está autenticado, redirigir
   if (hasCheckedAuth && !isAuthenticated) {
-    console.log("[AuthGuard] Usuario no autenticado, redirigiendo a login");
+    console.log("[ProtectedPage] Usuario no autenticado, redirigiendo a login");
     router.replace("/login");
     return null;
   }
 
   // Si está autenticado, mostrar el contenido
   if (isAuthenticated) {
-    console.log("[AuthGuard] Usuario autenticado, mostrando contenido");
+    console.log("[ProtectedPage] Usuario autenticado, mostrando contenido");
     return children;
   }
 
   // Estado intermedio (no debería llegar aquí)
   return null;
-}
+} 

@@ -1,14 +1,22 @@
 import { useEffect, useState } from 'react';
 import { getTables } from '@/services/tablesService';
 import { getColumnsByTable } from '@/services/columnsService';
+import useUserStore from '@/stores/userStore';
 
 export function useForeignKeyOptions() {
   const [tables, setTables] = useState([]);
   const [columnsByTable, setColumnsByTable] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { user } = useUserStore();
 
   useEffect(() => {
+    // Only fetch data if user is authenticated
+    if (!user) {
+      console.log('useForeignKeyOptions: User not authenticated, skipping data fetch');
+      return;
+    }
+
     const fetchTablesAndColumns = async () => {
       setLoading(true);
       try {
@@ -35,7 +43,7 @@ export function useForeignKeyOptions() {
     };
 
     fetchTablesAndColumns();
-  }, []);
+  }, [user]);
 
   return { tables, columnsByTable, loading, error };
 }

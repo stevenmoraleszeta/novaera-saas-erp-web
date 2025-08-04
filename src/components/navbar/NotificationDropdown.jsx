@@ -46,7 +46,12 @@ const NotificationDropdown = () => {
 
   // Poll notifications every 30s
   useEffect(() => {
-    if (!userId) return;
+    // Only fetch notifications if user is authenticated
+    if (!userId || !user) {
+      console.log('NotificationDropdown: User not authenticated, skipping notification fetch');
+      return;
+    }
+
     let interval;
     const fetchNotifications = async () => {
       setLoading(true);
@@ -69,7 +74,7 @@ const NotificationDropdown = () => {
     fetchNotifications();
     interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
-  }, [userId]);
+  }, [userId, user]);
 
   // Marcar como leída
   const markAsRead = async (notificationId) => {

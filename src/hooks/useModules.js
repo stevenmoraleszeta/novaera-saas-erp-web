@@ -34,6 +34,12 @@ export function useModules(initialParams = {}) {
 
   const loadModules = useCallback(
     async (params = {}) => {
+      // Only load modules if user is authenticated
+      if (!user) {
+        console.log("useModules: User not authenticated, skipping module load");
+        return;
+      }
+
       setLoading(true);
       try {
         const response = await getModules({
@@ -54,12 +60,15 @@ export function useModules(initialParams = {}) {
         setLoading(false);
       }
     },
-    [currentPage, itemsPerPage, search]
+    [currentPage, itemsPerPage, search, user]
   );
 
   useEffect(() => {
-    loadModules();
-  }, [loadModules]);
+    // Only load modules if user is authenticated
+    if (user) {
+      loadModules();
+    }
+  }, [loadModules, user]);
 
   const handleSearch = useCallback((query) => {
     setSearch(query);

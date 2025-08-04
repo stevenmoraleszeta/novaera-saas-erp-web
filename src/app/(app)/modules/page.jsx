@@ -41,14 +41,6 @@ export default function ModulesPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [moduleToDelete, setModuleToDelete] = useState(null);
 
-  // Proteger la página: si no hay usuario, redirigir a /login
-  const router = useRouter();
-  useEffect(() => {
-    if (!user) {
-      router.replace("/login");
-    }
-  }, [user, router]);
-
   // Debug: Log del modo edición
   console.log("🔧 ModulesPage - Modo edición:", isEditingMode, "Hidratado:", isHydrated);
 

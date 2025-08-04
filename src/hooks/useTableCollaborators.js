@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAxiosAuth } from './useAxiosAuth';
+import useUserStore from '../stores/userStore';
 
 export const useTableCollaborators = (tableId) => {
   const axios = useAxiosAuth();
+  const { user } = useUserStore();
   const [collaborators, setCollaborators] = useState([]);
   const [availableUsers, setAvailableUsers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -10,7 +12,11 @@ export const useTableCollaborators = (tableId) => {
 
   // Obtener colaboradores de una tabla
   const fetchCollaborators = async () => {
-    if (!tableId) return;
+    // Only fetch collaborators if user is authenticated and tableId is provided
+    if (!tableId || !user) {
+      console.log('useTableCollaborators: User not authenticated or no tableId, skipping collaborators fetch');
+      return;
+    }
     
     setLoading(true);
     setError(null);
@@ -28,7 +34,11 @@ export const useTableCollaborators = (tableId) => {
 
   // Obtener usuarios disponibles para asignar
   const fetchAvailableUsers = async () => {
-    if (!tableId) return;
+    // Only fetch available users if user is authenticated and tableId is provided
+    if (!tableId || !user) {
+      console.log('useTableCollaborators: User not authenticated or no tableId, skipping available users fetch');
+      return;
+    }
     
     try {
       const response = await axios.get(`/table-collaborators/table/${tableId}/available-users`);
@@ -122,11 +132,12 @@ export const useTableCollaborators = (tableId) => {
 
   // Cargar datos iniciales cuando cambia el tableId
   useEffect(() => {
-    if (tableId) {
+    // Only fetch data if user is authenticated and tableId is provided
+    if (tableId && user) {
       fetchCollaborators();
       fetchAvailableUsers();
     }
-  }, [tableId]);
+  }, [tableId, user]);
 
   return {
     collaborators,

@@ -26,7 +26,12 @@ export function useColumns(tableId) {
   } = useLogicalTables();
 
   const fetchColumns = useCallback(async () => {
-    if (!tableId) return;
+    // Only fetch columns if user is authenticated and tableId is provided
+    if (!tableId || !user) {
+      console.log('useColumns: User not authenticated or no tableId, skipping columns fetch');
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await getColumnsByTable(tableId);
@@ -43,11 +48,14 @@ export function useColumns(tableId) {
     } finally {
       setLoading(false);
     }
-  }, [tableId, search]);
+  }, [tableId, search, user]);
 
   useEffect(() => {
-    fetchColumns();
-  }, [fetchColumns]);
+    // Only fetch columns if user is authenticated
+    if (user) {
+      fetchColumns();
+    }
+  }, [fetchColumns, user]);
 
   const handleCreate = async (columnData) => {
     try {

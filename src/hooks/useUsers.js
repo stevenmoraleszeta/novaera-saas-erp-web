@@ -14,6 +14,7 @@ import {
     checkEmailExists,
     setUserAvatar
 } from '../services/userService';
+import useUserStore from '../stores/userStore';
 
 export function useUsers(initialFilters = {}) {
     // State management
@@ -37,6 +38,8 @@ export function useUsers(initialFilters = {}) {
         ...initialFilters
     });
 
+    const { user } = useUserStore();
+
     // Load users data
     const loadUsers = useCallback(async (
         page = currentPage,
@@ -44,6 +47,13 @@ export function useUsers(initialFilters = {}) {
         sort = sortConfig,
         currentFilters = filters
     ) => {
+        // Only load users if user is authenticated
+        if (!user) {
+            console.log('useUsers: User not authenticated, skipping users load');
+            setLoading(false);
+            return;
+        }
+
         try {
             setLoading(true);
             setError(null);
@@ -71,12 +81,17 @@ export function useUsers(initialFilters = {}) {
         } finally {
             setLoading(false);
         }
-    }, [currentPage, searchQuery, sortConfig, filters, itemsPerPage]);
+    }, [currentPage, searchQuery, sortConfig, filters, itemsPerPage, user]);
 
     // Initialize data loading
     useEffect(() => {
-        loadUsers(1, searchQuery, sortConfig, filters);
-    }, [searchQuery, sortConfig, filters]);
+        // Only load users if user is authenticated
+        if (user) {
+            loadUsers(1, searchQuery, sortConfig, filters);
+        } else {
+            setLoading(false);
+        }
+    }, [searchQuery, sortConfig, filters, user]);
 
     // Handle search
     const handleSearch = useCallback((query) => {

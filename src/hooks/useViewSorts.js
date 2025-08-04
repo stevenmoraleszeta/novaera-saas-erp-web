@@ -6,6 +6,7 @@ import {
   deleteViewSort,
   updateViewSortPosition,
 } from "@/services/viewSortService";
+import useUserStore from "@/stores/userStore";
 
 export function useViewSorts(viewId) {
   const [sorts, setSorts] = useState([]);
@@ -13,9 +14,16 @@ export function useViewSorts(viewId) {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
+  const { user } = useUserStore();
+
   // Cargar los ordenamientos de la vista
   const loadViewSorts = useCallback(async () => {
-    if (!viewId) return;
+    // Only load view sorts if user is authenticated and viewId is provided
+    if (!viewId || !user) {
+      console.log('useViewSorts: User not authenticated or no viewId, skipping view sorts load');
+      return;
+    }
+
     setLoading(true);
     try {
       const result = await getViewSortsByViewId(viewId);
@@ -26,11 +34,14 @@ export function useViewSorts(viewId) {
     } finally {
       setLoading(false);
     }
-  }, [viewId]);
+  }, [viewId, user]);
 
   useEffect(() => {
-    loadViewSorts();
-  }, [loadViewSorts]);
+    // Only load view sorts if user is authenticated
+    if (user) {
+      loadViewSorts();
+    }
+  }, [loadViewSorts, user]);
 
   // Crear nuevo ordenamiento
   const handleCreateSort = async (sortData) => {

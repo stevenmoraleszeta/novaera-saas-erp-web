@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
 import { columnOptionsService } from '@/services/columnOptionsService';
+import useUserStore from '@/stores/userStore';
 
 export const useColumnOptions = (columnId) => {
   const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { user } = useUserStore();
 
   const fetchOptions = async () => {
-    if (!columnId || columnId === null || columnId === undefined) {
-      console.log('useColumnOptions: No columnId provided');
+    // Only fetch options if user is authenticated and columnId is provided
+    if (!columnId || columnId === null || columnId === undefined || !user) {
+      console.log('useColumnOptions: No columnId provided or user not authenticated');
       setOptions([]);
       setLoading(false);
       return;
@@ -41,8 +44,11 @@ export const useColumnOptions = (columnId) => {
   };
 
   useEffect(() => {
-    fetchOptions();
-  }, [columnId]);
+    // Only fetch options if user is authenticated
+    if (user) {
+      fetchOptions();
+    }
+  }, [columnId, user]);
 
   return {
     options,

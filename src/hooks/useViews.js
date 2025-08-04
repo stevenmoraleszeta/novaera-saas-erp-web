@@ -11,6 +11,7 @@ import {
   updateViewPosition,
   updateViewColumnPosition
 } from "@/services/viewsService";
+import useUserStore from "@/stores/userStore";
 
 export function useViews(tableId) {
   const [views, setViews] = useState([]);
@@ -18,18 +19,26 @@ export function useViews(tableId) {
   const [loadingViews, setLoadingViews] = useState(false);
   const [loadingColumns, setLoadingColumns] = useState(false);
   const [error, setError] = useState(null);
-    const [success, setSuccess] = useState(null);
+  const [success, setSuccess] = useState(null);
+
+  const { user } = useUserStore();
 
   // Auto-load views when tableId changes
   useEffect(() => {
-    if (tableId) {
+    // Only load views if user is authenticated and tableId is provided
+    if (tableId && user) {
       loadViews();
     }
-  }, [tableId]);
+  }, [tableId, user]);
 
   // Cargar vistas de una tabla
   const loadViews = useCallback(async () => {
-    if (!tableId) return;
+    // Only load views if user is authenticated
+    if (!tableId || !user) {
+      console.log('useViews: User not authenticated or no tableId, skipping views load');
+      return;
+    }
+
     setLoadingViews(true);
     setError(null);
     try {
@@ -40,25 +49,29 @@ export function useViews(tableId) {
     } finally {
       setLoadingViews(false);
     }
-  }, [tableId]);
+  }, [tableId, user]);
 
   // Cargar columnas de una vista
-    const loadColumns = useCallback(async (viewId) => {
-      if (!viewId) return [];
+  const loadColumns = useCallback(async (viewId) => {
+    // Only load columns if user is authenticated
+    if (!viewId || !user) {
+      console.log('useViews: User not authenticated or no viewId, skipping columns load');
+      return [];
+    }
 
-      setLoadingColumns(true);
-      setError(null);
-      try {
-        const data = await getColumnsByView(viewId);
-        setColumns((prev) => ({ ...prev, [viewId]: data }));
-        return data; // <-- devuélvelo
-      } catch (err) {
-        setError(err.message || "Error loading columns");
-        return [];
-      } finally {
-        setLoadingColumns(false);
-      }
-    }, []);
+    setLoadingColumns(true);
+    setError(null);
+    try {
+      const data = await getColumnsByView(viewId);
+      setColumns((prev) => ({ ...prev, [viewId]: data }));
+      return data; // <-- devuélvelo
+    } catch (err) {
+      setError(err.message || "Error loading columns");
+      return [];
+    } finally {
+      setLoadingColumns(false);
+    }
+  }, [user]);
 
   // Get columns for a specific view
   const getColumnsForView = useCallback(

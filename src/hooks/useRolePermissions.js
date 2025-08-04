@@ -2,14 +2,21 @@
 import { useState, useEffect } from "react";
 import { getTables } from "../services/tablesService";
 import axios from "../lib/axios";
+import useUserStore from "../stores/userStore";
 
 export function useRolePermissions(roleId) {
   const [permissions, setPermissions] = useState({});
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(false);
+  const { user } = useUserStore();
 
   useEffect(() => {
-    if (!roleId) return;
+    // Only fetch data if user is authenticated and roleId is provided
+    if (!roleId || !user) {
+      console.log('useRolePermissions: User not authenticated or no roleId, skipping permissions fetch');
+      return;
+    }
+
     setLoading(true);
     getTables().then(tbls => {
       setTables(tbls);
@@ -44,7 +51,7 @@ export function useRolePermissions(roleId) {
         setLoading(false);
       });
     });
-  }, [roleId]);
+  }, [roleId, user]);
 
   const updatePerm = (roleId, tableId, actions) => {
     setPermissions(prev => ({
