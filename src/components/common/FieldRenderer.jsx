@@ -114,7 +114,7 @@ export default function FieldRenderer({
   if (column.is_foreign_key && column.foreign_table_id && column.foreign_column_name) {
     console.log('Rendering legacy foreign key field - this should not be used for new intermediate tables');
     const legacyFkOptions = [
-      { label: "-- Ninguno --", value: "none" },
+      { label: "Ninguno", value: "none" },
       ...foreignOptions.filter((option) => option.value !== "")
     ];
     return (

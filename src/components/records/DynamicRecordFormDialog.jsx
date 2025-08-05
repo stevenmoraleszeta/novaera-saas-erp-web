@@ -9,6 +9,9 @@ import {
   getLogicalTableRecords,
   validateUniqueValue,
 } from "@/services/logicalTableService";
+import { useUsers } from '@/hooks/useUsers';
+import { useRoles } from '@/hooks/useRoles';
+import { getMyPermissions } from '@/services/permissionsService'; 
 import FieldRenderer from "../common/FieldRenderer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +51,9 @@ export default function DynamicRecordFormDialog({
   original_record_Id,
 }) {
 
+  const { users, loadUsers } = useUsers();
+  const { roles } = useRoles();
+  const [permissionStatus, setPermissionStatus] = useState({});
   const router = useRouter();
   const { addModuleTab, navigateToTab } = useTabStore();
   const [columns, setColumns] = useState([]);
@@ -71,6 +77,7 @@ export default function DynamicRecordFormDialog({
   const [commentsCount, setCommentsCount] = useState(0);
   const [showUniqueErrorDialog, setShowUniqueErrorDialog] = useState(false);
   const [uniqueErrorInfo, setUniqueErrorInfo] = useState({ fieldName: '', value: '' });
+  const [formNotification, setFormNotification] = useState(null);
   const [original_record_Id_local, setOriginal_record_Id_local] = useState(0);
 
   // Estado y función para el modal de tabla relacionada tipo 'tabla'
@@ -214,6 +221,23 @@ export default function DynamicRecordFormDialog({
     }
   };
 
+  // lectura de los usuarios
+  useEffect(() => {
+    if (open) {
+      loadUsers();
+    }
+  }, [open]); 
+
+  // mostrar mensaje que no puede acceder a un modulo por permisos.
+  useEffect(() => {
+  if (formNotification) {
+    const timer = setTimeout(() => {
+      setFormNotification(null);
+    }, 3000); 
+    return () => clearTimeout(timer);
+  }
+}, [formNotification]);
+
   useEffect(() => {
     if (!tableId || !open) return;
     (async () => {
@@ -301,6 +325,30 @@ export default function DynamicRecordFormDialog({
       loadCommentsCount();
     }
   }, [open, mode, record]);
+
+  // manejo de los permisos
+  useEffect(() => {
+    if (open && columns.length > 0 && tables.length > 0) {
+      const checkAllPermissions = async () => {
+        const statusMap = {};
+        for (const col of columns) {
+          if (col.data_type === 'select' && col.foreign_table_id) {
+            const targetTable = tables.find(t => t.id === col.foreign_table_id);
+            if (targetTable) {
+              try {
+                const permissions = await getMyPermissions(targetTable.id);
+                statusMap[col.name] = permissions.can_read ? 'allowed' : 'denied';
+              } catch {
+                statusMap[col.name] = 'denied';
+              }
+            }
+          }
+        }
+        setPermissionStatus(statusMap);
+      };
+      checkAllPermissions();
+    }
+  }, [open, columns, tables]);
 
   // Función para cargar conteo de comentarios
   const loadCommentsCount = async () => {
@@ -590,19 +638,56 @@ export default function DynamicRecordFormDialog({
 
   if (!open) return null;
 
-  const handleRedirect = (col, recordId) => {
-    if (!recordId || !col.foreign_table_id) return;
+  // Logica para el redireccionamiento foreáneo
+  const handleRedirect = async (col, recordId) => {
+    if (!recordId) {
+      const targetTable = tables.find(t => t.id === col.foreign_table_id);
+      if (targetTable && targetTable.module_id) {
+        const tabId = addModuleTab(targetTable.module_id, targetTable.name || 'Módulo');
+        if (tabId) navigateToTab(tabId, router);
+      }
+      return; 
+    }
+
+    if (!col.foreign_table_id) return;
+
     const targetTable = tables.find(t => t.id === col.foreign_table_id);
 
-    if (targetTable && targetTable.module_id) {
-      const newTabId = addModuleTab(targetTable.module_id, targetTable.name || 'Módulo', recordId);
+    if (!targetTable || !targetTable.module_id) {
+      setFormNotification({ 
+        text: "No se pudo encontrar el módulo de destino.", 
+        type: 'error' 
+      });
+      return;
+    }
 
-      if (newTabId) {
-        navigateToTab(newTabId, router);
-        onOpenChange(false); // Cierra el modal actual
+    try {
+      const permissions = await getMyPermissions(targetTable.id);
+      if (!permissions.can_read) { 
+          setFormNotification({ 
+            text: `No tienes permiso para acceder al módulo "${targetTable.name}".`, 
+            type: 'warning' 
+          });
+        return; 
       }
-    } else {
-      toast.error("No se pudo encontrar el módulo para la tabla de destino.");
+    } catch (error) {
+      setFormNotification({ 
+        text: "No se pudo verificar tus permisos.", 
+        type: 'error' 
+      });
+      console.error("Error checking permissions:", error);
+      return;
+    }
+
+    const tabId = addModuleTab(
+      targetTable.module_id, 
+      targetTable.name || 'Módulo', 
+      recordId
+    );
+
+    if (tabId) {
+      navigateToTab(tabId, router);
+      onOpenChange(false);
     }
   };
 
@@ -660,10 +745,19 @@ export default function DynamicRecordFormDialog({
             <form onSubmit={handleSubmit} noValidate className="space-y-6">
               {columns.map((col) => {
                 if (foreignForm && col.name === "original_record_id") return null;
-                const redirectHandler =
-                  (col.data_type === 'select' || col.data_type === 'user' || col.is_foreign_key)
-                    ? () => handleRedirect(col, values[col.name])
-                    : null;
+                const targetTable = tables.find(t => t.id === col.foreign_table_id);
+
+                const excludedTables = ['roles_sistema', 'usuarios_sistema'];
+
+                const shouldShowRedirectButton =
+                  col.data_type === 'select' &&
+                  col.foreign_table_id &&
+                  targetTable &&
+                  !excludedTables.includes(targetTable.name);
+
+                const redirectHandler = shouldShowRedirectButton
+                  ? () => handleRedirect(col, values[col.name])
+                  : null;
                 return (
                   <div key={col.column_id} className="space-y-2">
                     <Label htmlFor={`field-${col.name}`}>
@@ -697,7 +791,6 @@ export default function DynamicRecordFormDialog({
                       <Button type="button" onClick={() => handleOpenFileModal(col)}>
                         Gestionar Archivos
                       </Button>
-                      // ----------------------------
                     ) : (
                       <div className="space-y-2">
                         <FieldRenderer
@@ -705,11 +798,7 @@ export default function DynamicRecordFormDialog({
                           id={`field-${col.name}`}
                           column={col}
                           value={values[col.name]}
-                          onRedirectClick={
-                            ((col.data_type === 'select' && col.foreign_table_id) || col.data_type === 'user')
-                              ? () => handleRedirect(col, values[col.name])
-                              : null
-                          }
+                          onRedirectClick={redirectHandler}
                           onChange={(e) =>
                             handleChange(
                               col.name,
@@ -768,6 +857,18 @@ export default function DynamicRecordFormDialog({
                   <AlertDescription>{submitError}</AlertDescription>
                 </Alert>
               )}
+              <div className="h-6 mt-2">
+                {formNotification && (
+                  <p className={`font-semibold text-sm ${
+                    formNotification.type === 'error' ? 'text-red-600' :
+                    formNotification.type === 'warning' ? 'text-yellow-800' : 
+                    'text-green-600' 
+                  }`}>
+                    {formNotification.text}
+                    
+                  </p>
+                )}
+              </div>
             </form>
           )}
         </div>

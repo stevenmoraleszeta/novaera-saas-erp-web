@@ -408,57 +408,48 @@ export default function LogicalTableDataView({
     return processedRecords;
   };
 
-  useEffect(() => {
+// Tuve que cambiar  los dos useEffect (unificar ambos) que habian, 
+// el fetchData y fetchAllOptions porque generaba que uno le caia al otro y provocaba el error de los nombres correctos.
 
-    const fetchData = async () => {
-      if (!tableId) {
-        setColumns([]);
-        setRecords([]);
-        setLoading(false);
-        return;
-      }
+useEffect(() => {
+  const loadAllData = async () => {
+    if (!tableId) {
+      setColumns([]);
+      setRecords([]);
+      setLoading(false);
+      return;
+    }
 
-      // Si tenemos registros pre-procesados, usarlos directamente
-      /*
-      if (preProcessedRecords) {
-        console.log('📦 Usando registros pre-procesados:', preProcessedRecords);
-        setRecords(preProcessedRecords);
-        
-        // Todavía necesitamos cargar las columnas
-        try {
-          const cols = await getLogicalTableStructure(tableId);
-          console.log('📋 Columnas cargadas para registros pre-procesados:', cols);
-          setColumns(cols);
-          setTotal(preProcessedRecords.length);
-        } catch (err) {
-          console.error("💥 Error cargando estructura de tabla:", err);
-        }
-        setLoading(false);
-        return;
-      }
-      } */
-
-      loadViews();
-      loadViewSorts();
-      setLoading(true);
-
-      console.log('🚀 Iniciando carga de datos para tabla ID:', tableId);
-
+    // Si tenemos registros pre-procesados, usarlos directamente
+    if (preProcessedRecords) {
+      console.log('📦 Usando registros pre-procesados:', preProcessedRecords);
+      setRecords(preProcessedRecords);
+      
       try {
         const cols = await getLogicalTableStructure(tableId);
-        console.log('📋 Columnas cargadas:', cols);
         setColumns(cols);
+        setTotal(preProcessedRecords.length);
+      } catch (err) {
+        console.error("💥 Error cargando estructura de tabla:", err);
+      }
+      setLoading(false);
+      return; 
+    }
+    setLoading(true);
+    
+    try {
+      const cols = await getLogicalTableStructure(tableId);
+      setColumns(cols);
 
-        const data = await getLogicalTableRecords(tableId, {
-          page,
-          pageSize,
-        });
+      const data = await getLogicalTableRecords(tableId, { 
+        page,
+        pageSize,
+      });
+      const rawRecords = data.records || data;
+      console.log('📊 Registros crudos obtenidos:', rawRecords);
 
-        const rawRecords = data.records || data;
-        console.log('📊 Registros crudos obtenidos:', rawRecords);
-
-        // Procesar registros para resolver foreign_record_id a texto descriptivo
-        console.log('🔄 Iniciando procesamiento de registros...');
+      // Procesar registros para resolver foreign_record_id a texto descriptivo
+      console.log('🔄 Iniciando procesamiento de registros...');
         const processedRecords = await processRecordsWithForeignText(rawRecords, cols);
         console.log('sevala:✅ Registros procesados:', processedRecords);
 
@@ -473,28 +464,50 @@ export default function LogicalTableDataView({
           handleSelectView(selectedView)
         }
 
-        const recordIdToOpen = searchParams.get('openRecord');
-        if (recordIdToOpen) {
-          const recordToOpen = processedRecords.find(r => r.id == recordIdToOpen);
-          if (recordToOpen) {
-            setRecordToEdit(recordToOpen);
-            setShowEditRecordDialog(true);
-
-            const newPath = window.location.pathname;
-            router.replace(newPath, { scroll: false });
+      const optionsMap = {};
+      for (const col of cols) {
+        if (col.data_type === 'select' && col.foreign_table_id) {
+          try {
+            const relatedRecords = await getLogicalTableRecords(col.foreign_table_id);
+            optionsMap[col.name] = relatedRecords.map(r => ({
+              value: r.id,
+              label: r.record_data[col.foreign_column_name] || `ID: ${r.id}`,
+            }));
+          } catch (error) {
+            console.error(`Error fetching options for column ${col.name}:`, error);
+            optionsMap[col.name] = [];
           }
+        } else if (col.data_type === 'user') {
+          optionsMap[col.name] = users.map(u => ({ value: u.id, label: u.name }));
+        } else if (col.data_type === 'roles') {
+          optionsMap[col.name] = roles.map(r => ({ value: r.id, label: r.name }));
         }
-      } catch (err) {
-        console.error("💥 Error fetching table data:", err);
-        setRecords([]);
-        setTotal(0);
-      } finally {
-        setLoading(false);
-        //useTabStore.getState().clearLoadingTab();
       }
-    };
-    fetchData();
-  }, [tableId, page, pageSize, refresh, localRefreshFlag, preProcessedRecords, searchParams, router]);
+      
+      setSelectOptions(optionsMap);
+      setRecords(rawRecords); 
+      setTotal(data.total || rawRecords.length);
+
+      const recordIdToOpen = searchParams.get('openRecord');
+      if (recordIdToOpen) {
+        const recordToOpen = processedRecords.find(r => r.id == recordIdToOpen);
+        if (recordToOpen) {
+          setRecordToEdit(recordToOpen);
+          setShowEditRecordDialog(true);
+          const newPath = window.location.pathname;
+          router.replace(newPath, { scroll: false });
+        }
+      }
+    } catch (err) {
+      console.error("💥 Error fetching table data:", err);
+      setRecords([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+  loadAllData();
+}, [tableId, page, pageSize, refresh, localRefreshFlag, users, roles, searchParams, router, preProcessedRecords]);
 
   useEffect(() => {
     const fetchMeta = async () => {
@@ -572,11 +585,18 @@ export default function LogicalTableDataView({
           }
         })
       );
+      columns.forEach(col => {
+        if (col.data_type === 'user') {
+          optionsMap[col.name] = users.map(u => ({ value: u.id, label: u.name }));
+        } else if (col.data_type === 'roles') {
+          optionsMap[col.name] = roles.map(r => ({ value: r.id, label: r.name }));
+        }
+      });
       setSelectOptions(optionsMap);
     };
 
     fetchAllOptions();
-  }, [columns]); // Se ejecuta cada vez que las columnas cambian
+  }, [columns, users, roles]); // Se ejecuta cada vez que las columnas cambian
 
 
   const handleDeleteRecord = async (record) => {
@@ -944,7 +964,6 @@ export default function LogicalTableDataView({
       setShowColumnFormDialog(false);
       setColumnFormMode("create");
       setSelectedColumn(null);
-      setLocalRefreshFlag((prev) => !prev);
       for (const vista of views) {
         await handleAddColumnToView({
           view_id: vista.id,
@@ -956,7 +975,7 @@ export default function LogicalTableDataView({
           width_px: null
         });
       }
-
+      setLocalRefreshFlag((prev) => !prev);
 
     } catch (err) {
       console.error("Error creating column:", err);

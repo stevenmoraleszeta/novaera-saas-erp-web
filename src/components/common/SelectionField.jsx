@@ -31,7 +31,7 @@ export default function SelectionField({
 
   // Prepara el array de opciones, añadiendo la opción para limpiar la selección
   const finalOptions = [
-    { label: "-- Ninguno --", value: "clear-selection" },
+    { label: "Ninguno", value: "clear-selection" },
     ...options.filter(option => option && option.value !== null && option.value !== undefined && option.value !== "")
   ];
 
