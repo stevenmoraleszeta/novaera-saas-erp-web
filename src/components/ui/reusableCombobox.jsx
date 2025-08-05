@@ -122,7 +122,7 @@ export default function ReusableCombobox({
           type="button"
           variant="outline"
           size="icon"
-          disabled={!value}
+          disabled={disabled}
           onClick={onRedirectClick}
           className="h-11 w-11 flex-shrink-0 border-gray-300" 
         >
