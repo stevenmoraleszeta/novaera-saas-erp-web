@@ -79,19 +79,18 @@ export default function Table({
       setOrderedColumns(columns.map((col) => col.key));
       setVisibleColumns(columns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}));
 
-      const hasWidths =
-        externalColumnWidths && Object.keys(externalColumnWidths).length > 0;
-
-      if (!hasWidths) {
+      const hasWidths = externalColumnWidths && Object.keys(externalColumnWidths).length > 0;
+      if (!hasWidths && Object.keys(columnWidths).length === 0) { // ✅ Solo si aún no hay widths
         setColumnWidths(
           columns.reduce((acc, col) => {
-            acc[col.key] = `${100 / columns.length}%`;
+            acc[col.key] = "200px"; // tamaño fijo por defecto
             return acc;
           }, {})
         );
       }
     }
   }, [columns]);
+
 
   const sensors = useSensors(useSensor(PointerSensor));
 
@@ -215,7 +214,7 @@ export default function Table({
 
   return (
     <div className={`space-y-4 ${className}`}>
-      <div className="overflow-x-auto bg-gray-50">
+      <div className="bg-gray-50">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -297,12 +296,24 @@ export default function Table({
                   })
                 ) : (
                   <tr>
-                    <td colSpan={visibleColumnsList.length + 1} className="text-center text-gray-400">
+                    {/* 🔹 Columna del grip aunque no haya datos */}
+                    <td className="w-4 px-2 text-gray-400 select-none">
+                      <GripVertical className="h-4 w-4 opacity-0" />
+                      {/* lo dejo invisible para no confundir al usuario pero mantener ancho */}
+                    </td>
+
+                    {/* 🔹 Columna para el texto */}
+                    <td
+                      colSpan={visibleColumnsList.length}
+                      className="text-center text-gray-400"
+                      style={{ padding: "1rem" }}
+                    >
                       Sin datos
                     </td>
                   </tr>
                 )}
               </tbody>
+
             </table>
           </SortableContext>
         </DndContext>

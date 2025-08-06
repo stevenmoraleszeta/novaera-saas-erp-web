@@ -68,10 +68,12 @@ export default function SortableRow({
                 key={`${column.key || column.name}-${index}`}
                 className="px-4 py-2 border-r"
                 style={{
-                  width,
-                  minWidth: width,
-                  maxWidth: width,
-                  flexShrink: 0,
+                  width: columnWidths[column.key],
+                  minWidth: columnWidths[column.key],
+                  maxWidth: columnWidths[column.key],
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "normal"
                 }}
               >
                 {typeof row[dataKey] === "boolean"
