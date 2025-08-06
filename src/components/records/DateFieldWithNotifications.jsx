@@ -277,7 +277,7 @@ const DateFieldWithNotifications = ({
           }}
         >
           <Card
-            className="w-full max-w-md max-h-[90vh] overflow-y-auto"
+            className="w-full max-w-md max-h-[75vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <CardHeader>

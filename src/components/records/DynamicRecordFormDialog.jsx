@@ -8,10 +8,12 @@ import {
   updateLogicalTableRecord,
   getLogicalTableRecords,
   validateUniqueValue,
+  updateAllOriginalRecordIds,
+  deleteRecordsByOriginalRecordId
 } from "@/services/logicalTableService";
 import { useUsers } from '@/hooks/useUsers';
 import { useRoles } from '@/hooks/useRoles';
-import { getMyPermissions } from '@/services/permissionsService'; 
+import { getMyPermissions } from '@/services/permissionsService';
 import FieldRenderer from "../common/FieldRenderer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -226,17 +228,17 @@ export default function DynamicRecordFormDialog({
     if (open) {
       loadUsers();
     }
-  }, [open]); 
+  }, [open]);
 
   // mostrar mensaje que no puede acceder a un modulo por permisos.
   useEffect(() => {
-  if (formNotification) {
-    const timer = setTimeout(() => {
-      setFormNotification(null);
-    }, 3000); 
-    return () => clearTimeout(timer);
-  }
-}, [formNotification]);
+    if (formNotification) {
+      const timer = setTimeout(() => {
+        setFormNotification(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [formNotification]);
 
   useEffect(() => {
     if (!tableId || !open) return;
@@ -432,6 +434,7 @@ export default function DynamicRecordFormDialog({
     if (isDirty) {
       setShowExitConfirm(true);
     } else {
+      deleteRecordsByOriginalRecordId(tableId, 2147483647)
       onOpenChange(false);
     }
   };
@@ -456,7 +459,17 @@ export default function DynamicRecordFormDialog({
 
       if (mode === "create") {
         const userId = currentUser?.id;
-        result = await createLogicalTableRecord(tableId, cleanValues, userId);
+
+        const sanitizedValues = {
+          ...cleanValues,
+          original_record_id: cleanValues.original_record_id === 0 ? 2147483647 : cleanValues.original_record_id,
+        };
+
+        result = await createLogicalTableRecord(tableId, sanitizedValues, userId);
+
+        if (result?.id && !isChildModal) {
+          await updateAllOriginalRecordIds(tableId, 2147483647, result.id);
+        }
 
         if (pendingNotifications.length > 0 && result?.id) {
           console.log('Registro creado con ID:', result.id, 'Procesando notificaciones...');
@@ -531,7 +544,7 @@ export default function DynamicRecordFormDialog({
     const localId = id ? id : tableId
     console.log('🚀 Abriendo modal foráneo para columna:', col);
 
-    setOriginal_record_Id_local(record?.id ?? 0);
+    setOriginal_record_Id_local(record?.id ?? 2147483647);
 
     const interTable = tables.find(t =>
       (t.original_table_id === localId && t.foreign_table_id === col.foreign_table_id) ||
@@ -646,7 +659,7 @@ export default function DynamicRecordFormDialog({
         const tabId = addModuleTab(targetTable.module_id, targetTable.name || 'Módulo');
         if (tabId) navigateToTab(tabId, router);
       }
-      return; 
+      return;
     }
 
     if (!col.foreign_table_id) return;
@@ -654,34 +667,34 @@ export default function DynamicRecordFormDialog({
     const targetTable = tables.find(t => t.id === col.foreign_table_id);
 
     if (!targetTable || !targetTable.module_id) {
-      setFormNotification({ 
-        text: "No se pudo encontrar el módulo de destino.", 
-        type: 'error' 
+      setFormNotification({
+        text: "No se pudo encontrar el módulo de destino.",
+        type: 'error'
       });
       return;
     }
 
     try {
       const permissions = await getMyPermissions(targetTable.id);
-      if (!permissions.can_read) { 
-          setFormNotification({ 
-            text: `No tienes permiso para acceder al módulo "${targetTable.name}".`, 
-            type: 'warning' 
-          });
-        return; 
+      if (!permissions.can_read) {
+        setFormNotification({
+          text: `No tienes permiso para acceder al módulo "${targetTable.name}".`,
+          type: 'warning'
+        });
+        return;
       }
     } catch (error) {
-      setFormNotification({ 
-        text: "No se pudo verificar tus permisos.", 
-        type: 'error' 
+      setFormNotification({
+        text: "No se pudo verificar tus permisos.",
+        type: 'error'
       });
       console.error("Error checking permissions:", error);
       return;
     }
 
     const tabId = addModuleTab(
-      targetTable.module_id, 
-      targetTable.name || 'Módulo', 
+      targetTable.module_id,
+      targetTable.name || 'Módulo',
       recordId
     );
 
@@ -859,13 +872,12 @@ export default function DynamicRecordFormDialog({
               )}
               <div className="h-6 mt-2">
                 {formNotification && (
-                  <p className={`font-semibold text-sm ${
-                    formNotification.type === 'error' ? 'text-red-600' :
-                    formNotification.type === 'warning' ? 'text-yellow-800' : 
-                    'text-green-600' 
-                  }`}>
+                  <p className={`font-semibold text-sm ${formNotification.type === 'error' ? 'text-red-600' :
+                    formNotification.type === 'warning' ? 'text-yellow-800' :
+                      'text-green-600'
+                    }`}>
                     {formNotification.text}
-                    
+
                   </p>
                 )}
               </div>
@@ -893,6 +905,7 @@ export default function DynamicRecordFormDialog({
               onClick: () => {
                 setShowExitConfirm(false);
                 setIsDirty(false);
+                deleteRecordsByOriginalRecordId(tableId, 2147483647);
                 onOpenChange(false);
               },
               variant: "outline"

@@ -34,7 +34,10 @@ export default function SortableColumnHeader({
     width: columnWidths[column.key],
     minWidth: columnWidths[column.key],
     maxWidth: columnWidths[column.key],
+    overflow: "hidden",
     position: "relative",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
     opacity: isDragging ? 0 : 1,
     zIndex: isDragging ? 0 : 1,
   };
@@ -59,8 +62,8 @@ export default function SortableColumnHeader({
       {/* Área de resize a la derecha */}
       <div
         className={`absolute right-0 top-0 bottom-0 w-2 cursor-col-resize ${resizingColumn === column.key
-            ? "bg-black"
-            : "bg-transparent hover:bg-gray-300"
+          ? "bg-black"
+          : "bg-transparent hover:bg-gray-300"
           }`}
         onMouseDown={(e) => {
           e.stopPropagation();
