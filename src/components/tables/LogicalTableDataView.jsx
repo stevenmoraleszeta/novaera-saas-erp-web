@@ -421,6 +421,8 @@ useEffect(() => {
     }
 
     // Si tenemos registros pre-procesados, usarlos directamente
+
+    /*
     if (preProcessedRecords) {
       console.log('📦 Usando registros pre-procesados:', preProcessedRecords);
       setRecords(preProcessedRecords);
@@ -436,7 +438,8 @@ useEffect(() => {
       return; 
     }
     setLoading(true);
-    
+    */
+   
     try {
       const cols = await getLogicalTableStructure(tableId);
       setColumns(cols);

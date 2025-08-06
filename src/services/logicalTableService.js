@@ -74,6 +74,13 @@ export async function updateAllOriginalRecordIds(tableId, oldValue, newValue) {
   return response.data;
 }
 
+export async function deleteRecordsByOriginalRecordId(tableId, originalRecordId) {
+  const response = await axios.delete(`/records/delete-by-original-id/${tableId}`, {
+    data: { originalRecordId }
+  });
+  return response.data;
+}
+
 // Eliminar un registro en una tabla lógica
 export async function deleteLogicalTableRecord(recordId) {
   const { data } = await axios.delete(`/records//${recordId}`);
