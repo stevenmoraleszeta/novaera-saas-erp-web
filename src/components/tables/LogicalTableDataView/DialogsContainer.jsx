@@ -923,6 +923,7 @@ export default function DialogsContainer(props) {
                 column: updated.column, // asumimos que la API devuelve el id correcto
                 direction: updated.direction,
               });
+              
 
               setLocalRefreshFlag((prev) => !prev);
             }}
