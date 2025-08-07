@@ -819,7 +819,16 @@ useEffect(() => {
   if (activeFilters.length > 0) {
     processedRecords = processedRecords.filter((row) => {
       return activeFilters.every((filter) => {
-        const val = (row.record_data || row)[filter.column];
+         // logica para tomar los datos reales y no solo los ids
+        const columnConfig = columns.find(c => c.name === filter.column);
+        let cellValue = (row.record_data || row)[filter.column];
+
+        if (columnConfig && ['select', 'user', 'roles'].includes(columnConfig.data_type) && selectOptions[filter.column]) {
+          const option = selectOptions[filter.column].find(opt => opt.value == cellValue);
+          cellValue = option ? option.label : cellValue;
+        }
+
+        const val = cellValue;
         switch (filter.condition) {
           case "equals":
             return String(val) === String(filter.value);
@@ -854,8 +863,19 @@ useEffect(() => {
         const columnName = columns.find((col) => col.column_id === sort.columnId)?.name;
         if (!columnName) continue;
 
-        const aVal = (a.record_data || a)[columnName];
-        const bVal = (b.record_data || b)[columnName];
+        let aVal = (a.record_data || a)[columnName];
+        let bVal = (b.record_data || b)[columnName];
+
+        // logica para tomar los datos reales y no solo los ids
+        const columnConfig = columns.find(c => c.name === columnName);
+        const typesWithOptions = ['select', 'user', 'roles'];
+
+        if ( columnConfig && typesWithOptions.includes(columnConfig.data_type) && selectOptions[columnName]) {
+          const optionA = selectOptions[columnName].find(opt => opt.value == aVal);
+          const optionB = selectOptions[columnName].find(opt => opt.value == bVal);
+          aVal = optionA ? optionA.label : aVal;
+          bVal = optionB ? optionB.label : bVal;
+        }
 
         // Manejo nulos primero
         if (aVal == null && bVal == null) continue;
@@ -925,30 +945,30 @@ useEffect(() => {
         filterDraft.value === "")
     )
       return;
-    setActiveFilters((prev) => [...prev, filterDraft]);
-    setFilterDraft({ column: "", condition: "", value: "" });
-    setShowFilterDialog(false);
+      setActiveFilters((prev) => [...prev, filterDraft]);
+      setFilterDraft({ column: "", condition: "", value: "" });
+      setShowFilterDialog(false);
   };
 
-  const handleSetSort = () => {
+  const handleSetSort = () => { 
     if (!sortConfig?.column || !sortConfig?.direction) return;
 
-    const matchingCol = columns.find((col) => col.name === sortConfig.column);
-    const columnId = matchingCol?.column_id ?? null;
+      const matchingCol = columns.find((col) => col.name === sortConfig.column);
+      const columnId = matchingCol?.column_id ?? null;
+      
+        handleUpdateView(selectedView.id, {
+          selectedView,
+          name: selectedView.name,
+          sort_by: columnId,
+          sort_direction: sortConfig.direction,
+          position_num: selectedView.position_num,
+        });
 
-    handleUpdateView(selectedView.id, {
-      selectedView,
-      name: selectedView.name,
-      sort_by: columnId,
-      sort_direction: sortConfig.direction,
-      position_num: selectedView.position_num,
-    });
-
-    setActiveSort({
+       setActiveSort({
       column: sortConfig.column || null,
       direction: sortConfig.direction,
     });
-
+     
     //setLocalRefreshFlag((prev) => !prev);
     setShowSortDialog(false);
   };
