@@ -534,7 +534,7 @@ export default function LogicalTableDataView({
         handleSelectView(selectedView); // <-- Forzar refresco
       }
     }
-  }, [views, columns]);
+  }, [views, columns, selectedView]);
 
   // Verificar si hay usuarios asignados en la tabla
   useEffect(() => {
