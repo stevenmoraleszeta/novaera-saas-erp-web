@@ -408,51 +408,51 @@ export default function LogicalTableDataView({
     return processedRecords;
   };
 
-// Tuve que cambiar  los dos useEffect (unificar ambos) que habian, 
-// el fetchData y fetchAllOptions porque generaba que uno le caia al otro y provocaba el error de los nombres correctos.
+  // Tuve que cambiar  los dos useEffect (unificar ambos) que habian, 
+  // el fetchData y fetchAllOptions porque generaba que uno le caia al otro y provocaba el error de los nombres correctos.
 
-useEffect(() => {
-  const loadAllData = async () => {
-    if (!tableId) {
-      setColumns([]);
-      setRecords([]);
-      setLoading(false);
-      return;
-    }
+  useEffect(() => {
+    const loadAllData = async () => {
+      if (!tableId) {
+        setColumns([]);
+        setRecords([]);
+        setLoading(false);
+        return;
+      }
 
-    // Si tenemos registros pre-procesados, usarlos directamente
+      // Si tenemos registros pre-procesados, usarlos directamente
 
-    /*
-    if (preProcessedRecords) {
-      console.log('📦 Usando registros pre-procesados:', preProcessedRecords);
-      setRecords(preProcessedRecords);
-      
+      /*
+      if (preProcessedRecords) {
+        console.log('📦 Usando registros pre-procesados:', preProcessedRecords);
+        setRecords(preProcessedRecords);
+        
+        try {
+          const cols = await getLogicalTableStructure(tableId);
+          setColumns(cols);
+          setTotal(preProcessedRecords.length);
+        } catch (err) {
+          console.error("💥 Error cargando estructura de tabla:", err);
+        }
+        setLoading(false);
+        return; 
+      }
+      setLoading(true);
+      */
+
       try {
         const cols = await getLogicalTableStructure(tableId);
         setColumns(cols);
-        setTotal(preProcessedRecords.length);
-      } catch (err) {
-        console.error("💥 Error cargando estructura de tabla:", err);
-      }
-      setLoading(false);
-      return; 
-    }
-    setLoading(true);
-    */
-   
-    try {
-      const cols = await getLogicalTableStructure(tableId);
-      setColumns(cols);
 
-      const data = await getLogicalTableRecords(tableId, { 
-        page,
-        pageSize,
-      });
-      const rawRecords = data.records || data;
-      console.log('📊 Registros crudos obtenidos:', rawRecords);
+        const data = await getLogicalTableRecords(tableId, {
+          page,
+          pageSize,
+        });
+        const rawRecords = data.records || data;
+        console.log('📊 Registros crudos obtenidos:', rawRecords);
 
-      // Procesar registros para resolver foreign_record_id a texto descriptivo
-      console.log('🔄 Iniciando procesamiento de registros...');
+        // Procesar registros para resolver foreign_record_id a texto descriptivo
+        console.log('🔄 Iniciando procesamiento de registros...');
         const processedRecords = await processRecordsWithForeignText(rawRecords, cols);
         console.log('sevala:✅ Registros procesados:', processedRecords);
 
@@ -467,50 +467,51 @@ useEffect(() => {
           handleSelectView(selectedView)
         }
 
-      const optionsMap = {};
-      for (const col of cols) {
-        if (col.data_type === 'select' && col.foreign_table_id) {
-          try {
-            const relatedRecords = await getLogicalTableRecords(col.foreign_table_id);
-            optionsMap[col.name] = relatedRecords.map(r => ({
-              value: r.id,
-              label: r.record_data[col.foreign_column_name] || `ID: ${r.id}`,
-            }));
-          } catch (error) {
-            console.error(`Error fetching options for column ${col.name}:`, error);
-            optionsMap[col.name] = [];
+        const optionsMap = {};
+        for (const col of cols) {
+          if (col.data_type === 'select' && col.foreign_table_id) {
+            try {
+              const relatedRecords = await getLogicalTableRecords(col.foreign_table_id);
+              optionsMap[col.name] = relatedRecords.map(r => ({
+                value: r.id,
+                label: r.record_data[col.foreign_column_name] || `ID: ${r.id}`,
+              }));
+            } catch (error) {
+              console.error(`Error fetching options for column ${col.name}:`, error);
+              optionsMap[col.name] = [];
+            }
+          } else if (col.data_type === 'user') {
+            optionsMap[col.name] = users.map(u => ({ value: u.id, label: u.name }));
+          } else if (col.data_type === 'roles') {
+            optionsMap[col.name] = roles.map(r => ({ value: r.id, label: r.name }));
           }
-        } else if (col.data_type === 'user') {
-          optionsMap[col.name] = users.map(u => ({ value: u.id, label: u.name }));
-        } else if (col.data_type === 'roles') {
-          optionsMap[col.name] = roles.map(r => ({ value: r.id, label: r.name }));
         }
-      }
-      
-      setSelectOptions(optionsMap);
-      setRecords(rawRecords); 
-      setTotal(data.total || rawRecords.length);
 
-      const recordIdToOpen = searchParams.get('openRecord');
-      if (recordIdToOpen) {
-        const recordToOpen = processedRecords.find(r => r.id == recordIdToOpen);
-        if (recordToOpen) {
-          setRecordToEdit(recordToOpen);
-          setShowEditRecordDialog(true);
-          const newPath = window.location.pathname;
-          router.replace(newPath, { scroll: false });
+        setSelectOptions(optionsMap);
+        setRecords(rawRecords);
+        setTotal(data.total || rawRecords.length);
+        loadViewSorts()
+
+        const recordIdToOpen = searchParams.get('openRecord');
+        if (recordIdToOpen) {
+          const recordToOpen = processedRecords.find(r => r.id == recordIdToOpen);
+          if (recordToOpen) {
+            setRecordToEdit(recordToOpen);
+            setShowEditRecordDialog(true);
+            const newPath = window.location.pathname;
+            router.replace(newPath, { scroll: false });
+          }
         }
+      } catch (err) {
+        console.error("💥 Error fetching table data:", err);
+        setRecords([]);
+        setTotal(0);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("💥 Error fetching table data:", err);
-      setRecords([]);
-      setTotal(0);
-    } finally {
-      setLoading(false);
-    }
-  };
-  loadAllData();
-}, [tableId, page, pageSize, refresh, localRefreshFlag, users, roles, searchParams, router, preProcessedRecords]);
+    };
+    loadAllData();
+  }, [tableId, page, pageSize, refresh, localRefreshFlag, users, roles, searchParams, router, preProcessedRecords]);
 
   useEffect(() => {
     const fetchMeta = async () => {
@@ -526,8 +527,12 @@ useEffect(() => {
   }, [tableId, getTableById]);
 
   useEffect(() => {
-    if (!selectedView && views.length > 0 && columns.length > 0) {
-      handleSelectView(views[0]);
+    if (columns.length > 0 && views.length > 0) {
+      if (!selectedView) {
+        handleSelectView(views[0]);
+      } else {
+        handleSelectView(selectedView);
+      }
     }
   }, [views, columns, selectedView]);
 
@@ -822,7 +827,16 @@ useEffect(() => {
   if (activeFilters.length > 0) {
     processedRecords = processedRecords.filter((row) => {
       return activeFilters.every((filter) => {
-        const val = (row.record_data || row)[filter.column];
+        // logica para tomar los datos reales y no solo los ids
+        const columnConfig = columns.find(c => c.name === filter.column);
+        let cellValue = (row.record_data || row)[filter.column];
+
+        if (columnConfig && ['select', 'user', 'roles'].includes(columnConfig.data_type) && selectOptions[filter.column]) {
+          const option = selectOptions[filter.column].find(opt => opt.value == cellValue);
+          cellValue = option ? option.label : cellValue;
+        }
+
+        const val = cellValue;
         switch (filter.condition) {
           case "equals":
             return String(val) === String(filter.value);
@@ -857,8 +871,19 @@ useEffect(() => {
         const columnName = columns.find((col) => col.column_id === sort.columnId)?.name;
         if (!columnName) continue;
 
-        const aVal = (a.record_data || a)[columnName];
-        const bVal = (b.record_data || b)[columnName];
+        let aVal = (a.record_data || a)[columnName];
+        let bVal = (b.record_data || b)[columnName];
+
+        // logica para tomar los datos reales y no solo los ids
+        const columnConfig = columns.find(c => c.name === columnName);
+        const typesWithOptions = ['select', 'user', 'roles'];
+
+        if (columnConfig && typesWithOptions.includes(columnConfig.data_type) && selectOptions[columnName]) {
+          const optionA = selectOptions[columnName].find(opt => opt.value == aVal);
+          const optionB = selectOptions[columnName].find(opt => opt.value == bVal);
+          aVal = optionA ? optionA.label : aVal;
+          bVal = optionB ? optionB.label : bVal;
+        }
 
         // Manejo nulos primero
         if (aVal == null && bVal == null) continue;
@@ -975,7 +1000,7 @@ useEffect(() => {
           filter_condition: null,
           filter_value: null,
           position_num: null,
-          width_px: null
+          width_px: 100
         });
       }
       setLocalRefreshFlag((prev) => !prev);
