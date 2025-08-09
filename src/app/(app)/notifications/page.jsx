@@ -107,43 +107,13 @@ const NotificacionesPage = () => {
                   </div>
                   <div className="font-medium text-gray-900 flex items-center gap-2">
                     {n.notification_title || n.title}
-                    {(n.table_id || n.module_id || n.link_to_module) && (
-                      <div className="ml-2 flex gap-1">
-                        {/* Botón para ir al módulo */}
-                        <button
-                          className="text-xs text-blue-600 hover:underline"
-                          onClick={() => {
-                            if (n.module_id) {
-                              router.push(`/modulos/${n.module_id}`);
-                            } else if (n.table_id) {
-                              router.push(`/modulos/${n.table_id}`);
-                            } else if (n.link_to_module) {
-                              router.push(n.link_to_module);
-                            }
-                          }}
-                        >
-                          Ver módulo
-                        </button>
-                        
-                        {/* Botón para ir al registro específico (solo si hay record_id) */}
-                        {n.record_id && (
-                          <>
-                            <span className="text-xs text-gray-400">|</span>
-                            <button
-                              className="text-xs text-green-600 hover:underline"
-                              onClick={() => {
-                                if (n.module_id && n.record_id) {
-                                  router.push(`/modulos/${n.module_id}?openRecord=${n.record_id}`);
-                                } else if (n.table_id && n.record_id) {
-                                  router.push(`/modulos/${n.table_id}?openRecord=${n.record_id}`);
-                                }
-                              }}
-                            >
-                              Ver registro
-                            </button>
-                          </>
-                        )}
-                      </div>
+                    {n.table_id && (
+                      <button
+                        className="ml-2 text-xs text-blue-600 hover:underline"
+                        onClick={() => router.push(`${n.link_to_module}`)}
+                      >
+                        Ver módulo
+                      </button>
                     )}
                   </div>
                   <div className="text-xs text-gray-600 mt-1">{n.notification_message || n.message}</div>

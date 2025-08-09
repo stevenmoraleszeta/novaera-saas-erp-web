@@ -12,10 +12,10 @@ import { login as authServiceLogin } from "@/services/authService";
 import { Label } from "@/components/ui/label";
 
 export default function HomePage() {
-  const { setUser } = useUserStore();
+  const { setUserAndCompany } = useUserStore();
   const { clearTabs } = useTabStore();
   const router = useRouter();
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ email: "", password: "", company_code: "" });
   const [formError, setFormError] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [localError, setLocalError] = useState("");
@@ -25,6 +25,7 @@ export default function HomePage() {
     const err = {};
     if (!form.email) err.email = "El usuario es obligatorio";
     if (!form.password) err.password = "La contraseña es obligatoria";
+    if (!form.company_code) err.company_code = "El código de empresa es obligatorio";
     setFormError(err);
     return Object.keys(err).length === 0;
   };
@@ -42,14 +43,15 @@ export default function HomePage() {
     setSubmitting(true);
     setLocalError("");
     try {
-      const response = await authServiceLogin(form.email, form.password);
+      const response = await authServiceLogin(form.email, form.password, form.company_code);
       if (response && (response.user || response.id)) {
         const userToSet = response.user || response;
         if (userToSet.is_active === false || userToSet.isActive === false) {
           setLocalError("Tu cuenta está inactiva. Contacta al administrador para activarla.");
           return;
         }
-        setUser(userToSet);
+        // Usar setUserAndCompany para almacenar tanto usuario como empresa
+        setUserAndCompany(response);
         clearTabs();
         window.location.href = "/modules";
       } else {
@@ -72,9 +74,30 @@ export default function HomePage() {
             {localError && (
               <div className="bg-red-100 text-red-700 rounded px-3 py-2 text-sm text-center">{localError}</div>
             )}
+            
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="company_code">Código de Empresa</Label>
+              <Input 
+                id="company_code" 
+                name="company_code" 
+                type="text" 
+                placeholder="ABC001" 
+                value={form.company_code} 
+                onChange={handleChange} 
+                autoFocus
+                disabled={submitting} 
+                className={`font-mono ${formError.company_code ? "border-red-500" : ""}`}
+                aria-invalid={!!formError.company_code} 
+                aria-describedby="company_code-error" 
+              />
+              {formError.company_code && (
+                <span id="company_code-error" className="text-xs text-red-600">{formError.company_code}</span>
+              )}
+            </div>
+            
             <div className="flex flex-col gap-2">
               <Label htmlFor="email">Usuario</Label>
-              <Input id="email" name="email" type="email" placeholder="usuario@ejemplo.com" value={form.email} onChange={handleChange} autoFocus disabled={submitting} className={formError.email ? "border-red-500" : ""} aria-invalid={!!formError.email} aria-describedby="email-error" />
+              <Input id="email" name="email" type="email" placeholder="usuario@ejemplo.com" value={form.email} onChange={handleChange} disabled={submitting} className={formError.email ? "border-red-500" : ""} aria-invalid={!!formError.email} aria-describedby="email-error" />
               {formError.email && (
                 <span id="email-error" className="text-xs text-red-600">{formError.email}</span>
               )}
@@ -92,6 +115,8 @@ export default function HomePage() {
             <p className="text-sm text-black dark:text-black">
               ¿No tienes cuenta?{" "}
               <Link href="/register" className="text-black dark:text-black hover:underline font-medium">Regístrate</Link>
+              {" | "}
+              <Link href="/register-company" className="text-black dark:text-black hover:underline font-medium">Registrar Empresa</Link>
             </p>
           </form>
         </div>

@@ -1,10 +1,17 @@
 // Servicio de autenticación
 import axios from "../lib/axios";
 
-export async function login(email, password) {
+export async function login(email, password, companyCode) {
   try {
-    console.log("🔐 AuthService: Attempting login for:", email);
-    const response = await axios.post("/auth/login", { email, password });
+    console.log("🔐 AuthService: Attempting login for:", email, "Company:", companyCode);
+    const loginData = { email, password };
+    
+    // Agregar company_code si se proporciona
+    if (companyCode) {
+      loginData.company_code = companyCode;
+    }
+    
+    const response = await axios.post("/auth/login", loginData);
     console.log("🔐 AuthService: Login response:", response.data);
     return response.data;
   } catch (error) {
