@@ -182,6 +182,7 @@ export default function LogicalTableDataView({
   const [formInitialValues, setFormInitialValues] = useState({});
 
   const [closeFormCallback, setCloseFormCallback] = useState(null);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   const { user } = useUserStore();
 
@@ -331,94 +332,146 @@ export default function LogicalTableDataView({
   }, [roles]);
 
   // Función para procesar registros y resolver foreign_record_id a texto descriptivo
+  // Versión optimizada para evitar N+1 queries
   const processRecordsWithForeignText = async (records, columns) => {
-    console.log('🔄 Iniciando procesamiento de registros:', {
-      totalRecords: records.length,
-      columnsAvailable: columns.length
-    });
 
-    if (!records || records.length === 0 || !columns || columns.length === 0) {
-      console.log('⚠️ No hay registros o columnas para procesar');
+    if (!records?.length || !columns?.length) {
       return records;
     }
 
-    const processedRecords = [];
+    // 1. Detectar todas las columnas que tengan foreign_table_id
+    const foreignCols = columns.filter(col => col.name === "foreign_record_id" && col.foreign_table_id);
 
-    for (const record of records) {
+    if (foreignCols.length === 0) {
+      return records;
+    }
+
+    // 2. Preparar un cache para los registros foráneos por tabla
+    const foreignDataCache = {};
+
+    for (const col of foreignCols) {
+      if (!foreignDataCache[col.foreign_table_id]) {
+        try {
+          const foreignRecords = await getLogicalTableRecords(col.foreign_table_id);
+          foreignDataCache[col.foreign_table_id] = foreignRecords;
+        } catch (error) {
+          console.error(`💥 Error cargando tabla foránea ID ${col.foreign_table_id}:`, error);
+          foreignDataCache[col.foreign_table_id] = [];
+        }
+      }
+    }
+
+    // 3. Reemplazar valores usando el cache
+    const processedRecords = records.map(record => {
       const processedRecord = { ...record };
 
-      // Si el registro tiene foreign_record_id, intentar resolver el texto
       if (record.record_data?.foreign_record_id) {
-        console.log('🔍 Encontrado registro con foreign_record_id:', {
-          recordId: record.id,
-          foreignRecordId: record.record_data.foreign_record_id
-        });
+        const foreignCol = foreignCols[0]; // en tu caso parece que solo hay una columna llamada así
+        const foreignRecords = foreignDataCache[foreignCol.foreign_table_id] || [];
+        const foreignRecord = foreignRecords.find(r => r.id === parseInt(record.record_data.foreign_record_id));
 
-        try {
-          // Buscar la columna que define la tabla foránea
-          const foreignColumn = columns.find(col => col.name === "foreign_record_id");
-          console.log('📋 Columna foránea encontrada:', foreignColumn);
+        if (foreignRecord) {
+          const foreignColumnName = foreignCol.foreign_column_name || 'name';
+          const displayText =
+            foreignRecord.record_data?.[foreignColumnName] ||
+            foreignRecord[foreignColumnName] ||
+            foreignRecord.name ||
+            `Registro ${record.record_data.foreign_record_id}`;
 
-          if (foreignColumn && foreignColumn.foreign_table_id) {
-            console.log('🌐 Obteniendo registros de tabla foránea ID:', foreignColumn.foreign_table_id);
-
-            // Obtener el registro foráneo real
-            const foreignRecords = await getLogicalTableRecords(foreignColumn.foreign_table_id);
-            const foreignRecord = foreignRecords.find(r => r.id === parseInt(record.record_data.foreign_record_id));
-
-            console.log('📝 Registro foráneo encontrado:', foreignRecord);
-
-            if (foreignRecord) {
-              // Obtener el texto descriptivo del registro foráneo
-              const foreignColumnName = foreignColumn.foreign_column_name || 'name';
-              const displayText = foreignRecord.record_data?.[foreignColumnName] ||
-                foreignRecord[foreignColumnName] ||
-                foreignRecord.name ||
-                `Registro ${record.record_data.foreign_record_id}`;
-
-              console.log('✅ Texto descriptivo generado:', {
-                originalId: record.record_data.foreign_record_id,
-                displayText: displayText,
-                columnName: foreignColumnName
-              });
-
-              // Reemplazar el foreign_record_id con el texto descriptivo
-              processedRecord.record_data = {
-                ...processedRecord.record_data,
-                foreign_record_id: displayText
-              };
-            } else {
-              console.log('❌ No se encontró el registro foráneo con ID:', record.record_data.foreign_record_id);
-            }
-          } else {
-            console.log('❌ No se encontró columna foránea válida');
-          }
-        } catch (error) {
-          console.error('💥 Error procesando foreign_record_id:', error);
+          processedRecord.record_data = {
+            ...processedRecord.record_data,
+            foreign_record_id: displayText
+          };
         }
       }
 
-      processedRecords.push(processedRecord);
-    }
-
-    console.log('🎉 Procesamiento completado:', {
-      originalCount: records.length,
-      processedCount: processedRecords.length,
-      recordsWithForeignId: records.filter(r => r.record_data?.foreign_record_id).length
+      return processedRecord;
     });
 
     return processedRecords;
   };
 
+
   // Tuve que cambiar  los dos useEffect (unificar ambos) que habian, 
   // el fetchData y fetchAllOptions porque generaba que uno le caia al otro y provocaba el error de los nombres correctos.
 
   useEffect(() => {
+    // Solo carga inicial
+    if (!tableId || hasLoadedOnce) {
+      return;
+    }
+
+    const loadInitialData = async () => {
+
+      try {
+        const cols = await getLogicalTableStructure(tableId);
+        setColumns(cols);
+
+        const data = await getLogicalTableRecords(tableId, { page, pageSize });
+
+        const rawRecords = data.records || data;
+
+        const processed = await processRecordsWithForeignText(rawRecords, cols);
+
+        setRecords(processed);
+        setTotal(data.total || processed.length);
+
+        const optionsMap = {};
+        for (const col of cols) {
+          if (col.data_type === "select" && col.foreign_table_id) {
+            const related = await getLogicalTableRecords(col.foreign_table_id);
+            optionsMap[col.name] = related.map(r => ({
+              value: r.id,
+              label: r.record_data[col.foreign_column_name] || `ID: ${r.id}`,
+            }));
+          }
+        }
+        setSelectOptions(optionsMap);
+        console.timeEnd("⚙️ Opciones select");
+
+        await loadViewSorts();
+      } catch (err) {
+        console.error("💥 Error en carga inicial:", err);
+        setRecords([]);
+      } finally {
+        setLoading(false);
+        setHasLoadedOnce(true);
+        console.timeEnd("🔄 Carga inicial de tabla");
+      }
+    };
+
+    loadInitialData();
+  }, [tableId]);
+
+  useEffect(() => {
+    if (!tableId || !hasLoadedOnce) return;
+
+    const refreshRecords = async () => {
+      try {
+        const data = await getLogicalTableRecords(tableId, { page, pageSize });
+        const rawRecords = data.records || data;
+        const processed = await processRecordsWithForeignText(rawRecords, columns);
+        setRecords(processed);
+        setTotal(data.total || processed.length);
+      } catch (err) {
+        console.error("Error refrescando registros:", err);
+      }
+    };
+
+    refreshRecords();
+  }, [page, pageSize, refresh, localRefreshFlag]);
+
+
+  /*
+
+  useEffect(() => {
     const loadAllData = async () => {
+      console.time("🔄 Tiempo total de carga de tabla");
       if (!tableId) {
         setColumns([]);
         setRecords([]);
         setLoading(false);
+        console.timeEnd("🔄 Tiempo total de carga de tabla");
         return;
       }
 
@@ -440,23 +493,27 @@ export default function LogicalTableDataView({
         return; 
       }
       setLoading(true);
-      */
+      
 
       try {
+        console.time("📑 Cargar estructura de tabla");
         const cols = await getLogicalTableStructure(tableId);
+        console.timeEnd("📑 Cargar estructura de tabla");
         setColumns(cols);
 
+        console.time("📊 Cargar registros");
         const data = await getLogicalTableRecords(tableId, {
           page,
           pageSize,
         });
+        console.timeEnd("📊 Cargar registros");
+
         const rawRecords = data.records || data;
-        console.log('📊 Registros crudos obtenidos:', rawRecords);
 
         // Procesar registros para resolver foreign_record_id a texto descriptivo
-        console.log('🔄 Iniciando procesamiento de registros...');
+        console.time("🔍 Procesar registros foráneos");
         const processedRecords = await processRecordsWithForeignText(rawRecords, cols);
-        console.log('sevala:✅ Registros procesados:', processedRecords);
+        console.timeEnd("🔍 Procesar registros foráneos");
 
         setRecords(processedRecords);
 
@@ -468,6 +525,8 @@ export default function LogicalTableDataView({
         if (selectedView) {
           handleSelectView(selectedView)
         }
+
+        console.time("⚙️ Cargar opciones de selects");
 
         const optionsMap = {};
         for (const col of cols) {
@@ -488,11 +547,14 @@ export default function LogicalTableDataView({
             optionsMap[col.name] = roles.map(r => ({ value: r.id, label: r.name }));
           }
         }
-
+        console.timeEnd("⚙️ Cargar opciones de selects");
         setSelectOptions(optionsMap);
         setRecords(rawRecords);
         setTotal(data.total || rawRecords.length);
-        loadViewSorts()
+
+        console.time("↕️ Cargar sorts de vista");
+        await loadViewSorts()
+        console.timeEnd("↕️ Cargar sorts de vista");
 
         const recordIdToOpen = searchParams.get('openRecord');
         if (recordIdToOpen) {
@@ -513,7 +575,7 @@ export default function LogicalTableDataView({
       }
     };
     loadAllData();
-  }, [tableId, page, pageSize, refresh, localRefreshFlag, users, roles, searchParams, router, preProcessedRecords]);
+  }, [tableId, page, pageSize, refresh, localRefreshFlag, users, roles, searchParams, router, preProcessedRecords]); */
 
   useEffect(() => {
     const fetchMeta = async () => {
