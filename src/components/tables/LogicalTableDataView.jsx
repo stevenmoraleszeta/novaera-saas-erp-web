@@ -181,6 +181,8 @@ export default function LogicalTableDataView({
 
   const [formInitialValues, setFormInitialValues] = useState({});
 
+  const [closeFormCallback, setCloseFormCallback] = useState(null);
+
   const { user } = useUserStore();
 
 
@@ -607,8 +609,9 @@ export default function LogicalTableDataView({
   }, [columns, users, roles]); // Se ejecuta cada vez que las columnas cambian
 
 
-  const handleDeleteRecord = async (record) => {
+  const handleDeleteRecord = async (record, closeForm) => {
     setDeleteConfirmRecord(record);
+    setCloseFormCallback(() => closeForm);
   };
 
   const confirmDeleteRecord = async () => {
@@ -617,6 +620,13 @@ export default function LogicalTableDataView({
     try {
       await deleteLogicalTableRecord(deleteConfirmRecord.id);
       setDeleteConfirmRecord(null);
+
+      // Cerrar el modal del GenericCRUDTable
+      if (closeFormCallback) {
+        closeFormCallback();
+        setCloseFormCallback(null);
+      }
+
       setLocalRefreshFlag((prev) => !prev);
     } catch (err) {
       console.error("Error deleting record:", err);
@@ -1565,7 +1575,9 @@ export default function LogicalTableDataView({
                   tableId={tableId}
                   record={item}
                   mode={mode}
-                  onDelete={effectiveCanDelete ? handleDeleteRecord : undefined}
+                  onDelete={effectiveCanDelete ? (id) => {
+                    handleDeleteRecord(item, onClose);
+                  } : undefined}
                   onSubmitSuccess={async (createdOrUpdatedRecord) => {
                     if (mode === "create") {
                       const userColumn = columns.find((col) => col.data_type === "user");
