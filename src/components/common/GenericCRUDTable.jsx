@@ -357,7 +357,7 @@ export default function GenericCRUDTable({
           },
           onDelete: (id) => {
             onDelete?.(id);
-            setFormOpen(false);
+            //setFormOpen(false);
           },
         })}
 
