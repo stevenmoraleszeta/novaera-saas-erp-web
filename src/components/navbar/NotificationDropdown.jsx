@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation';
 
 const NotificationDropdown = () => {
   const user = useUserStore(state => state.user);
+  const company = useUserStore(state => state.company);
+  const companyCode = company?.company_code || company?.code;
   const userId = user?.id;
   const [notifications, setNotifications] = useState([]);
   const [open, setOpen] = useState(false);
@@ -46,19 +48,28 @@ const NotificationDropdown = () => {
 
   // Poll notifications every 30s
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !companyCode) return;
+    // limpiar al cambiar de empresa
+    setNotifications([]);
     let interval;
     const fetchNotifications = async () => {
       setLoading(true);
       try {
-        // Obtener notificaciones programadas no leídas
-        const scheduled = await scheduledNotificationsService.getUserScheduledNotifications(userId);
-        // Obtener notificaciones normales no leídas
+        // Programadas (fun no requiere userId explícito)
+        const scheduled = await scheduledNotificationsService.getUserScheduledNotifications();
         const general = await scheduledNotificationsService.getUserGeneralNotifications(userId);
-        // Filtrar solo las no leídas y activas
-        const unreadGeneral = (general.data || general || []).filter(n => n.read === false && n.is_active !== false);
-        const unreadScheduled = (scheduled.data || scheduled || []).filter(n => n.read === false && n.is_active !== false);
-        // Unir ambas listas
+        const currentUserEmail = user?.email;
+        const filterFn = (n) => {
+          if (!n) return false;
+            if (n.is_active === false) return false;
+            if (n.read === true) return false;
+            // Asegurar pertenencia: user_id o email coinciden
+            if (n.user_id && n.user_id !== userId) return false;
+            if (n.email && currentUserEmail && n.email !== currentUserEmail) return false;
+            return true;
+        };
+        const unreadGeneral = (general.data || general || []).filter(filterFn);
+        const unreadScheduled = (scheduled.data || scheduled || []).filter(filterFn);
         setNotifications([...unreadScheduled, ...unreadGeneral]);
       } catch (e) {
         console.error('Error cargando notificaciones dropdown:', e);
@@ -69,7 +80,7 @@ const NotificationDropdown = () => {
     fetchNotifications();
     interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
-  }, [userId]);
+  }, [userId, companyCode]);
 
   // Marcar como leída
   const markAsRead = async (notificationId) => {

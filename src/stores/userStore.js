@@ -6,6 +6,7 @@ const useUserStore = create(
     (set, get) => ({
       user: null,
       company: null,
+  availableCompanies: [],
 
       setUser: (user) => {
         console.log("Setting user in store:", user);
@@ -40,7 +41,11 @@ const useUserStore = create(
 
       clearUser: () => {
         console.log("Clearing user from store");
-        set({ user: null, company: null });
+        set({ user: null, company: null, availableCompanies: [] });
+      },
+
+      setAvailableCompanies: (companies) => {
+        set({ availableCompanies: companies });
       },
 
       // Initialize user from server response

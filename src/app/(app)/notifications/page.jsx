@@ -20,7 +20,15 @@ const NotificacionesPage = () => {
     try {
       const res = await scheduledNotificationsService.getAllUserNotifications(userId);
       const all = res.data || res || [];
-      setNotifications(all.filter(n => n.is_active !== false));
+      const currentUserEmail = user?.email;
+      const filtered = all.filter(n => {
+        if (!n) return false;
+        if (n.is_active === false) return false;
+        if (n.user_id && n.user_id !== userId) return false;
+        if (n.email && currentUserEmail && n.email !== currentUserEmail) return false;
+        return true;
+      });
+      setNotifications(filtered);
     } catch (error) {
       console.error('Error al cargar notificaciones:', error);
       setNotifications([]);

@@ -13,7 +13,7 @@ import { login as authServiceLogin } from "@/services/authService";
 import { Label } from "@/components/ui/label";
 
 export default function LoginPage() {
-  const { setUser } = useUserStore();
+  const { setUser, setAvailableCompanies } = useUserStore();
   const { clearTabs } = useTabStore();
   const router = useRouter();
   const [form, setForm] = useState({ email: "", password: "" });
@@ -44,28 +44,14 @@ export default function LoginPage() {
     setLocalError("");
     try {
       const response = await authServiceLogin(form.email, form.password);
-      console.log("🚀 Login response:", response);
-
-      // Check if response has user property or if it's the user data directly
-      if (response && (response.user || response.id)) {
-        const userToSet = response.user || response;
-        console.log("🚀 Setting user:", userToSet);
-        console.log("🚀 User roles:", userToSet.roles);
-        console.log("🚀 User is_active:", userToSet.is_active);
-        
-        // Check if user is active
-        if (userToSet.is_active === false || userToSet.isActive === false) {
-          console.log("❌ User is inactive:", userToSet);
-          setLocalError("Tu cuenta está inactiva. Contacta al administrador para activarla.");
-          return;
-        }
-        
-        setUser(userToSet);
+      // Nueva respuesta: { user: {name,email}, companies: [...] }
+      if (response?.companies?.length) {
+        setUser(response.user); // user básico sin company
+        setAvailableCompanies(response.companies);
         clearTabs();
-        window.location.href = "/modules";
+        router.push('/select-company');
       } else {
-        console.log("❌ No user in response:", response);
-        setLocalError("No se pudo iniciar sesión. Verifica tus credenciales.");
+        setLocalError('No se encontraron compañías para este usuario');
       }
     } catch (err) {
       console.error("❌ Login error:", err);
@@ -155,13 +141,7 @@ export default function LoginPage() {
             </div>
 
             <p className="text-sm text-black dark:text-black">
-              ¿No tienes cuenta?{" "}
-              <Link
-                href="/register"
-                className="text-black dark:text-black hover:underline font-medium"
-              >
-                Regístrate
-              </Link>
+              ¿No tienes cuenta? <Link href="/register" className="text-black dark:text-black hover:underline font-medium">Regístrate</Link>
             </p>
           </form>
         </div>

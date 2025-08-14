@@ -211,7 +211,7 @@ export async function createUser(userData) {
         const backendData = {
             name: userData.name,
             email: userData.email,
-            password_hash: userData.password, // El backend espera password_hash
+            password: userData.password, // Enviamos password plano; backend lo hashea
             is_active: userData.isActive !== undefined ? userData.isActive : true, // Por defecto activo
             is_blocked: userData.isBlocked !== undefined ? userData.isBlocked : false // Por defecto no bloqueado
         };
@@ -395,7 +395,7 @@ export async function updateUser(id, userData) {
 
 export async function updateUserPassword(id, passwordData) {
     const payload = {
-        password_hash: passwordData.password_hash || passwordData.newPassword
+    password: passwordData.password || passwordData.newPassword || passwordData.password_hash
     };
     const response = await axios.put(`/users/${id}/password`, payload);
     return response.data;
@@ -422,7 +422,7 @@ export async function unblockUser(id) {
 }
 
 export async function resetUserPasswordAdmin(id, newPassword) {
-    const response = await axios.put(`/users/${id}/reset-password`, { password_hash: newPassword });
+    const response = await axios.put(`/users/${id}/reset-password`, { password: newPassword });
     return response.data;
 
 }
