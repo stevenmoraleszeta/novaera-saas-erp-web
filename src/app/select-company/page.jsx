@@ -208,7 +208,7 @@ export default function SelectCompanyPage() {
           <div className="flex justify-between items-center">
             <h3 className="font-semibold text-lg">Tus proyectos</h3>
             <Button size="sm" onClick={() => setShowCreate(v=>!v)} variant={showCreate? 'secondary':'default'}>
-              {showCreate ? 'Cancelar' : 'Agregar' }
+              {showCreate ? 'Cancelar' : 'Nuevo Proyecto' }
             </Button>
           </div>
 
