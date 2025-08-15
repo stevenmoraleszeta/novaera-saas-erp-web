@@ -235,7 +235,7 @@ export default function SelectCompanyPage() {
                       <Input value={newCompany.address} onChange={e=>setNewCompany(v=>({...v,address:e.target.value}))} placeholder="Opcional" disabled={creating} />
                     </div>
                   </div>
-                  {createError && <div className="text-xs text-red-600">{createError}</div>}
+                  {createError && <div className="text-xs bg-black/40">{createError}</div>}
                   <div className="flex justify-end gap-2 pt-2">
                     <Button type="button" variant="outline" disabled={creating} onClick={()=>{setShowCreate(false); setCreateError('');}}>Cancelar</Button>
                     <Button type="submit" disabled={creating}>{creating? 'Creando...':'Crear Empresa'}</Button>
