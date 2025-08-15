@@ -9,7 +9,7 @@ import { registerCompany } from '@/services/companyService';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import axios from '@/lib/axios';
-import { Edit3 } from 'lucide-react';
+import { Edit3, Copy } from 'lucide-react';
 
 export default function SelectCompanyPage() {
   const { user, availableCompanies, setCompany, setUser, setAvailableCompanies } = useUserStore();
@@ -24,6 +24,11 @@ export default function SelectCompanyPage() {
   const [editModalSaving, setEditModalSaving] = useState(false);
   const [editModalError, setEditModalError] = useState('');
   const router = useRouter();
+  const [cloneModalOpen, setCloneModalOpen] = useState(false);
+  const [cloneSource, setCloneSource] = useState(null);
+  const [cloneData, setCloneData] = useState({ copy_name: '' });
+  const [cloning, setCloning] = useState(false);
+  const [cloneError, setCloneError] = useState('');
 
   useEffect(() => {
     if (!user) {
@@ -259,6 +264,12 @@ export default function SelectCompanyPage() {
                             <Edit3 className="w-4 h-4" />
                           </Button>
                         )}
+                        {isAdmin && (
+                          <Button size="icon" variant="ghost" onClick={()=>{setCloneSource(c); setCloneData({ copy_name: c.company_name + ' Copia' }); setCloneError(''); setCloneModalOpen(true);}} title="Duplicar proyecto">
+                            <Copy className="w-4 h-4" />
+                            <span className="sr-only">Duplicar</span>
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -299,6 +310,55 @@ export default function SelectCompanyPage() {
                 <Button type="button" variant="outline" onClick={closeFullEdit} disabled={editModalSaving}>Cancelar</Button>
                 <Button type="submit" disabled={editModalSaving}>{editModalSaving? 'Guardando...':'Guardar Cambios'}</Button>
               </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {cloneModalOpen && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 relative">
+            <h4 className="text-xl font-bold mb-4">Duplicar Proyecto</h4>
+            <form onSubmit={async (e)=>{
+              e.preventDefault();
+              if (!cloneSource) return;
+              if (!cloneData.copy_name.trim()) { setCloneError('Nombre requerido'); return; }
+              setCloning(true); setCloneError('');
+              try {
+                const resp = await axios.post('/companies/clone', {
+                  source_code: cloneSource.company_code,
+                  copy_name: cloneData.copy_name.trim()
+                });
+                if (resp.data?.success) {
+                  // Agregar a la lista
+                  setAvailableCompanies([...availableCompanies, {
+                    company_id: resp.data.data.id,
+                    company_code: resp.data.data.company_code,
+                    company_name: resp.data.data.company_name || cloneData.copy_name.trim(),
+                    schema_name: resp.data.data.schema_name,
+                    roles: ['admin']
+                  }]);
+                  setCloneModalOpen(false);
+                  setCloneSource(null);
+                  setCloneData({ copy_name: '' });
+                } else {
+                  setCloneError(resp.data?.error || 'No se pudo clonar');
+                }
+              } catch (err) {
+                setCloneError(err?.response?.data?.error || err.message || 'Error al clonar');
+              } finally {
+                setCloning(false);
+              }
+            }} className="space-y-4">
+              <div>
+                <Label className="text-xs uppercase font-semibold">Nombre de la Copia</Label>
+                <Input value={cloneData.copy_name} onChange={e=>setCloneData(v=>({...v,copy_name:e.target.value}))} disabled={cloning} />
+              </div>
+              {cloneError && <div className="text-xs text-red-600">{cloneError}</div>}
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="outline" disabled={cloning} onClick={()=>{setCloneModalOpen(false); setCloneSource(null);}}>Cancelar</Button>
+                <Button type="submit" disabled={cloning}>{cloning? 'Clonando...':'Duplicar'}</Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">Se copiarán todos los datos del proyecto original.</p>
             </form>
           </div>
         </div>
