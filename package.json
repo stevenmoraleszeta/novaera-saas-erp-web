@@ -1,7 +1,10 @@
 {
-  "name": "erp-system_front",
+  "name": "novaera-erp-web",
   "version": "0.1.0",
   "private": true,
+  "description": "A modern, full-featured Enterprise Resource Planning (ERP) system built with Next.js 15 and React 19",
+  "author": "Steven Morales Fallas",
+  "license": "PROPRIETARY",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -14,10 +17,15 @@
     "@dnd-kit/sortable": "^10.0.0",
     "axios": "^1.9.0",
     "date-fns": "^4.1.0",
+    "jose": "^5.9.6",
     "js-cookie": "^3.0.5",
     "next": "15.3.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-icons": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   }
 }
