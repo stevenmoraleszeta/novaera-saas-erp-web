@@ -4,7 +4,6 @@
 ![React](https://img.shields.io/badge/React-19.0.0-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)
 ![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)
-![Version](https://img.shields.io/badge/Version-0.1.0-blue?style=for-the-badge)
 
 A modern, full-featured Enterprise Resource Planning (ERP) system built with Next.js 15, React 19, and a comprehensive role-based access control system. This application provides a complete solution for managing users, modules, roles, permissions, and dynamic data tables with an intuitive and professional user interface.
 
