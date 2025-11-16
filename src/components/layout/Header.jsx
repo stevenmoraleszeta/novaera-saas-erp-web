@@ -31,7 +31,7 @@ import NotificationDropdown from "../navbar/NotificationDropdown";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { logout as authServiceLogout } from "@/services/authService";
-import { useRoles } from '@/hooks/useRoles';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 export default function Header() {
   const { user, clearUser } = useUserStore();
@@ -40,14 +40,7 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const { roles } = useRoles();
-
-  const isUserAdmin = useMemo(() => {
-    return roles.some(role =>
-      user.roles.includes(role.name) && role.is_admin
-    );
-
-  }, [roles, user.roles])
+  const isUserAdmin = useIsAdmin();
 
 
 

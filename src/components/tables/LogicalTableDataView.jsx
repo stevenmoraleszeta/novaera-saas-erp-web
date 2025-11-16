@@ -57,7 +57,7 @@ import DialogsContainer from "@/components/tables/LogicalTableDataView/DialogsCo
 import { crearTablaUsuarios, sincronizarTablaUsuarios } from "@/services/usuariosTableManager";
 import { sincronizarTablaRoles } from "@/services/rolesTableManager";
 import { useUsers } from '@/hooks/useUsers';
-import { useRoles } from '@/hooks/useRoles';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 import { useViewSorts } from "@/hooks/useViewSorts";
 
@@ -188,14 +188,7 @@ export default function LogicalTableDataView({
 
 
   const { users } = useUsers();
-  const { roles } = useRoles();
-
-  const isUserAdmin = useMemo(() => {
-    return roles.some(role =>
-      user.roles.includes(role.name) && role.is_admin
-    );
-
-  }, [roles, user.roles])
+  const isUserAdmin = useIsAdmin();
 
 
   const {

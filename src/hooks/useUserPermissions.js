@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { getMyPermissions, getMyPermissionsForAllTables } from '../services/permissionsService';
 import useUserStore from '../stores/userStore';
+import { useIsAdmin } from './useIsAdmin';
 
 export const useUserPermissions = (tableId = null) => {
   const [permissions, setPermissions] = useState({
@@ -15,9 +16,25 @@ export const useUserPermissions = (tableId = null) => {
   const [error, setError] = useState(null);
   
   const { user } = useUserStore();
+  const isUserAdmin = useIsAdmin();
+
+  // Permisos de administrador (todos los permisos)
+  const adminPermissions = {
+    can_create: true,
+    can_read: true,
+    can_update: true,
+    can_delete: true
+  };
 
   // Cargar permisos para una tabla específica
   useEffect(() => {
+    // Si el usuario es administrador, no necesitamos cargar permisos
+    if (isUserAdmin) {
+      setPermissions(adminPermissions);
+      setLoading(false);
+      return;
+    }
+
     if (tableId && user?.id) {
       const loadPermissions = async () => {
         try {
@@ -62,25 +79,33 @@ export const useUserPermissions = (tableId = null) => {
     } else {
       setLoading(false);
     }
-  }, [tableId, user?.id]);
+  }, [tableId, user?.id, isUserAdmin]);
+
+  // Si el usuario es administrador, usar permisos de admin
+  const effectivePermissions = isUserAdmin ? adminPermissions : permissions;
 
   // Función para verificar un permiso específico
   const hasPermission = (permission) => {
-    return permissions[permission] || false;
+    return isUserAdmin || effectivePermissions[permission] || false;
   };
 
   // Función para verificar si tiene al menos un permiso
   const hasAnyPermission = () => {
-    return Object.values(permissions).some(perm => perm);
+    return isUserAdmin || Object.values(effectivePermissions).some(perm => perm);
   };
 
   // Función para verificar múltiples permisos
   const hasPermissions = (permissionList) => {
-    return permissionList.every(perm => permissions[perm]);
+    return isUserAdmin || permissionList.every(perm => effectivePermissions[perm]);
   };
 
   // Función para obtener permisos de una tabla específica (cuando se cargan todos)
   const getTablePermissions = (tableId) => {
+    // Si el usuario es administrador, devolver todos los permisos
+    if (isUserAdmin) {
+      return adminPermissions;
+    }
+    
     return allTablePermissions[tableId] || {
       can_create: false,
       can_read: false,
@@ -90,7 +115,7 @@ export const useUserPermissions = (tableId = null) => {
   };
 
   return {
-    permissions,
+    permissions: effectivePermissions,
     allTablePermissions,
     loading,
     error,
@@ -98,11 +123,12 @@ export const useUserPermissions = (tableId = null) => {
     hasAnyPermission,
     hasPermissions,
     getTablePermissions,
+    isAdmin: isUserAdmin,
     // Métodos de conveniencia
-    canCreate: hasPermission('can_create'),
-    canRead: hasPermission('can_read'),
-    canUpdate: hasPermission('can_update'),
-    canDelete: hasPermission('can_delete'),
+    canCreate: isUserAdmin || effectivePermissions.can_create,
+    canRead: isUserAdmin || effectivePermissions.can_read,
+    canUpdate: isUserAdmin || effectivePermissions.can_update,
+    canDelete: isUserAdmin || effectivePermissions.can_delete,
   };
 };
 
