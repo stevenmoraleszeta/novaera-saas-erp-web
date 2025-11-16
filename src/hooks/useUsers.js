@@ -156,8 +156,6 @@ export function useUsers(initialFilters = {}) {
                 // Recargar la lista de usuarios para obtener datos actualizados del servidor
                 await loadUsers(1, searchQuery, sortConfig, filters);
                 setSuccess('Usuario creado correctamente');
-            }
-
                 return response;
             } else {
                 throw new Error('Respuesta inválida del servidor');
@@ -176,8 +174,6 @@ export function useUsers(initialFilters = {}) {
         try {
             setError(null);
             const response = await updateUser(userId, userData);
-
-            console.log('User update response:', response);
 
             // Recargar la lista para obtener datos actualizados del servidor
             await loadUsers(currentPage, searchQuery, sortConfig, filters);
@@ -302,7 +298,6 @@ export function useUsers(initialFilters = {}) {
         try {
             setError(null);
             const user = await getUserById(userId);
-            console.log('User retrieved by ID:', user);
             return user;
 
         } catch (err) {

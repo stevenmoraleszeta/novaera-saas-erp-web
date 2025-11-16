@@ -122,9 +122,7 @@ export function useUsersWithConfirmation(initialFilters = {}) {
     // Enhanced update user (no confirmation needed)
     const handleUpdateUserEnhanced = useCallback(async (userId, userData) => {
         try {
-            console.log('Updating user:', userId, 'with data:', userData);
             const result = await usersHook.handleUpdateUser(userId, userData);
-            console.log('User updated successfully:', result);
             return result;
         } catch (error) {
             console.error('Error updating user:', error);

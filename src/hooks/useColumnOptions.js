@@ -13,20 +13,16 @@ export const useColumnOptions = (columnId) => {
       return;
     }
 
-    console.log(`useColumnOptions: Fetching options for column ${columnId}`);
     setLoading(true);
     setError(null);
 
     try {
       const response = await columnOptionsService.getAvailableOptions(columnId);
-      console.log(`useColumnOptions: Response for column ${columnId}:`, response);
       
       if (response.success) {
         const options = response.options || [];
-        console.log(`useColumnOptions: Setting ${options.length} options for column ${columnId}:`, options);
         setOptions(options);
       } else {
-        console.warn(`useColumnOptions: Response not successful for column ${columnId}:`, response.message);
         setError(response.message || 'Error al cargar opciones');
         setOptions([]);
       }
