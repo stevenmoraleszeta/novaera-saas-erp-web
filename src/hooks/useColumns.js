@@ -114,7 +114,6 @@ export function useColumns(tableId) {
     try {
       setError(null);
       setSuccess(null);
-      console.log('chat: NEWPO, ', columnId, newPosition);
       await updateColumnPosition(columnId, newPosition);
       setSuccess('Posición actualizada correctamente');
       fetchColumns();

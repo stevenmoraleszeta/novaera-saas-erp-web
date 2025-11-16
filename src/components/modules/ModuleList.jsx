@@ -45,9 +45,6 @@ export default function ModuleList({
   const { addModuleTab } = useTabStore();
   const { isEditingMode, isHydrated } = useEditMode();
 
-  // Debug: Log del modo edición en ModuleList
-  console.log("🔧 ModuleList - Modo edición:", isEditingMode, "Hidratado:", isHydrated);
-
   const handleModuleClick = (module) => {
     if (isEditingMode) {
       onEdit(module);

@@ -49,9 +49,6 @@ export default function ModulesPage() {
     }
   }, [user, router]);
 
-  // Debug: Log del modo edición
-  console.log("🔧 ModulesPage - Modo edición:", isEditingMode, "Hidratado:", isHydrated);
-
   const [modalState, setModalState] = React.useState({
     showModal: false,
     selectedModule: null,

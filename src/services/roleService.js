@@ -9,7 +9,6 @@ export async function getRoles({ page = 1, search = '' } = {}) {
 }
 
 export async function createRole(roleData) {
-  console.log("cage se va a crear: ", roleData)
   const res = await axios.post('/roles', { 
     name: roleData.nombre
   });

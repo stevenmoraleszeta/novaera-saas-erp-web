@@ -3,9 +3,7 @@ import axios from "../lib/axios";
 
 export async function login(email, password) {
   try {
-    console.log("🔐 AuthService: Attempting login for:", email);
     const response = await axios.post("/auth/login", { email, password });
-    console.log("🔐 AuthService: Login response:", response.data);
     return response.data;
   } catch (error) {
     console.error("🔐 AuthService: Login error:", error);

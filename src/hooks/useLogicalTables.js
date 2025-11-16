@@ -52,7 +52,6 @@ export function useLogicalTables(moduleId) {
     try {
       setError(null);
       setSuccess(null);
-      console.log('NEWPO, ', newPosition);
       await updateTablePosition(tableID, newPosition);
       setSuccess('Posición actualizada correctamente');
       getAllTables(); // O lo que uses para recargar la lista
@@ -66,7 +65,6 @@ export function useLogicalTables(moduleId) {
     try {
       setError(null);
       setSuccess(null);
-      console.log('chat: NEWPO, ', recordId, newPosition);
       await updateRecordPosition(recordId, newPosition);
       setSuccess('Posición actualizada correctamente');
     } catch (err) {

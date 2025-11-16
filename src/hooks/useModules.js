@@ -142,7 +142,6 @@ export function useModules(initialParams = {}) {
     try {
       setError(null);
       setSuccess(null);
-      console.log('chat: NEWPO, ', id, newPosition);
       await updateModulePosition(id, newPosition);
       setSuccess('Posición actualizada correctamente');
       loadModules();

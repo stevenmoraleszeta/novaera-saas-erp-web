@@ -149,24 +149,14 @@ export function useUsers(initialFilters = {}) {
     const handleCreateUser = useCallback(async (userData) => {
         try {
             setError(null);
-            console.log('🚀 useUsers handleCreateUser received:', userData);
-            console.log('🎯 Role selected for new user:', userData.role);
-
             const response = await createUser(userData);
-
-            console.log('🎉 User creation response:', response);
 
             // Solo actualizar estado local si tenemos datos del usuario creado
             if (response && (response.user || response.message)) {
                 // Recargar la lista de usuarios para obtener datos actualizados del servidor
                 await loadUsers(1, searchQuery, sortConfig, filters);
                 setSuccess('Usuario creado correctamente');
-
-                // Verificar el rol del usuario creado
-                if (response.user) {
-                    console.log('👤 Created user role:', response.user.role);
-                    console.log('✅ User creation successful with all data');
-                }
+            }
 
                 return response;
             } else {

@@ -30,7 +30,6 @@ export function useUsersWithConfirmation(initialFilters = {}) {
             type: user.isActive ? 'warning' : 'default',
             onConfirm: async () => {
                 try {
-                    console.log('Toggling user status:', user.id, 'to', !user.isActive);
                     await usersHook.handleToggleUserStatus(user);
                 } catch (error) {
                     console.error('Error toggling user status:', error);
@@ -54,7 +53,6 @@ export function useUsersWithConfirmation(initialFilters = {}) {
             type: 'danger',
             onConfirm: async () => {
                 try {
-                    console.log('Blocking user:', user.id);
                     await usersHook.handleBlockUser(user);
                 } catch (error) {
                     console.error('Error blocking user:', error);
@@ -78,7 +76,6 @@ export function useUsersWithConfirmation(initialFilters = {}) {
             type: 'default',
             onConfirm: async () => {
                 try {
-                    console.log('Unblocking user:', user.id);
                     await usersHook.handleUnblockUser(user);
                 } catch (error) {
                     console.error('Error unblocking user:', error);
@@ -102,7 +99,6 @@ export function useUsersWithConfirmation(initialFilters = {}) {
             type: 'danger',
             onConfirm: async () => {
                 try {
-                    console.log('Deleting user:', user.id);
                     await usersHook.handleDeleteUser(user);
                 } catch (error) {
                     console.error('Error deleting user:', error);
@@ -115,9 +111,7 @@ export function useUsersWithConfirmation(initialFilters = {}) {
     // Enhanced create user (no confirmation needed)
     const handleCreateUserEnhanced = useCallback(async (userData) => {
         try {
-            console.log('Creating user with data:', userData);
             const result = await usersHook.handleCreateUser(userData);
-            console.log('User created successfully:', result);
             return result;
         } catch (error) {
             console.error('Error creating user:', error);

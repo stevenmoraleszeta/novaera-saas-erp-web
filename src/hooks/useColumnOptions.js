@@ -8,7 +8,6 @@ export const useColumnOptions = (columnId) => {
 
   const fetchOptions = async () => {
     if (!columnId || columnId === null || columnId === undefined) {
-      console.log('useColumnOptions: No columnId provided');
       setOptions([]);
       setLoading(false);
       return;

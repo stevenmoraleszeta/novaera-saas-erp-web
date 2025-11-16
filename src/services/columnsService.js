@@ -56,11 +56,7 @@ export async function getColumns() {
 
 // Crear una nueva columna
 export async function createColumn(column) {
-  console.log('createColumn service called with:', column);
-  //const payload = mapColumnToBackend(column);
-  //console.log("payload", payload);
   const res = await axios.post('/columns', column);
-  console.log('createColumn service response:', res.data);
   return mapColumnFromBackend(res.data);
 }
 
@@ -79,17 +75,13 @@ export async function getColumnById(columnId) {
 // Actualizar columna
 export async function updateColumn(columnId, updatedColumn) {
   const payload = mapColumnToBackend(updatedColumn);
-  console.log("payload", columnId);
   const res = await axios.put(`/columns/${columnId}`, payload);
   return mapColumnFromBackend(res.data);
 }
 
 // Eliminar columna
 export async function deleteColumn(columnId) {
-        console.log("mana: intenta borrar adentro", columnId)
   const res = await axios.delete(`/columns/${columnId}`);
-
-  console.log("mana: intenta delete service", res);
   return res.data;
 }
 
