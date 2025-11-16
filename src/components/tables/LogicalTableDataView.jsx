@@ -58,6 +58,7 @@ import { crearTablaUsuarios, sincronizarTablaUsuarios } from "@/services/usuario
 import { sincronizarTablaRoles } from "@/services/rolesTableManager";
 import { useUsers } from '@/hooks/useUsers';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { useRoles } from '@/hooks/useRoles';
 
 import { useViewSorts } from "@/hooks/useViewSorts";
 
@@ -188,6 +189,7 @@ export default function LogicalTableDataView({
 
 
   const { users } = useUsers();
+  const { roles } = useRoles();
   const isUserAdmin = useIsAdmin();
 
 
