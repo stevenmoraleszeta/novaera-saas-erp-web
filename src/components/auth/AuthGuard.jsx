@@ -13,10 +13,7 @@ export default function AuthGuard({ children }) {
     // Dar tiempo al UserInitializer para cargar el usuario
     const timeout = setTimeout(() => {
       if (!user) {
-        console.log("[AuthGuard] No hay usuario después de la inicialización, redirigiendo a login");
         router.replace("/login");
-      } else {
-        console.log("[AuthGuard] Usuario autenticado:", user);
       }
       setIsLoading(false);
     }, 1500); // Dar 1.5 segundos para que UserInitializer haga su trabajo
@@ -25,7 +22,6 @@ export default function AuthGuard({ children }) {
     if (user) {
       clearTimeout(timeout);
       setIsLoading(false);
-      console.log("[AuthGuard] Usuario ya disponible:", user);
     }
 
     return () => clearTimeout(timeout);

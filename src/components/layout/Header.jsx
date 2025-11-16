@@ -42,11 +42,6 @@ export default function Header() {
 
   const isUserAdmin = useIsAdmin();
 
-
-
-  // Debug: Log del modo edición en el header
-  console.log("🔧 Header - Modo edición:", isEditingMode, "Hidratado:", isHydrated);
-
   // Desactivar modo edición al cambiar de página
   useEffect(() => {
     if (isEditingMode) {
@@ -59,9 +54,7 @@ export default function Header() {
   };
 
   const handleToggleEditMode = () => {
-    console.log("🔧 Toggle modo edición - Estado actual:", isEditingMode);
     toggleEditMode();
-    console.log("🔧 Toggle modo edición - Después del toggle");
   };
 
   const handleLogout = async () => {

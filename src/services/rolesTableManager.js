@@ -107,7 +107,6 @@ export const sincronizarTablaRoles = async ({
             }
         }
 
-        console.log("✅ Tabla de roles sincronizada.");
         return tablaId;
 
     } catch (err) {

@@ -34,9 +34,6 @@ export default function ModuleDetailPage() {
   const searchParams = useSearchParams();
   const openRecordId = searchParams.get('openRecord'); // Obtener el ID del registro a abrir
 
-  // Debug: Log del modo edición en la página del módulo
-  console.log("🔧 ModuleDetailPage - Modo edición:", isEditingMode, "Hidratado:", isHydrated);
-
   const { id } = useParams();
   const [module, setModule] = useState(null);
   const [loading, setLoading] = useState(true);

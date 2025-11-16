@@ -271,7 +271,6 @@ const useTabStore = create(
         set({ tabs: [HOME_TAB], activeTab: "home", loadingTab: null });
         setStoredTabs([]);
         setStoredActiveTab("home");
-        console.log("🧹 Tabs cleared - reset to home tab only");
       },
 
       // Update active tab based on pathname

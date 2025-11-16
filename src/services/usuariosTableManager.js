@@ -31,13 +31,11 @@ export const crearTablaUsuarios = async ({
         if (tablaExistente) {
 
             if (creandoTablaUsuarios) {
-                console.log("🔄 Esperando a que termine la creación anterior...");
                 return;
             }
 
             creandoTablaUsuarios = true;
             try {
-                console.log("ℹ️ La tabla 'usuarios_sistema' ya existe con ID:", tablaExistente.id);
                 const tablaId = tablaExistente.id;
 
                 // Obtener registros existentes en la tabla
@@ -57,7 +55,6 @@ export const crearTablaUsuarios = async ({
                     }
                 }
 
-                console.log(`✅ Tabla existente actualizada. ${nuevos} usuarios nuevos agregados.`);
                 return tablaId;
             } finally {
                 creandoTablaUsuarios = false;
@@ -98,7 +95,6 @@ export const crearTablaUsuarios = async ({
                 });
             }
 
-            console.log("✅ Tabla de usuarios creada correctamente");
             return tabla.id;
         }
     } catch (err) {
@@ -147,7 +143,6 @@ export const sincronizarTablaUsuarios = async ({
             }
         }
 
-        console.log("✅ Tabla de usuarios sincronizada");
     } catch (err) {
         console.error("❌ Error al sincronizar tabla de usuarios:", err);
         throw err;

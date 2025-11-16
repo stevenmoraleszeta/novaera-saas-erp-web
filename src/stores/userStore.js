@@ -7,19 +7,16 @@ const useUserStore = create(
       user: null,
 
       setUser: (user) => {
-        console.log("Setting user in store:", user);
         set({ user });
       },
 
       clearUser: () => {
-        console.log("Clearing user from store");
         set({ user: null });
       },
 
       // Initialize user from server response
       initializeUser: (user) => {
         if (user) {
-          console.log("Initializing user in store:", user);
           set({ user });
         }
       },

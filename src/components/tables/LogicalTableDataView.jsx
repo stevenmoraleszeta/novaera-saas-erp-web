@@ -422,7 +422,6 @@ export default function LogicalTableDataView({
           }
         }
         setSelectOptions(optionsMap);
-        console.timeEnd("⚙️ Opciones select");
 
         await loadViewSorts();
       } catch (err) {
@@ -431,7 +430,6 @@ export default function LogicalTableDataView({
       } finally {
         setLoading(false);
         setHasLoadedOnce(true);
-        console.timeEnd("🔄 Carga inicial de tabla");
       }
     };
 
@@ -458,98 +456,6 @@ export default function LogicalTableDataView({
 
 
   /*
-
-  useEffect(() => {
-    const loadAllData = async () => {
-      console.time("🔄 Tiempo total de carga de tabla");
-      if (!tableId) {
-        setColumns([]);
-        setRecords([]);
-        setLoading(false);
-        console.timeEnd("🔄 Tiempo total de carga de tabla");
-        return;
-      }
-
-      // Si tenemos registros pre-procesados, usarlos directamente
-
-      /*
-      if (preProcessedRecords) {
-        console.log('📦 Usando registros pre-procesados:', preProcessedRecords);
-        setRecords(preProcessedRecords);
-        
-        try {
-          const cols = await getLogicalTableStructure(tableId);
-          setColumns(cols);
-          setTotal(preProcessedRecords.length);
-        } catch (err) {
-          console.error("💥 Error cargando estructura de tabla:", err);
-        }
-        setLoading(false);
-        return; 
-      }
-      setLoading(true);
-      
-
-      try {
-        console.time("📑 Cargar estructura de tabla");
-        const cols = await getLogicalTableStructure(tableId);
-        console.timeEnd("📑 Cargar estructura de tabla");
-        setColumns(cols);
-
-        console.time("📊 Cargar registros");
-        const data = await getLogicalTableRecords(tableId, {
-          page,
-          pageSize,
-        });
-        console.timeEnd("📊 Cargar registros");
-
-        const rawRecords = data.records || data;
-
-        // Procesar registros para resolver foreign_record_id a texto descriptivo
-        console.time("🔍 Procesar registros foráneos");
-        const processedRecords = await processRecordsWithForeignText(rawRecords, cols);
-        console.timeEnd("🔍 Procesar registros foráneos");
-
-        setRecords(processedRecords);
-
-
-        setTotal(
-          data.total || (data.records ? data.records.length : data.length)
-        );
-
-        if (selectedView) {
-          handleSelectView(selectedView)
-        }
-
-        console.time("⚙️ Cargar opciones de selects");
-
-        const optionsMap = {};
-        for (const col of cols) {
-          if (col.data_type === 'select' && col.foreign_table_id) {
-            try {
-              const relatedRecords = await getLogicalTableRecords(col.foreign_table_id);
-              optionsMap[col.name] = relatedRecords.map(r => ({
-                value: r.id,
-                label: r.record_data[col.foreign_column_name] || `ID: ${r.id}`,
-              }));
-            } catch (error) {
-              console.error(`Error fetching options for column ${col.name}:`, error);
-              optionsMap[col.name] = [];
-            }
-          } else if (col.data_type === 'user') {
-            optionsMap[col.name] = users.map(u => ({ value: u.id, label: u.name }));
-          } else if (col.data_type === 'roles') {
-            optionsMap[col.name] = roles.map(r => ({ value: r.id, label: r.name }));
-          }
-        }
-        console.timeEnd("⚙️ Cargar opciones de selects");
-        setSelectOptions(optionsMap);
-        setRecords(rawRecords);
-        setTotal(data.total || rawRecords.length);
-
-        console.time("↕️ Cargar sorts de vista");
-        await loadViewSorts()
-        console.timeEnd("↕️ Cargar sorts de vista");
 
         const recordIdToOpen = searchParams.get('openRecord');
         if (recordIdToOpen) {
@@ -601,14 +507,11 @@ export default function LogicalTableDataView({
       if (!tableId) return;
 
       try {
-        console.log('Checking assigned users for table:', tableId);
         const hasUsers = await hasAssignedUsersInTable(tableId);
-        console.log('hasUsers result:', hasUsers);
         setHasAssignedUsers(hasUsers);
 
         if (hasUsers) {
           const stats = await getAssignedUsersStatsForTable(tableId);
-          console.log('stats result:', stats);
           setAssignedUsersStats(stats);
         } else {
           setAssignedUsersStats(null);
@@ -804,7 +707,6 @@ export default function LogicalTableDataView({
 
     // Agregar columna de usuarios asignados solo si hay usuarios asignados en la tabla Y la tabla NO tiene funcionalidad de notificaciones
     if (hasAssignedUsers && !hasNotificationColumns && !cols.some(col => col.key === 'assigned_users')) {
-      console.log('Adding assigned users column, hasAssignedUsers:', hasAssignedUsers, 'hasNotificationColumns:', hasNotificationColumns);
       cols.push({
         key: 'assigned_users',
         header: 'Usuarios Asignados',
@@ -825,15 +727,8 @@ export default function LogicalTableDataView({
           );
         },
       });
-    } else {
-      console.log('Not adding assigned users column:', {
-        hasAssignedUsers,
-        hasNotificationColumns,
-        hasAssignedUsersColumn: cols.some(col => col.key === 'assigned_users')
-      });
     }
 
-    console.log('Final columns:', cols.map(c => c.key));
     return cols;
   }, [columns, columnVisibility, hiddenColumns, hasAssignedUsers, hasNotificationColumns, tableId, isEditingMode]);
 
@@ -1110,15 +1005,10 @@ export default function LogicalTableDataView({
 
 
   const handleDeleteColumnClick = (columnId) => {
-    console.log("handleDeleteColumnClick called with columnId:", columnId);
     const column = columns.find((col) => col.column_id === columnId);
-    console.log("Found column:", column);
     if (column) {
       setColumnToDelete(column);
       setShowColumnDeleteDialog(true);
-      console.log("Delete dialog should be opening");
-    } else {
-      console.log("Column not found for ID:", columnId);
     }
   };
 
@@ -1194,11 +1084,6 @@ export default function LogicalTableDataView({
           vc.filter_condition === "is_not_null" ||
           (vc.filter_value !== null && vc.filter_value !== undefined && vc.filter_value !== "")
         )) {
-          console.log(
-            vc.filter_value,
-            "tipo:",
-            typeof vc.filter_value
-          );
           filters.push({
             id: vc.id,
             column: col.name,

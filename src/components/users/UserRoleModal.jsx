@@ -137,7 +137,6 @@ export default function UserRoleModal({
         if (roleFound) {
           setSelectedRole(roleFound.id.toString());
         } else {
-          console.warn(`Role "${primaryRole}" not found in available roles. Available:`, rolesToUse.map(r => r.name));
           setSelectedRole("no-role");
         }
       } else {

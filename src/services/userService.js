@@ -30,17 +30,13 @@ const mapUserFromBackend = (backendUser) => {
 // Helper function to enrich user data with role information
 const enrichUserWithRole = async (user) => {
     try {
-        console.log(`🔍 Enriching user ${user.id} (${user.name}) with role information...`);
-
         if (user.role && user.role !== 'user' && user.role !== 'undefined' && user.role !== null && user.role !== 'Sin rol') {
             // Si ya tiene un rol válido, no necesitamos buscar más
-            console.log(`✅ User ${user.id} already has valid role: ${user.role}`);
             return user;
         }
 
         // Intentar obtener roles del usuario desde user_roles
         const userRoles = await getUserRoles(user.id);
-        console.log(`📋 User ${user.id} roles from database:`, userRoles);
 
         if (userRoles && userRoles.length > 0) {
             // Tomar el primer rol (o podrías manejar múltiples roles)
@@ -50,24 +46,19 @@ const enrichUserWithRole = async (user) => {
 
             if (roleName) {
                 user.role = roleName;
-                console.log(`✅ Enriched user ${user.id} with role: ${user.role}`);
             } else {
                 user.role = 'Sin rol';
-                console.log(`⚠️ User ${user.id} has role data but no valid role name, defaulting to 'Sin rol'`);
             }
         } else {
             // No hay roles asignados, usar 'Sin rol' por defecto
             user.role = 'Sin rol';
-            console.log(`📝 User ${user.id} has no roles assigned, defaulting to 'Sin rol'`);
         }
     } catch (error) {
-        console.warn(`❌ Could not enrich user ${user.id} with role info:`, error.message);
+        console.warn(`Could not enrich user ${user.id} with role info:`, error.message);
         // Si no se puede obtener el rol, usar 'Sin rol' por defecto
         user.role = 'Sin rol';
-        console.log(`🔧 User ${user.id} role set to 'Sin rol' due to error`);
     }
 
-    console.log(`🎯 Final role for user ${user.id}: ${user.role}`);
     return user;
 };
 
@@ -86,21 +77,16 @@ const mapUserToBackend = (frontendUser) => {
 export async function getUsers(params = {}) {
     try {
         // Obtener usuarios del backend
-        console.log('Fetching users with params:', params);
         const response = await axios.get('/users');
         const backendUsers = response.data;
 
-        console.log('Users received from backend:', backendUsers);
-
         // Map backend data to frontend format
         const mappedUsers = backendUsers.map(mapUserFromBackend);
-        console.log('Users after mapping:', mappedUsers);
 
         // Enrich users with role information from user_roles table
         const enrichedUsers = await Promise.all(
             mappedUsers.map(user => enrichUserWithRole({ ...user }))
         );
-        console.log('Users after role enrichment:', enrichedUsers);
 
         // Simular paginación y filtros en el frontend mientras actualizas el backend
         let filteredUsers = enrichedUsers;
@@ -183,18 +169,14 @@ export async function getUsers(params = {}) {
 
 export async function getUserById(id) {
     try {
-        console.log('Fetching user by ID:', id);
         const response = await axios.get(`/users/${id}`);
         const backendUser = response.data;
-        console.log('User data received from backend:', backendUser);
 
         // Map backend data to frontend format
         const mappedUser = mapUserFromBackend(backendUser);
-        console.log('User data after mapping:', mappedUser);
 
         // Enrich with role information
         const enrichedUser = await enrichUserWithRole({ ...mappedUser });
-        console.log('User data after role enrichment:', enrichedUser);
 
         return enrichedUser;
     } catch (error) {
@@ -205,8 +187,6 @@ export async function getUserById(id) {
 
 export async function createUser(userData) {
     try {
-        console.log('Creating user with data:', userData);
-
         // Mapear los datos al formato que espera el backend
         const backendData = {
             name: userData.name,
@@ -216,9 +196,7 @@ export async function createUser(userData) {
             is_blocked: userData.isBlocked !== undefined ? userData.isBlocked : false // Por defecto no bloqueado
         };
 
-        console.log('Sending user data to backend:', backendData);
         const response = await axios.post('/users', backendData);
-        console.log('User creation response:', response.data);
 
         // Extraer ID del usuario de la respuesta
         let userId = null;
@@ -229,48 +207,33 @@ export async function createUser(userData) {
             if (response.data.user) {
                 createdUser = response.data.user;
                 userId = createdUser.id;
-                console.log('📋 User ID extracted from response.data.user.id:', userId);
             } else if (response.data.id) {
                 userId = response.data.id;
                 createdUser = response.data;
-                console.log('📋 User ID extracted from response.data.id:', userId);
             } else if (response.data.insertId) {
                 userId = response.data.insertId;
-                console.log('📋 User ID extracted from response.data.insertId:', userId);
             } else if (response.data.user_id) {
                 userId = response.data.user_id;
-                console.log('📋 User ID extracted from response.data.user_id:', userId);
             } else if (response.data.message) {
                 // Intentar extraer ID del mensaje: "Usuario registrado exitosamente con ID: 7"
                 const messageMatch = response.data.message.match(/ID:\s*(\d+)/i);
                 if (messageMatch) {
                     userId = parseInt(messageMatch[1]);
-                    console.log('📋 User ID extracted from message:', userId);
-                    console.log('📝 Original message:', response.data.message);
-                } else {
-                    console.warn('⚠️ Could not extract ID from message:', response.data.message);
                 }
             }
         }
 
-        console.log('🆔 Final extracted userId:', userId);
-
         // Si encontramos un ID de usuario y hay un rol para asignar
         if (userId && userData.role) {
             try {
-                console.log('🎯 Assigning role', userData.role, 'to user', userId);
                 await assignRoleToUser(userId, userData.role);
-                console.log('✅ Role assigned successfully');
 
                 // Pequeño delay para que el backend procese la asignación
                 await new Promise(resolve => setTimeout(resolve, 100));
 
                 // Obtener el usuario actualizado con su rol
                 try {
-                    console.log('🔄 Fetching updated user with role...');
                     const updatedUser = await getUserById(userId);
-                    console.log('👤 User with role retrieved:', updatedUser);
-                    console.log('🏷️ User role after creation:', updatedUser.role);
 
                     return {
                         user: updatedUser,
@@ -278,7 +241,7 @@ export async function createUser(userData) {
                         roleAssigned: true
                     };
                 } catch (fetchError) {
-                    console.warn('⚠️ Could not fetch updated user, but role was assigned:', fetchError.message);
+                    console.warn('Could not fetch updated user, but role was assigned:', fetchError.message);
 
                     // Crear un objeto usuario básico con los datos que tenemos
                     const basicUser = {
@@ -291,7 +254,6 @@ export async function createUser(userData) {
                         createdAt: new Date().toISOString()
                     };
 
-                    console.log('📋 Returning basic user object:', basicUser);
                     return {
                         user: basicUser,
                         message: 'Usuario creado correctamente',
@@ -300,8 +262,7 @@ export async function createUser(userData) {
                     };
                 }
             } catch (roleError) {
-                console.error('❌ Failed to assign role to user:', roleError);
-                console.warn('⚠️ Usuario creado pero falló la asignación del rol. Rol:', userData.role);
+                console.error('Failed to assign role to user:', roleError);
 
                 // El usuario fue creado pero sin rol, así que retornamos algo básico
                 const basicUser = {
@@ -320,15 +281,6 @@ export async function createUser(userData) {
                     roleAssigned: false,
                     roleError: roleError.message
                 };
-            }
-        } else {
-            console.warn('⚠️ Could not assign role: userId =', userId, ', role =', userData.role);
-
-            if (!userId) {
-                console.error('❌ No user ID found - cannot assign role');
-            }
-            if (!userData.role) {
-                console.error('❌ No role specified - cannot assign role');
             }
         }
 
@@ -371,7 +323,6 @@ export async function updateUser(id, userData) {
             backendData.is_active = userData.isActive;
         }
 
-        console.log('Updating user with data:', backendData);
         const response = await axios.put(`/users/${id}`, backendData);
 
         // Si se cambió el rol, actualizar la asignación de roles
@@ -380,7 +331,6 @@ export async function updateUser(id, userData) {
                 // Aquí podrías necesitar primero eliminar roles existentes y luego asignar el nuevo
                 // Dependiendo de cómo maneje tu backend la actualización de roles
                 await assignRoleToUser(id, userData.role);
-                console.log('Role updated successfully');
             } catch (roleError) {
                 console.warn('Failed to update role:', roleError);
             }
@@ -460,11 +410,8 @@ export async function setUserAvatar(id, avatarData) {
 // Obtener roles disponibles
 export async function fetchRoles() {
     try {
-        console.log('Fetching roles from backend...');
         const response = await axios.get('/roles');
         const roles = response.data;
-
-        console.log('Roles received from backend:', roles);
 
         // Mapear el formato del backend al formato esperado
         const mappedRoles = roles.map(role => ({
@@ -473,7 +420,6 @@ export async function fetchRoles() {
             label: getRoleDisplayName(role.rol_name || role.name || role.role_name)
         }));
 
-        console.log('Roles after mapping:', mappedRoles);
         return mappedRoles;
     } catch (error) {
         console.warn('Error fetching roles from backend:', error.message);
@@ -485,24 +431,15 @@ export async function fetchRoles() {
 // Asignar rol a usuario usando la tabla user_roles
 export async function assignRoleToUser(userId, roleName) {
     try {
-        console.log('🎯 ASSIGNING ROLE:', roleName, 'to user:', userId);
-        console.log('🔍 Searching for role with name:', roleName);
-
         // Primero obtenemos todos los roles para encontrar el ID del rol por nombre
         const roles = await fetchRoles();
-        console.log('📋 Available roles for search:', roles);
 
         const role = roles.find(r => r.name === roleName);
 
         if (!role) {
-            console.error('❌ Role not found!');
-            console.error('🔍 Searched for role name:', roleName);
-            console.error('📋 Available role names:', roles.map(r => r.name));
+            console.error(`Role '${roleName}' not found. Available roles:`, roles.map(r => r.name));
             throw new Error(`Role '${roleName}' not found`);
         }
-
-        console.log('✅ Found role:', role);
-        console.log('🆔 Role ID to assign:', role.id);
 
         // Primero eliminamos cualquier rol existente del usuario
         await removeUserRoles(userId);
@@ -512,19 +449,20 @@ export async function assignRoleToUser(userId, roleName) {
             user_id: parseInt(userId)
         });
 
-        console.log('Role assignment successful:', response.data);
         return response.data;
     } catch (error) {
         console.error('Error assigning role to user:', error);
 
         // Si el endpoint principal falla, intentar métodos alternativos
         if (error.response?.status === 404 || error.response?.status === 500) {
-            console.log('Primary role assignment failed, trying alternative methods...');
             try {
                 // Intentar insertar directamente usando insertUserRole
-                const response = await insertUserRole(parseInt(userId), parseInt(role.id));
-                console.log('Alternative role assignment successful:', response);
-                return response;
+                const roles = await fetchRoles();
+                const role = roles.find(r => r.name === roleName);
+                if (role) {
+                    const response = await insertUserRole(parseInt(userId), parseInt(role.id));
+                    return response;
+                }
             } catch (altError) {
                 console.error('Alternative role assignment also failed:', altError);
             }
@@ -537,10 +475,8 @@ export async function assignRoleToUser(userId, roleName) {
 // Obtener roles de un usuario
 export async function getUserRoles(userId) {
     try {
-        console.log('Fetching roles for user:', userId);
         const response = await axios.get(`/roles/user/${userId}`);
         const userRoles = response.data;
-        console.log('User roles received:', userRoles);
         
         // Normalizar el formato de los roles
         const normalizedRoles = userRoles.map(role => ({
@@ -551,7 +487,6 @@ export async function getUserRoles(userId) {
             rol_name: role.rol_name || role.name
         }));
         
-        console.log('Normalized roles:', normalizedRoles);
         return normalizedRoles;
     } catch (error) {
         console.warn('Error fetching user roles:', error.message);
@@ -562,13 +497,10 @@ export async function getUserRoles(userId) {
 // Función para eliminar todos los roles de un usuario
 export async function removeUserRoles(userId) {
     try {
-        console.log('Removing all roles for user:', userId);
-
         // Primero obtener todos los roles del usuario
         const userRoles = await getUserRoles(userId);
 
         if (!userRoles || userRoles.length === 0) {
-            console.log('No roles to remove for user:', userId);
             return { message: 'No roles to remove' };
         }
 
@@ -576,13 +508,11 @@ export async function removeUserRoles(userId) {
         const removePromises = userRoles.map(async (role) => {
             try {
                 const roleId = role.id || role.role_id || role.rol_id;
-                console.log(`Removing role ${roleId} from user ${userId}`);
 
                 const response = await axios.delete(`/roles/${roleId}/remove`, {
                     data: { user_id: userId }
                 });
 
-                console.log(`Role ${roleId} removed successfully:`, response.data);
                 return { success: true, roleId, data: response.data };
             } catch (roleError) {
                 console.error(`Error removing role ${role.id} from user ${userId}:`, roleError.message);
@@ -591,7 +521,6 @@ export async function removeUserRoles(userId) {
         });
 
         const results = await Promise.allSettled(removePromises);
-        console.log('Role removal results:', results);
 
         return { message: 'Roles removal attempted', results };
     } catch (error) {
@@ -604,8 +533,6 @@ export async function removeUserRoles(userId) {
 // Función para insertar directamente en user_roles usando rutas correctas
 export async function insertUserRole(userId, roleId) {
     try {
-        console.log('Inserting user_role:', { userId, roleId });
-
         // Usar la ruta correcta primero, luego fallbacks
         const endpoints = [
             {
@@ -627,12 +554,9 @@ export async function insertUserRole(userId, roleId) {
 
         for (const endpoint of endpoints) {
             try {
-                console.log(`Trying ${endpoint.description}: ${endpoint.url}`);
                 const response = await axios.post(endpoint.url, endpoint.data);
-                console.log(`Success with ${endpoint.description}:`, response.data);
                 return response.data;
             } catch (endpointError) {
-                console.log(`Failed ${endpoint.description}:`, endpointError.message);
                 continue;
             }
         }

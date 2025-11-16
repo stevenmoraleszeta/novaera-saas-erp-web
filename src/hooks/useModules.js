@@ -130,7 +130,6 @@ export function useModules(initialParams = {}) {
     try {
       setError(null);
       const module = await getModuleById(id);
-      console.log("Module retrieved by ID:", module);
       return module;
     } catch (err) {
       console.error("Error getting Module by ID:", err);

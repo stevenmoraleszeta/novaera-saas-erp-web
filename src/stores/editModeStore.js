@@ -10,11 +10,8 @@ const useEditModeStore = create(
 
       // Actions
       toggleEditMode: () => {
-        console.log("🔧 editModeStore - toggleEditMode called");
         set((state) => {
           const newMode = !state.isEditingMode;
-          console.log("🔧 editModeStore - Estado actual:", state.isEditingMode);
-          console.log("🔧 editModeStore - Nuevo estado:", newMode);
           
           // También guardar en localStorage como respaldo
           if (typeof window !== 'undefined') {
@@ -26,7 +23,6 @@ const useEditModeStore = create(
       },
 
       setEditMode: (value) => {
-        console.log("🔧 editModeStore - setEditMode:", value);
         if (typeof window !== 'undefined') {
           localStorage.setItem('edit-mode', JSON.stringify(value));
         }
@@ -35,7 +31,6 @@ const useEditModeStore = create(
 
       // Reset edit mode (useful for logout)
       resetEditMode: () => {
-        console.log("🔧 editModeStore - resetEditMode");
         if (typeof window !== 'undefined') {
           localStorage.removeItem('edit-mode');
         }
@@ -54,7 +49,6 @@ const useEditModeStore = create(
             const stored = localStorage.getItem('edit-mode');
             if (stored !== null) {
               const isEditing = JSON.parse(stored);
-              console.log("🔧 editModeStore - syncFromLocalStorage:", isEditing);
               set({ isEditingMode: isEditing });
               return isEditing;
             }
@@ -69,7 +63,6 @@ const useEditModeStore = create(
       name: "edit-mode-storage",
       partialize: (state) => ({ isEditingMode: state.isEditingMode }),
       onRehydrateStorage: () => (state) => {
-        console.log("🔧 editModeStore - onRehydrateStorage:", state);
         state?.setHasHydrated(true);
       },
     }

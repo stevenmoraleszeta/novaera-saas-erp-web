@@ -25,8 +25,6 @@ export function useEditMode() {
     
     // Marcar como hidratado en el store
     setHasHydrated(true);
-    
-    console.log("🔧 useEditMode - Hook hidratado, modo actual:", isEditingMode);
   }, []);
 
   // Solo retornar el valor real después de la hidratación del cliente

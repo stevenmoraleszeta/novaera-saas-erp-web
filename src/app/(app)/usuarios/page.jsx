@@ -22,20 +22,16 @@ export default function UsuariosPage() {
 
   // Función para gestionar roles (placeholder)
   const handleManageRoles = () => {
-    console.log('Gestionar roles - funcionalidad pendiente');
     // Aquí puedes agregar la lógica para gestionar roles globalmente
   };
 
   // Función para manejar la selección de un usuario desde la tabla
   const handleUserSelected = async (user) => {
-    console.log('User selected:', user);
-    
     // Obtener el usuario completo con su rol desde la API
     try {
       const userId = user.id || user.record_data?.id;
       if (userId) {
         const fullUser = await getUserById(userId);
-        console.log('Full user data loaded:', fullUser);
         setSelectedUser(fullUser || user);
       } else {
         setSelectedUser(user);
