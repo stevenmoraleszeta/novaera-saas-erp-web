@@ -1,262 +1,306 @@
-# Novaera ERP Web
+# NovaEra ERP API
 
-![Next.js](https://img.shields.io/badge/Next.js-15.3.3-black?style=for-the-badge&logo=next.js)
-![React](https://img.shields.io/badge/React-19.0.0-61DAFB?style=for-the-badge&logo=react&logoColor=black)
-![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)
-![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)
+![Node.js](https://img.shields.io/badge/Node.js-18.x-339933?logo=node.js&logoColor=white)
+![Express](https://img.shields.io/badge/Express-4.18-000000?logo=express&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-316192?logo=postgresql&logoColor=white)
+![License](https://img.shields.io/badge/License-Proprietary-red)
 
-A modern, full-featured Enterprise Resource Planning (ERP) system built with Next.js 15, React 19, and a comprehensive role-based access control system. This application provides a complete solution for managing users, modules, roles, permissions, and dynamic data tables with an intuitive and professional user interface.
+A comprehensive RESTful API for an Enterprise Resource Planning (ERP) system built with Node.js, Express, and PostgreSQL. This API provides complete backend functionality for managing modules, tables, records, users, roles, permissions, notifications, file uploads, audit logs, and more.
 
-## Table of Contents
+## ✨ Introduction
 
-- [Introduction](#introduction)
-- [Technologies Used](#technologies-used)
-- [Features](#features)
-- [Installation](#installation)
-- [Project Structure](#project-structure)
-- [Environment Variables](#environment-variables)
-- [Deployment](#deployment)
-- [License](#license)
-- [Contributing](#contributing)
+NovaEra ERP API is a robust backend solution designed for enterprise-level resource planning and management. It features a modular architecture with role-based access control, comprehensive audit logging, real-time notifications, file management, and flexible data modeling capabilities.
 
-## Introduction
+### Key Features
 
-Novaera ERP Web is a comprehensive ERP frontend application designed to streamline business operations through efficient user management, modular architecture, and flexible data management. The system features:
+- 🔐 **Authentication & Authorization**: JWT-based authentication with role-based access control (RBAC)
+- 📊 **Dynamic Data Modeling**: Create and manage custom modules, tables, and columns
+- 📝 **Record Management**: Full CRUD operations for records with assigned users and comments
+- 🔔 **Notifications**: Real-time and scheduled notifications system
+- 📁 **File Management**: Secure file upload and management
+- 📋 **Views & Sorting**: Custom views with advanced sorting capabilities
+- 🔍 **Audit Logging**: Comprehensive audit trail for all system activities
+- 👥 **Collaboration**: User assignment, comments, and table collaboration features
+- ⏰ **Scheduled Jobs**: Automated notification scheduling using node-cron
 
-- **User Management**: Complete CRUD operations for user accounts with role assignment
-- **Module Management**: Dynamic module creation and configuration
-- **Role-Based Access Control (RBAC)**: Granular permissions system
-- **Dynamic Tables**: Create and manage logical tables with custom columns and relationships
-- **Real-time Notifications**: System-wide notification management
-- **Secure Authentication**: JWT-based authentication with HTTP-only cookies
-- **Responsive Design**: Modern UI with drag-and-drop functionality
+## 🚀 Technologies Used
 
-## Technologies Used
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Database**: PostgreSQL
+- **Authentication**: JWT (jsonwebtoken)
+- **Password Hashing**: bcryptjs
+- **Task Scheduling**: node-cron
+- **File Handling**: Built-in Node.js file system
+- **Environment Management**: dotenv
 
-### Core Framework
-- **Next.js 15.3.3** - React framework with App Router
-- **React 19.0.0** - UI library
-- **React DOM 19.0.0** - React rendering
-
-### UI & Interaction
-- **React Icons 5.5.0** - Icon library
-- **@dnd-kit/core 6.3.1** - Drag and drop functionality
-- **@dnd-kit/sortable 10.0.0** - Sortable lists
-- **@dnd-kit/modifiers 9.0.0** - Drag and drop modifiers
-- **date-fns 4.1.0** - Date formatting and manipulation
-
-### HTTP & Data
-- **Axios 1.9.0** - HTTP client for API requests
-- **js-cookie 3.0.5** - Cookie management
-
-### Authentication & Security
-- **jose** - JWT verification and validation
-- **Next.js Middleware** - Route protection
-
-### Development Tools
-- **JavaScript (JSX)** - Primary programming language
-- **CSS Modules** - Component-scoped styling
-
-## Features
-
-### User Management
-- Create, read, update, and delete users
-- Role assignment and management
-- User status tracking (active/inactive)
-- Search and filter functionality
-- Pagination support
-
-### Module Management
-- Dynamic module creation
-- Module configuration and customization
-- Module-based navigation
-- Icon and description management
-
-### Role & Permissions
-- Role creation and management
-- Granular permission assignment
-- Permission matrix visualization
-- Role-based UI rendering
-
-### Dynamic Tables
-- Create logical tables with custom columns
-- Support for various data types
-- Foreign key relationships
-- Dynamic form generation
-- Table filtering and pagination
-
-### Notifications
-- Real-time notification system
-- Notification polling
-- Status tracking
-- User-specific notifications
-
-### Authentication & Security
-- JWT-based authentication
-- HTTP-only cookie storage
-- Protected routes via middleware
-- Role-based access control
-- Secure API communication
-
-## Installation
+## ⚙️ Installation
 
 ### Prerequisites
 
-- Node.js 18.x or higher
-- npm or yarn package manager
-- Backend API server (see deployment section)
+- Node.js (v14 or higher)
+- PostgreSQL (v12 or higher)
+- npm or yarn
 
-### Steps
+### Setup Steps
 
 1. **Clone the repository**
+
    ```bash
-   git clone https://github.com/yourusername/novaera-erp-web.git
-   cd novaera-erp-web
+   git clone https://github.com/yourusername/novaera-erp-api.git
+   cd novaera-erp-api
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
-   # or
-   yarn install
    ```
 
 3. **Configure environment variables**
+
    ```bash
    cp .env.example .env
    ```
-   Edit `.env` and set your environment variables (see [Environment Variables](#environment-variables))
 
-4. **Run the development server**
+   Edit `.env` and fill in your database credentials and other configuration values.
+
+4. **Set up the database**
+   - Create a PostgreSQL database
+   - Run the SQL schema scripts to create all required tables
+   - Ensure the database user has appropriate permissions
+
+5. **Start the development server**
+
    ```bash
    npm run dev
-   # or
-   yarn dev
    ```
 
-5. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+6. **Start the production server**
 
-### Build for Production
+   ```bash
+   npm start
+   ```
 
-```bash
-npm run build
-npm start
-```
+The API will be available at `http://localhost:3000` (or the port specified in your `.env` file).
 
-## Project Structure
-
-```
-novaera-erp-web/
-├── public/                 # Static assets
-│   ├── file.svg
-│   ├── globe.svg
-│   ├── next.svg
-│   └── vercel.svg
-├── src/
-│   ├── app/               # Next.js App Router pages
-│   │   ├── dashboard/     # Dashboard page
-│   │   ├── login/         # Login page
-│   │   ├── register/      # Registration page
-│   │   ├── usuarios/      # User management
-│   │   ├── modulos/       # Module management
-│   │   ├── roles/         # Role management
-│   │   ├── permissions/   # Permissions management
-│   │   ├── tablas-logicas/# Dynamic tables
-│   │   └── notificaciones/# Notifications
-│   ├── components/        # React components
-│   │   ├── commmon/       # Common UI components
-│   │   ├── layout/        # Layout components
-│   │   ├── modules/       # Module components
-│   │   ├── users/         # User components
-│   │   ├── roles/         # Role components
-│   │   ├── tables/        # Table components
-│   │   └── ui/            # UI components
-│   ├── context/           # React Context providers
-│   │   └── AuthContext.js # Authentication context
-│   ├── hooks/             # Custom React hooks
-│   │   ├── useAuth.js
-│   │   ├── useUsers.js
-│   │   ├── useModules.js
-│   │   └── ...
-│   ├── lib/               # Utility libraries
-│   │   ├── axios.js       # Axios configuration
-│   │   └── cookies.js     # Cookie utilities
-│   ├── services/          # API services
-│   │   ├── authService.js
-│   │   ├── userService.js
-│   │   ├── moduleService.js
-│   │   └── ...
-│   └── utils/             # Utility functions
-│       └── debugUtils.js
-├── middleware.js          # Next.js middleware for route protection
-├── next.config.mjs        # Next.js configuration
-├── jsconfig.json          # JavaScript configuration
-├── package.json           # Project dependencies
-└── README.md              # This file
-```
-
-## Environment Variables
+## 📋 Environment Variables
 
 Create a `.env` file in the root directory with the following variables:
 
 ```env
-# JWT Secret for token verification
-JWT_SECRET=your-secret-key-here
+# Server Configuration
+PORT=3000
+NODE_ENV=development
 
-# API Base URL
-NEXT_PUBLIC_API_URL=http://localhost:3001/api
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=your_db_user
+DB_PASSWORD=your_db_password
+DB_NAME=your_database_name
+DB_SSL=disable
+
+# JWT Configuration
+JWT_SECRET=your_jwt_secret_key
+
+# Optional: Database URL (for hosted environments)
+# DATABASE_URL=postgresql://user:password@host:port/database
 ```
 
-**Important**: Never commit your `.env` file to version control. Use `.env.example` as a template.
+See `.env.example` for a complete template.
 
-## Deployment
+## 🧩 Project Structure
 
-### Vercel (Recommended)
+```text
+novaera-erp-api/
+│
+├── src/
+│   ├── app.js                 # Express app configuration
+│   ├── server.js              # Server entry point
+│   │
+│   ├── config/
+│   │   └── db.js              # Database connection configuration
+│   │
+│   ├── controllers/           # Request handlers
+│   │   ├── authController.js
+│   │   ├── modulesController.js
+│   │   ├── tablesController.js
+│   │   ├── recordsController.js
+│   │   ├── usersController.js
+│   │   ├── rolesController.js
+│   │   ├── permissionsController.js
+│   │   ├── notificationsController.js
+│   │   ├── filesController.js
+│   │   ├── auditLogController.js
+│   │   └── ...
+│   │
+│   ├── services/              # Business logic layer
+│   │   ├── usersService.js
+│   │   ├── modulesService.js
+│   │   ├── recordsService.js
+│   │   └── ...
+│   │
+│   ├── routes/                # API routes
+│   │   ├── auth.js
+│   │   ├── modules.js
+│   │   ├── tables.js
+│   │   ├── records.js
+│   │   └── ...
+│   │
+│   ├── middleware/            # Custom middleware
+│   │   ├── authMiddleware.js
+│   │   └── validateFile.js
+│   │
+│   ├── jobs/                  # Scheduled jobs
+│   │   └── notificationScheduler.js
+│   │
+│   └── utils/                 # Utility functions
+│       └── fileUtils.js
+│
+├── .env.example               # Environment variables template
+├── .gitignore                 # Git ignore rules
+├── LICENSE                    # License file
+├── package.json               # Project dependencies
+└── README.md                  # Project documentation
+```
 
-[Vercel](https://vercel.com) provides seamless deployment for Next.js applications:
+## 📚 API Endpoints
 
-1. Push your code to GitHub
-2. Import your repository to Vercel
-3. Configure environment variables in Vercel dashboard
-4. Deploy with one click
+### Authentication
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
+- `POST /api/auth/register` - Register a new user
+- `POST /api/auth/login` - User login
+- `POST /api/auth/logout` - User logout
+- `GET /api/auth/me` - Get current user information
 
-### Other Deployment Options
+### Modules
 
-- **Netlify**: Similar to Vercel, supports Next.js out of the box
-- **AWS Amplify**: For AWS infrastructure integration
-- **Railway**: Simple deployment with environment variable management
-- **Render**: Full-stack deployment platform
-- **Docker**: Containerize the application for any platform
+- `GET /api/modules` - Get all modules
+- `POST /api/modules` - Create a new module
+- `GET /api/modules/:id` - Get a specific module
+- `PUT /api/modules/:id` - Update a module
+- `DELETE /api/modules/:id` - Delete a module
 
-### Production Checklist
+### Tables
 
-- [ ] Set strong `JWT_SECRET` in production environment
-- [ ] Configure `NEXT_PUBLIC_API_URL` to point to production API
-- [ ] Enable HTTPS/SSL certificates
-- [ ] Configure CORS on backend API
-- [ ] Set up monitoring and error tracking
-- [ ] Configure environment-specific builds
-- [ ] Test authentication flow in production
-- [ ] Verify all protected routes are working
+- `GET /api/tables` - Get all tables
+- `POST /api/tables` - Create a new table
+- `GET /api/tables/:id` - Get a specific table
+- `PUT /api/tables/:id` - Update a table
+- `DELETE /api/tables/:id` - Delete a table
 
-## License
+### Records
 
-Copyright (c) 2024 Steven Morales Fallas
+- `GET /api/records` - Get all records
+- `POST /api/records` - Create a new record
+- `GET /api/records/:id` - Get a specific record
+- `PUT /api/records/:id` - Update a record
+- `DELETE /api/records/:id` - Delete a record
 
-All rights reserved. Redistribution, modification, reproduction, sublicensing, or any form of transaction (including commercial, educational, or promotional use) involving this repository, its source code, or derived works is strictly prohibited without the explicit and personal written authorization of the Lead Developer, Steven Morales Fallas.
+### Users
+
+- `GET /api/users` - Get all users
+- `POST /api/users` - Create a new user
+- `GET /api/users/:id` - Get a specific user
+- `PUT /api/users/:id` - Update a user
+- `DELETE /api/users/:id` - Delete a user
+
+### Other Endpoints
+
+- Roles: `/api/roles`
+- Permissions: `/api/permissions`
+- Notifications: `/api/notifications`
+- Files: `/api/files`
+- Views: `/api/views`
+- Audit Log: `/api/audit-log`
+- And more...
+
+## 🔒 Security Features
+
+- JWT-based authentication with secure cookie storage
+- Password hashing using bcryptjs
+- Role-based access control (RBAC)
+- CORS configuration for allowed origins
+- SQL injection prevention through parameterized queries
+- Input validation and sanitization
+- Audit logging for security monitoring
+
+## 🚀 Deployment
+
+### Recommended Platforms
+
+- **Render**: Easy deployment with PostgreSQL support
+- **Railway**: Simple setup with automatic database provisioning
+- **Heroku**: Traditional PaaS with add-on support
+- **AWS**: Full control with EC2, RDS, and Elastic Beanstalk
+- **DigitalOcean**: App Platform or Droplets
+- **Vercel**: Serverless functions (may require adjustments)
+
+### Deployment Checklist
+
+1. Set `NODE_ENV=production` in environment variables
+2. Configure production database credentials
+3. Set a strong `JWT_SECRET`
+4. Configure `DB_SSL` appropriately for your database provider
+5. Update CORS allowed origins in `src/app.js`
+6. Ensure database migrations are run
+7. Set up environment variables on your hosting platform
+8. Configure automatic restarts (PM2, systemd, etc.)
+
+### Example: Deploying to Render
+
+1. Connect your GitHub repository to Render
+2. Create a new Web Service
+3. Set build command: `npm install`
+4. Set start command: `npm start`
+5. Add environment variables from your `.env` file
+6. Create a PostgreSQL database on Render
+7. Update database connection variables
+8. Deploy
+
+## 🧪 Development
+
+### Available Scripts
+
+- `npm start` - Start the production server
+- `npm run dev` - Start the development server with nodemon
+
+### Development Best Practices
+
+- Use environment variables for all configuration
+- Follow the existing code structure and patterns
+- Add appropriate error handling
+- Write meaningful commit messages
+- Test API endpoints before committing
+
+## 📝 License
+
+This project is proprietary and confidential. All rights reserved.
+
+### Copyright (c) 2024 Steven Morales Fallas
+
+Redistribution, modification, reproduction, sublicensing, or any form of transaction (including commercial, educational, or promotional use) involving this repository, its source code, or derived works is strictly prohibited without the explicit and personal written authorization of the Lead Developer, Steven Morales Fallas.
 
 Unauthorized commercial use, resale, or licensing of this repository or its contents is strictly forbidden and will be subject to applicable legal action.
 
-## Contributing
+For licensing inquiries, please contact: Steven Morales Fallas
 
-This is a proprietary project. Contributions are not accepted at this time. For inquiries or collaboration requests, please contact Steven Morales Fallas directly.
+## 👤 Author
+
+### Steven Morales Fallas
+
+- Full Stack Developer
+- Specialized in Node.js, Express, PostgreSQL, and modern web technologies
+
+## 🤝 Contributing
+
+This is a proprietary project. Contributions are not accepted at this time. For collaboration inquiries, please contact the author.
+
+## 📞 Support
+
+For issues, questions, or licensing inquiries, please contact the project maintainer.
 
 ---
 
-**Developed by Steven Morales Fallas**
-
-For questions, support, or licensing inquiries, please contact the repository owner.
-
+**Note**: This API is designed to work with a frontend application. Ensure proper CORS configuration and authentication flow when integrating with client applications.

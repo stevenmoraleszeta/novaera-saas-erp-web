@@ -1,31 +1,37 @@
 {
-  "name": "novaera-erp-web",
-  "version": "0.1.0",
-  "private": true,
-  "description": "A modern, full-featured Enterprise Resource Planning (ERP) system built with Next.js 15 and React 19",
+  "name": "novaera-erp-api",
+  "version": "1.0.0",
+  "description": "A comprehensive RESTful API for Enterprise Resource Planning (ERP) system built with Node.js, Express, and PostgreSQL",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "keywords": [
+    "express",
+    "postgresql",
+    "erp",
+    "api",
+    "restful",
+    "nodejs",
+    "backend",
+    "enterprise",
+    "rbac",
+    "jwt"
+  ],
   "author": "Steven Morales Fallas",
   "license": "PROPRIETARY",
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
   "dependencies": {
-    "@dnd-kit/core": "^6.3.1",
-    "@dnd-kit/modifiers": "^9.0.0",
-    "@dnd-kit/sortable": "^10.0.0",
-    "axios": "^1.9.0",
-    "date-fns": "^4.1.0",
-    "jose": "^5.9.6",
-    "js-cookie": "^3.0.5",
-    "next": "15.3.3",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-icons": "^5.5.0"
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "node-cron": "^4.2.0",
+    "pg": "^8.11.3"
   },
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+  "devDependencies": {
+    "nodemon": "^3.1.0"
   }
 }
