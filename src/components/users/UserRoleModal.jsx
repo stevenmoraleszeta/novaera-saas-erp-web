@@ -48,8 +48,16 @@ export default function UserRoleModal({
   useEffect(() => {
     const initializeModal = async () => {
       if (open) {
+        // Resetear estados primero
+        setErrors({});
+        setSubmitError(null);
+        setIsDirty(false);
+        setRolesDirty(false);
+        setSelectedRole("no-role");
+        setCurrentUserRoles([]);
+        
         // Cargar roles disponibles primero
-        await loadRoles();
+        const roles = await loadRoles();
         
         if (user) {
           // Cargar datos del usuario existente
@@ -61,7 +69,8 @@ export default function UserRoleModal({
           });
           
           // Cargar roles del usuario después de que los roles disponibles estén cargados
-          loadUserRoles();
+          // Pasar los roles directamente para evitar problemas de timing con el estado
+          await loadUserRoles(roles || []);
         } else {
           // Reset para nuevo usuario
           setFormData({
@@ -74,10 +83,6 @@ export default function UserRoleModal({
           setCurrentUserRoles([]);
         }
       }
-      setErrors({});
-      setSubmitError(null);
-      setIsDirty(false);
-      setRolesDirty(false);
     };
 
     initializeModal();
@@ -87,38 +92,53 @@ export default function UserRoleModal({
     try {
       const roles = await fetchRoles();
       setAvailableRoles(roles || []);
+      return roles || [];
     } catch (error) {
       console.error('Error loading roles:', error);
       setSubmitError('Error al cargar los roles');
+      return [];
     }
   };
 
-  const loadUserRoles = async () => {
+  const loadUserRoles = async (availableRolesList = []) => {
     if (!user) return;
     
     setRolesLoading(true);
     try {
       const userId = user.id || user.record_data?.id;
+      
+      // Obtener roles del usuario desde la API
       const userRoles = await getUserRoles(userId);
       setCurrentUserRoles(userRoles || []);
       
-      // Establecer el rol principal si existe
+      // Obtener el rol principal
+      let primaryRole = null;
       if (userRoles && userRoles.length > 0) {
-        const primaryRole = typeof userRoles[0] === 'string' 
+        primaryRole = typeof userRoles[0] === 'string' 
           ? userRoles[0] 
-          : userRoles[0]?.name || userRoles[0]?.toString();
-        
-        // Si el rol es "Sin rol" o está vacío, usar "no-role"
-        if (primaryRole === "Sin rol" || !primaryRole || primaryRole.trim() === "") {
-          setSelectedRole("no-role");
+          : userRoles[0]?.name || userRoles[0]?.rol_name || userRoles[0]?.toString();
+      }
+      
+      // Si no hay rol en los roles obtenidos, intentar obtenerlo de los datos del usuario
+      if (!primaryRole || primaryRole === 'Sin rol') {
+        primaryRole = user.role || user.record_data?.role;
+      }
+      
+      // Usar los roles pasados como parámetro o los del estado si están disponibles
+      const rolesToUse = availableRolesList.length > 0 ? availableRolesList : availableRoles;
+      
+      // Establecer el rol seleccionado
+      if (primaryRole && primaryRole !== "Sin rol" && primaryRole.trim() !== "") {
+        // Convertir el nombre del rol a ID
+        const roleFound = rolesToUse.find(role => 
+          role.name === primaryRole || 
+          role.name?.toLowerCase() === primaryRole?.toLowerCase()
+        );
+        if (roleFound) {
+          setSelectedRole(roleFound.id.toString());
         } else {
-          // Buscar el rol en availableRoles para obtener su ID
-          const roleFound = availableRoles.find(role => role.name === primaryRole);
-          if (roleFound) {
-            setSelectedRole(roleFound.id.toString());
-          } else {
-            setSelectedRole("no-role");
-          }
+          console.warn(`Role "${primaryRole}" not found in available roles. Available:`, rolesToUse.map(r => r.name));
+          setSelectedRole("no-role");
         }
       } else {
         setSelectedRole("no-role");
@@ -126,10 +146,30 @@ export default function UserRoleModal({
     } catch (error) {
       console.error('Error loading user roles:', error);
       setSubmitError('Error al cargar los roles del usuario');
+      setSelectedRole("no-role");
     } finally {
       setRolesLoading(false);
     }
   };
+  
+  // Efecto de respaldo para establecer el rol seleccionado si por alguna razón no se estableció antes
+  // Esto solo se ejecuta si selectedRole es un nombre de rol (string) y los roles ya están cargados
+  useEffect(() => {
+    if (!user || !open || availableRoles.length === 0 || rolesLoading) return;
+    
+    // Solo procesar si selectedRole es un nombre de rol (no un ID numérico)
+    const currentSelected = selectedRole;
+    if (currentSelected && currentSelected !== "no-role" && isNaN(parseInt(currentSelected))) {
+      // Es un nombre de rol, buscar su ID
+      const roleFound = availableRoles.find(role => 
+        role.name === currentSelected || 
+        role.name?.toLowerCase() === currentSelected?.toLowerCase()
+      );
+      if (roleFound) {
+        setSelectedRole(roleFound.id.toString());
+      }
+    }
+  }, [availableRoles, user, open, rolesLoading]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({

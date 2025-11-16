@@ -5,7 +5,7 @@ import useEditModeStore from "@/stores/editModeStore";
 import UserRoleModal from "@/components/users/UserRoleModal";
 import DeleteConfirmationModal from "@/components/common/DeleteConfirmationModal";
 import UsersTableView from "@/components/users/UsersTableView";
-import { createUser, updateUser, deleteUser } from "@/services/userService";
+import { createUser, updateUser, deleteUser, getUserById } from "@/services/userService";
 
 export default function UsuariosPage() {
   const { isEditingMode } = useEditModeStore();
@@ -27,9 +27,25 @@ export default function UsuariosPage() {
   };
 
   // Función para manejar la selección de un usuario desde la tabla
-  const handleUserSelected = (user) => {
+  const handleUserSelected = async (user) => {
     console.log('User selected:', user);
-    setSelectedUser(user);
+    
+    // Obtener el usuario completo con su rol desde la API
+    try {
+      const userId = user.id || user.record_data?.id;
+      if (userId) {
+        const fullUser = await getUserById(userId);
+        console.log('Full user data loaded:', fullUser);
+        setSelectedUser(fullUser || user);
+      } else {
+        setSelectedUser(user);
+      }
+    } catch (error) {
+      console.error('Error loading user details:', error);
+      // Si falla, usar el usuario que viene de la tabla
+      setSelectedUser(user);
+    }
+    
     setIsUserRoleModalOpen(true);
   };
 
