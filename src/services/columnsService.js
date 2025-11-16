@@ -1,129 +1,116 @@
-// Crear una nueva tabla vacía relacionada con original_table_id
-exports.createRelatedTable = async ({ name, description = '', module_id = null, original_table_id, position_num = 0 }) => {
-  // Inserta en la tabla 'tables' los campos básicos
-  const result = await pool.query(
-    `INSERT INTO tables (name, description, module_id, original_table_id, position_num)
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [name, description, module_id, original_table_id, position_num]
-  );
-  const newTable = result.rows[0];
+import axios from '../lib/axios';
 
-  // Crear columna 'Nombre' de tipo texto en la nueva tabla
-  await exports.createColumn({
-    table_id: newTable.id,
-    name: 'Nombre',
-    data_type: 'text',
-    is_required: true,
-    is_foreign_key: false,
-    foreign_table_id: null,
-    foreign_column_name: null,
-    column_position: 0,
-    relation_type: null,
-    validations: null, 
-    is_unique: false,
+// Mapear del backend al frontend
+const mapColumnFromBackend = (c) => ({
+  id: c.column_id,
+  tableId: c.table_id,
+  name: c.name,
+  type: c.type,
+  nullable: c.nullable,
+  defaultValue: c.default_value,
+  createdAt: c.created_at,
+  column_position: c.column_position,
+  relation_type: c.relation_type,
+  validations:  c.validations,
+  is_unique: c.is_unique,
+  ...c,
+});
+
+// Mapear del frontend al backend
+const mapColumnToBackend = (c) => {
+  const payload = {
+    table_id: c.table_id,
+    name: c.name,
+    data_type: c.data_type,
+    is_required: c.is_required,
+    is_foreign_key: c.is_foreign_key,
+    column_position: c.column_position,
+    relation_type: c.relation_type,
+    validations:  c.validations,
+    is_unique: c.is_unique,
+  };
+
+  const makePosition = (c) => ({
+      position: c.position,
+      ...c,
+    });
+
+
+  // Solo incluir si es foreign key válida
+  if (c.is_foreign_key && c.foreign_table_id) {
+    payload.foreign_table_id = c.foreign_table_id;
+  }
+
+  if (c.is_foreign_key && c.foreign_column_name && c.foreign_column_name.trim() !== '') {
+    payload.foreign_column_name = c.foreign_column_name;
+  }
+
+  return payload;
+};
+
+// Obtener todas las columnas
+export async function getColumns() {
+  const res = await axios.get('/columns');
+  return res.data.map(mapColumnFromBackend);
+}
+
+// Crear una nueva columna
+export async function createColumn(column) {
+  console.log('createColumn service called with:', column);
+  //const payload = mapColumnToBackend(column);
+  //console.log("payload", payload);
+  const res = await axios.post('/columns', column);
+  console.log('createColumn service response:', res.data);
+  return mapColumnFromBackend(res.data);
+}
+
+// Obtener columnas por tabla
+export async function getColumnsByTable(tableId) {
+  const res = await axios.get(`/columns/table/${tableId}`);
+  return res.data.map(mapColumnFromBackend);
+}
+
+// Obtener columna por ID
+export async function getColumnById(columnId) {
+  const res = await axios.get(`/columns/${columnId}`);
+  return mapColumnFromBackend(res.data);
+}
+
+// Actualizar columna
+export async function updateColumn(columnId, updatedColumn) {
+  const payload = mapColumnToBackend(updatedColumn);
+  console.log("payload", columnId);
+  const res = await axios.put(`/columns/${columnId}`, payload);
+  return mapColumnFromBackend(res.data);
+}
+
+// Eliminar columna
+export async function deleteColumn(columnId) {
+        console.log("mana: intenta borrar adentro", columnId)
+  const res = await axios.delete(`/columns/${columnId}`);
+
+  console.log("mana: intenta delete service", res);
+  return res.data;
+}
+
+// Verificar si existe nombre duplicado en una tabla
+export async function checkColumnNameExists(tableId, columnName) {
+  const res = await axios.get(`/columns/table/${tableId}/exists-name`, {
+    params: { name: columnName },
   });
-  return newTable;
-};
-const pool = require('../config/db');
+  return res.data.exists;
+}
 
-exports.getColumns = async () => {
-  const result = await pool.query('SELECT * FROM columns');
-  return result.rows;
-};
-
-
-exports.createColumn = async ({ table_id, name, data_type, is_required, is_foreign_key, foreign_table_id, foreign_column_name, column_position, relation_type, validations, is_unique }) => {
-  const result = await pool.query(
-    'SELECT * FROM sp_crear_columna($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)',
-    [table_id, name, data_type, is_required, is_foreign_key, foreign_table_id, foreign_column_name, column_position, relation_type, validations, is_unique]
-  );
-  return result.rows[0];
-};
+// Verificar si una columna tiene registros asociados
+export async function checkColumnHasRecords(columnId) {
+  const res = await axios.get(`/columns/${columnId}/has-records`);
+  return res.data.hasRecords;
+}
 
 
-exports.getColumnsByTable = async (table_id) => {
-  const result = await pool.query(
-    'SELECT * FROM sp_obtener_columnas_por_tabla($1)',
-    [table_id]
-  );
-  return result.rows;
-};
-
-exports.getColumnById = async (column_id) => {
-  const result = await pool.query(
-    'SELECT * FROM sp_obtener_columna_por_id($1)',
-    [column_id]
-  );
-  return result.rows[0];
-};
-
-exports.updateColumn = async ({ column_id, name, data_type, is_required, is_foreign_key, foreign_table_id, foreign_column_name, column_position, relation_type, validations, is_unique }) => {
-  const result = await pool.query(
-    'SELECT sp_actualizar_columna($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) AS message',
-    [column_id, name, data_type, is_required, is_foreign_key, foreign_table_id, foreign_column_name, column_position, relation_type, validations, is_unique]
-  );
-  return result.rows[0];
-};
-
-exports.renameColumnKeyInRecords = async ({ tableId, oldKey, newKey }) => {
-  await pool.query(
-    `UPDATE records
-    SET record_data = record_data - $1 || jsonb_build_object($2::text, record_data->$1)
-    WHERE table_id = $3 AND record_data ? $1`,
-    [oldKey, newKey, tableId]
-  );
-};
-
-
-exports.addFieldToAllRecords = async ({ tableId, columnName, defaultValue }) => {
-  console.log("adding info to records:", tableId, columnName, defaultValue);
-
-  const safeValue = defaultValue === undefined ? null : defaultValue;
-
-  await pool.query(
-    `UPDATE records
-     SET record_data = jsonb_set(
-       COALESCE(record_data, '{}'::jsonb),
-       $1::text[],
-       to_jsonb($2::text),
-       true
-     )
-     WHERE table_id = $3
-       AND NOT (COALESCE(record_data, '{}'::jsonb) ? $4);`,
-    [[columnName], String(safeValue), tableId, columnName]
-  );
-};
-
-exports.deleteColumn = async (column_id) => {
-  const result = await pool.query(
-    'SELECT sp_eliminar_columna($1) AS message',
-    [column_id]
-  );
-  return result.rows[0];
-};
-
-exports.existsColumnNameInTable = async (table_id, name) => {
-  const result = await pool.query(
-    'SELECT sp_existe_nombre_columna_en_tabla($1, $2) AS exists',
-    [table_id, name]
-  );
-  return result.rows[0].exists;
-};
-
-exports.columnHasRecords = async (column_id) => {
-  const result = await pool.query(
-    'SELECT sp_columna_tiene_registros_asociados($1) AS hasRecords',
-    [column_id]
-  );
-  return result.rows[0].hasrecords;
-};
-
-
-exports.updateColumnPosition = async (column_id, newPosition) => {
-
-  const result = await pool.query(
-    'SELECT sp_actualizar_posicion_columna($1, $2)',
-    [column_id, newPosition]
-  );
-  return result;
-};
+export async function updateColumnPosition(columnId, newPosition) {
+  const res = await axios.patch(`/columns/${columnId}/update_cols`, {
+    position: newPosition,
+  });
+  return res.data.message; // o lo que devuelva el backend
+}

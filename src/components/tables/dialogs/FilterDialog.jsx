@@ -1,0 +1,118 @@
+import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import ReusableCombobox from "@/components/ui/reusableCombobox";
+
+export default function FilterDialog({
+  open,
+  onOpenChange,
+  columns,
+  filterConditions = [],
+  filterDraft,
+  setFilterDraft,
+  onAddFilter,
+  columnVisibility,
+  setColumnVisibility,
+  showFilters = false,
+}) {
+
+  const columnOptions = columns.map((col) => ({
+    value: col.name,
+    label: col.foreign_column_name || col.header || col.name || col.column_id,
+  }));
+
+  const conditionOptions = filterConditions;
+  
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Mostrar u ocultar columnas</DialogTitle>
+        </DialogHeader>
+
+        {/* FILTROS */}
+        {showFilters && (
+          
+        <div className="flex flex-col gap-4 mb-6 border-b pb-6">
+          <h4 className="text-sm font-semibold">Agregar Filtro</h4>
+          <ReusableCombobox
+            placeholder="Columna"
+            options={columnOptions}
+            value={filterDraft.column}
+            onChange={(val) => setFilterDraft((d) => ({ ...d, column: val }))}
+          />
+          <ReusableCombobox
+            placeholder="Condición"
+            options={conditionOptions}
+            value={filterDraft.condition}
+            onChange={(val) => setFilterDraft((d) => ({ ...d, condition: val }))}
+          />
+          {filterDraft.condition &&
+            !["is_null", "is_not_null"].includes(filterDraft.condition) && (
+              <input
+                className="border rounded px-3 py-2 text-sm"
+                placeholder="Valor"
+                value={filterDraft.value}
+                onChange={(e) =>
+                  setFilterDraft((d) => ({ ...d, value: e.target.value }))
+                }
+              />
+            )}
+
+          <Button
+            onClick={onAddFilter}
+            disabled={
+              !filterDraft.column ||
+              !filterDraft.condition ||
+              (filterDraft.condition !== "is_null" &&
+                filterDraft.condition !== "is_not_null" &&
+                !filterDraft.value)
+            }
+          >
+            Agregar filtro
+          </Button>
+        </div> 
+
+            )}
+
+        {/* Column visibility (opcional) */}
+        {columnVisibility && setColumnVisibility && (
+          <div className="flex flex-col gap-3">
+            <h4 className="text-sm font-semibold">Mostrar u ocultar columnas</h4>
+            {columns.map((col) => (
+              <div key={col.name} className="flex items-center space-x-3">
+                <Checkbox
+                  id={`col-${col.name}`}
+                  checked={columnVisibility[col.name] !== false}
+                  onCheckedChange={(checked) => {
+                    setColumnVisibility((prev) => ({
+                      ...prev,
+                      [col.name]: checked,
+                    }));
+                  }}
+                />
+                <label
+                  htmlFor={`col-${col.name}`}
+                  className="text-sm font-medium leading-none"
+                >
+                  {col.foreign_column_name || col.name}
+                </label>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <DialogFooter className="pt-6">
+          <Button onClick={() => onOpenChange(false)}>Cerrar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -1,89 +1,91 @@
-const pool = require('../config/db');
+import axios from "../lib/axios";
 
-exports.createView = async ({ table_id, name, sort_by = null, sort_direction = 'asc', position_num }) => {
-  const result = await pool.query(
-    'SELECT sp_crear_vista($1, $2, $3, $4, $5) AS message',
-    [table_id, name, sort_by, sort_direction, position_num]
-  );
-  return result.rows[0];
-};
+// Mapeo del backend al frontend
+const mapViewFromBackend = (backendView) => ({
+  id: backendView.id,
+  tableId: backendView.table_id,
+  name: backendView.name,
+  sortBy: backendView.sort_by,
+  sortDirection: backendView.sort_direction,
+  position_num: backendView.position_num,
+  columns: backendView.columns || [], // esto puede llenarse aparte
+  width_px:backendView.width_px
+});
 
-exports.getViewsByTable = async (table_id) => {
-  const result = await pool.query(
-    'SELECT * FROM sp_obtener_vistas_por_tabla($1)',
-    [table_id]
-  );
-  return result.rows;
-};
+// Mapeo del frontend al backend
+const mapViewToBackend = (frontendView) => ({
+  table_id: frontendView.tableId,
+  name: frontendView.name,
+  sort_by: frontendView.sort_by,
+  position_num: frontendView.position_num,
+  sort_direction: frontendView.sort_direction,
+  width_px: frontendView.width_px
+});
 
-exports.addColumnToView = async ({ view_id, column_id, visible = true, filter_condition = null, filter_value = null, position_num , width_px}) => {
-  const result = await pool.query(
-    'SELECT sp_agregar_columnas_a_vista($1, $2, $3, $4, $5, $6, $7) AS message',
-    [view_id, column_id, visible, filter_condition, filter_value, position_num, width_px]
-  );
-  return result.rows[0];
-};
+// Crear una vista
+export async function createView(viewData) {
+  const payload = mapViewToBackend(viewData);
+  const response = await axios.post("/views", payload);
+  return response.data;
+}
 
-exports.getColumnsByView = async (view_id) => {
-  const result = await pool.query(
-    'SELECT * FROM sp_obtener_columnas_de_vista($1)',
-    [view_id]
-  );
-  return result.rows;
-};
+// Obtener vistas de una tabla (usando query param)
+export async function getViewsByTable(tableId) {
+  const response = await axios.get(`/views`, {
+    params: { table_id: tableId },
+  });
+  return response.data.map(mapViewFromBackend);
+}
 
-exports.deleteView = async (view_id) => {
-  const result = await pool.query(
-    'SELECT sp_eliminar_vista($1) AS message',
-    [view_id]
-  );
-  return result.rows[0];
-};
+// Obtener columnas de una vista
+export async function getColumnsByView(viewId) {
+  const response = await axios.get(`/views/columns`, {
+    params: { view_id: viewId },
+  });
+  return response.data;
+}
 
-exports.updateView = async ({ id, name, sort_by, sort_direction, position_num }) => {
-  const result = await pool.query(
-    'SELECT sp_actualizar_vista($1, $2, $3, $4, $5) AS message',
-    [id, name, sort_by, sort_direction, position_num]
-  );
-  return result.rows[0];
-};
+// Agregar columna a una vista
+export async function addColumnToView(viewColumnData) {
+  const response = await axios.post(`/views/columns`, viewColumnData);
+  return response.data;
+}
 
-exports.updateViewColumn = async ({ id, visible, filter_condition, filter_value, position_num, width_px, column_id }) => {
-  console.log("clap data INSIDE", id, visible, filter_condition, filter_value, position_num, width_px, column_id)
-  const result = await pool.query(
-    'SELECT sp_actualizar_columna_vista($1, $2, $3, $4, $5, $6, $7) AS message',
-    [id, visible, filter_condition, filter_value, position_num, width_px, column_id]
-  );
-  return result.rows[0];
-};
+// Eliminar una vista por ID
+export async function deleteView(viewId) {
+  const response = await axios.delete(`/views/${viewId}`);
+  return response.data;
+}
 
+// Actualizar vista
+export async function updateView(id, updatedData) {
+  const payload = mapViewToBackend(updatedData);
+  const response = await axios.put(`/views/${id}`, payload);
+  return mapViewFromBackend(response.data);
+}
 
-exports.updateViewPosition = async (view_id, newPosition) => {
-  const cleanRecordId = parseInt(view_id, 10);
-  const result = await pool.query(
-    'SELECT sp_actualizar_posicion_vistas($1, $2)',
-    [cleanRecordId, newPosition]
-  );
-  return result;
-};
+// Actualizar columna de vista
+export async function updateViewColumn(id, updatedData) {
+  const response = await axios.put(`/views/columns/${id}`, updatedData);
+  return response.data;
+}
 
-exports.updateViewColumnPosition = async (view_id, newPosition) => {
-  const cleanRecordId = parseInt(view_id, 10);
-  const result = await pool.query(
-    'SELECT sp_actualizar_posicion_view_column($1, $2)',
-    [cleanRecordId, newPosition]
-  );
-  return result;
-};
+// Eliminar columna de vista
+export async function deleteViewColumn(id) {
+  const response = await axios.delete(`/views/columns/${id}`);
+  return response.data;
+}
 
+export async function updateViewPosition(view_id, newPosition) {
+  const res = await axios.patch(`/views/${view_id}/update_views`, {
+    position: newPosition,
+  });
+  return res.data.message; // o lo que devuelva el backend
+}
 
-
-exports.deleteViewColumn = async (id) => {
-  const result = await pool.query(
-    `SELECT sp_eliminar_columna_vista($1) AS message`,
-    [id]
-  );
-
-  return result.rows[0]; // o result.rows[0].message si solo querés el texto
-};
-
+export async function updateViewColumnPosition(view_id, newPosition) {
+  const res = await axios.patch(`/views/${view_id}/update_view_columns`, {
+    position: newPosition,
+  });
+  return res.data.message; // o lo que devuelva el backend
+}
