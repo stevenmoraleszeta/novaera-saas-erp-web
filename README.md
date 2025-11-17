@@ -207,6 +207,9 @@ novaera-saas-erp-web/
 - Login and registration pages
 - Session management
 - Auto-redirect based on auth state
+- **Admin Quick Login**: One-click admin login button on login pages
+- **Auto Admin Creation**: Automatically creates admin user if it doesn't exist
+- **Universal Admin Permissions**: All users have admin permissions by default
 
 ### Module Management
 - Create, read, update, and delete modules
@@ -255,6 +258,7 @@ novaera-saas-erp-web/
 - Role-based permissions
 - Table-level permissions
 - Permission matrix visualization
+- **Note**: Currently, all users have admin-level permissions by default
 
 ### Notifications
 - Real-time notification polling
@@ -291,6 +295,25 @@ novaera-saas-erp-web/
 - Input validation and sanitization
 - Secure file upload handling
 - XSS prevention
+
+## 👤 Default Admin User
+
+The application includes a default administrator account for quick access:
+
+- **Email**: `admin@novaeracorp.com`
+- **Password**: `admin123`
+- **Name**: Administrador
+
+### Features
+
+- **Quick Login Button**: Available on both `/` and `/login` pages
+- **Auto-Creation**: If the admin user doesn't exist, it will be automatically created on first use
+- **Smart Detection**: The system checks if the user exists before attempting creation
+- **Extended Timeouts**: Login and registration operations use extended timeouts (60 seconds) for production environments
+
+### Usage
+
+Click the "Ingresar como Administrador" button on the login page to automatically log in with the default admin credentials. If the user doesn't exist in the database, it will be created automatically.
 
 ## 🚀 Deployment
 
@@ -355,10 +378,21 @@ novaera-saas-erp-web/
 
 The frontend communicates with the Novaera ERP API backend. Ensure the API is running and accessible at the URL specified in `NEXT_PUBLIC_API_URL`.
 
+### API Configuration
+
+- **Base Timeout**: 30 seconds for general API requests
+- **Auth Timeout**: 60 seconds for login and registration operations (to handle cold starts in production)
+- **Error Handling**: Improved timeout error messages for better user experience
+
 ### API Endpoints Used
 
 - Authentication: `/api/auth/*`
+  - `POST /api/auth/login` - User login
+  - `POST /api/auth/register` - User registration
+  - `GET /api/auth/me` - Get current user
+  - `POST /api/auth/logout` - User logout
 - Users: `/api/users/*`
+  - `GET /api/users/exists/email` - Check if email exists
 - Roles: `/api/roles/*`
 - Modules: `/api/modules/*`
 - Tables: `/api/tables/*`
