@@ -3,10 +3,17 @@ import axios from "../lib/axios";
 
 export async function login(email, password) {
   try {
-    const response = await axios.post("/auth/login", { email, password });
+    // Usar timeout más largo para login (puede tomar más tiempo si necesita crear usuario)
+    const response = await axios.post("/auth/login", { email, password }, {
+      timeout: 60000, // 60 segundos para login
+    });
     return response.data;
   } catch (error) {
     console.error("🔐 AuthService: Login error:", error);
+    // Mejorar mensaje de error para timeouts
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      throw new Error("La operación está tomando más tiempo del esperado. Por favor, intenta nuevamente.");
+    }
     throw error;
   }
 }
@@ -24,10 +31,17 @@ export async function register(name, email, password) {
       password: String(password),
     };
 
-    const response = await axios.post("/auth/register", userData);
+    // Usar timeout más largo para registro (puede tomar más tiempo en producción)
+    const response = await axios.post("/auth/register", userData, {
+      timeout: 60000, // 60 segundos para registro
+    });
     return response.data;
   } catch (error) {
     console.error("Error en registro:", error);
+    // Mejorar mensaje de error para timeouts
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      throw new Error("La operación está tomando más tiempo del esperado. Por favor, intenta nuevamente.");
+    }
     throw error;
   }
 }

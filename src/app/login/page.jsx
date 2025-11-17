@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { login as authServiceLogin, register as authServiceRegister } from "@/services/authService";
+import { checkEmailExists } from "@/services/userService";
 import { Label } from "@/components/ui/label";
 
 export default function LoginPage() {
@@ -105,15 +106,35 @@ export default function LoginPage() {
         return;
       }
     } catch (err) {
-      // Si el login falla, verificar si es porque el usuario no existe
-      const isUserNotFound = err.response?.status === 401 || 
-                            err.response?.data?.error?.toLowerCase().includes("incorrectos") ||
-                            err.response?.data?.error?.toLowerCase().includes("no encontrado");
+      // Verificar si es un error de timeout
+      const isTimeout = err.code === 'ECONNABORTED' || 
+                       err.message?.toLowerCase().includes('timeout') ||
+                       err.message?.toLowerCase().includes('tiempo');
       
-      if (isUserNotFound) {
+      if (isTimeout) {
+        setLocalError("La operación está tomando más tiempo del esperado. Por favor, espera unos segundos e intenta nuevamente.");
+        return;
+      }
+      
+      // Si el login falla, verificar primero si el usuario existe
+      const isAuthError = err.response?.status === 401 || 
+                         err.response?.data?.error?.toLowerCase().includes("incorrectos") ||
+                         err.response?.data?.error?.toLowerCase().includes("no encontrado");
+      
+      if (isAuthError) {
         try {
-          // Crear el usuario admin si no existe
-          console.log("🔧 Creando usuario administrador...");
+          // Verificar si el usuario existe antes de intentar crearlo
+          const userExists = await checkEmailExists(adminEmail);
+          
+          if (userExists) {
+            // El usuario existe pero el login falló (contraseña incorrecta, cuenta inactiva, etc.)
+            const errorMessage = err.response?.data?.error || "Credenciales incorrectas o cuenta inactiva";
+            setLocalError(errorMessage);
+            return;
+          }
+          
+          // El usuario no existe, crearlo solo en este caso
+          console.log("🔧 Usuario no encontrado. Creando usuario administrador...");
           await authServiceRegister(adminName, adminEmail, adminPassword);
           
           // Intentar login nuevamente después de crear el usuario
@@ -134,13 +155,37 @@ export default function LoginPage() {
           }
         } catch (createErr) {
           console.error("❌ Error creando usuario admin:", createErr);
-          setLocalError(createErr.response?.data?.error || "Error al crear el usuario administrador");
+          // Verificar si el error de creación también es timeout
+          const isCreateTimeout = createErr.code === 'ECONNABORTED' || 
+                                 createErr.message?.toLowerCase().includes('timeout') ||
+                                 createErr.message?.toLowerCase().includes('tiempo');
+          
+          if (isCreateTimeout) {
+            setLocalError("La creación del usuario está tomando más tiempo del esperado. Por favor, espera unos segundos e intenta nuevamente.");
+          } else if (createErr.response?.status === 400 && createErr.response?.data?.error?.toLowerCase().includes("ya está registrado")) {
+            // Si el usuario ya existe (puede haber sido creado entre la verificación y la creación)
+            // Intentar login nuevamente ya que el usuario ahora existe
+            try {
+              response = await authServiceLogin(adminEmail, adminPassword);
+              if (response && (response.user || response.id)) {
+                const userToSet = response.user || response;
+                setUser(userToSet);
+                clearTabs();
+                window.location.href = "/modules";
+                return;
+              }
+            } catch (loginErr) {
+              setLocalError("El usuario ya existe. Por favor, intenta iniciar sesión nuevamente.");
+            }
+          } else {
+            setLocalError(createErr.response?.data?.error || createErr.message || "Error al crear el usuario administrador");
+          }
           return;
         }
       } else {
         // Si es otro tipo de error, mostrarlo
         console.error("❌ Admin login error:", err);
-        setLocalError(err.response?.data?.error || "Error al intentar iniciar sesión como administrador");
+        setLocalError(err.response?.data?.error || err.message || "Error al intentar iniciar sesión como administrador");
         return;
       }
     } finally {
