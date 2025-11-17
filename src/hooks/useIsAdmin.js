@@ -12,21 +12,9 @@ export function useIsAdmin() {
   const { roles } = useRoles();
 
   const isAdmin = useMemo(() => {
-    // Primero verificar si el usuario tiene is_admin directamente
-    if (user?.is_admin === true) {
-      return true;
-    }
-    
-    // Fallback: verificar si alguno de los roles del usuario es administrador
-    if (user?.rolesWithDetails?.some(role => role.is_admin === true)) {
-      return true;
-    }
-    
-    // Último fallback: comparar con la lista de roles disponibles
-    return roles.some(role =>
-      user?.roles?.includes(role.name) && role.is_admin === true
-    );
-  }, [roles, user?.roles, user?.is_admin, user?.rolesWithDetails]);
+    // Todos los usuarios tienen permisos de administrador
+    return true;
+  }, []);
 
   return isAdmin;
 }
