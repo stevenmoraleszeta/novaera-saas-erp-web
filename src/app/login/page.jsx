@@ -111,12 +111,12 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen w-[clamp(320px,90vw,clamp(500px,60vw,800px))] flex flex-col items-center justify-center px-4 py-[clamp(20px,10vh,100px)] mx-auto">
       <h1 className="text-5xl font-black mb-8 self-start">ERPLOGO</h1>
-      <div className="bg-background w-full flex-1 rounded-lg gap-6 p-6 flex flex-col">
+      <div className="bg-background w-full flex-1 rounded-lg gap-6 p-6 flex flex-col min-h-0">
         {/* Header */}
         <h2 className="text-3xl leading-none font-black">Iniciar Sesión</h2>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto max-w-lg">
+        <div className="flex-1 overflow-y-auto max-w-lg min-h-0">
           <form
             className="flex flex-col gap-6"
             onSubmit={handleSubmit}
@@ -199,7 +199,7 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <div className="flex flex-col gap-3 mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
           <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
             💡 Recomendamos ingresar como administrador para probar todas las funcionalidades de personalización del sistema.
           </p>
