@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
-import { login as authServiceLogin } from "@/services/authService";
+import { login as authServiceLogin, register as authServiceRegister } from "@/services/authService";
 import { Label } from "@/components/ui/label";
 
 export default function HomePage() {
@@ -62,6 +62,71 @@ export default function HomePage() {
     }
   };
 
+  const handleAdminLogin = async () => {
+    setForm({ email: "admin@novaeracorp.com", password: "admin123" });
+    setFormError({});
+    setLocalError("");
+    setSubmitting(true);
+    const adminEmail = "admin@novaeracorp.com";
+    const adminPassword = "admin123";
+    const adminName = "Administrador";
+    
+    try {
+      // Intentar hacer login primero
+      let response = await authServiceLogin(adminEmail, adminPassword);
+
+      if (response && (response.user || response.id)) {
+        const userToSet = response.user || response;
+        if (userToSet.is_active === false || userToSet.isActive === false) {
+          setLocalError("Tu cuenta está inactiva. Contacta al administrador para activarla.");
+          return;
+        }
+        setUser(userToSet);
+        clearTabs();
+        window.location.href = "/modules";
+        return;
+      }
+    } catch (err) {
+      // Si el login falla, verificar si es porque el usuario no existe
+      const isUserNotFound = err.response?.status === 401 || 
+                            err.response?.data?.error?.toLowerCase().includes("incorrectos") ||
+                            err.response?.data?.error?.toLowerCase().includes("no encontrado");
+      
+      if (isUserNotFound) {
+        try {
+          // Crear el usuario admin si no existe
+          await authServiceRegister(adminName, adminEmail, adminPassword);
+          
+          // Intentar login nuevamente después de crear el usuario
+          response = await authServiceLogin(adminEmail, adminPassword);
+          
+          if (response && (response.user || response.id)) {
+            const userToSet = response.user || response;
+            
+            if (userToSet.is_active === false || userToSet.isActive === false) {
+              setLocalError("Tu cuenta está inactiva. Contacta al administrador para activarla.");
+              return;
+            }
+            
+            setUser(userToSet);
+            clearTabs();
+            window.location.href = "/modules";
+            return;
+          }
+        } catch (createErr) {
+          setLocalError(createErr.response?.data?.error || "Error al crear el usuario administrador");
+          return;
+        }
+      } else {
+        // Si es otro tipo de error, mostrarlo
+        setLocalError(err.response?.data?.error || "Error al intentar iniciar sesión como administrador");
+        return;
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen w-[clamp(320px,90vw,clamp(500px,60vw,800px))] flex flex-col items-center justify-center px-4 py-[clamp(20px,10vh,100px)] mx-auto">
       <h1 className="text-5xl font-black mb-8 self-start">ERPLOGO</h1>
@@ -95,10 +160,30 @@ export default function HomePage() {
             </p>
           </form>
         </div>
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-start mt-auto pt-4">
-          <Button type="submit" className="w-full sm:w-auto h-12 text-lg font-semibold" disabled={submitting} onClick={handleSubmit}>
-            {submitting ? "Validando..." : "Iniciar Sesión"}
-          </Button>
+        <div className="flex flex-col gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+            Recomendamos ingresar como administrador para probar todas las funcionalidades de personalización del sistema.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full sm:w-auto h-12"
+              onClick={handleAdminLogin}
+              disabled={submitting}
+            >
+              Ingresar como Administrador
+            </Button>
+            
+            <Button
+              type="submit"
+              className="w-full sm:flex-1 h-12 text-lg font-semibold"
+              disabled={submitting}
+              onClick={handleSubmit}
+            >
+              {submitting ? "Validando..." : "Iniciar Sesión"}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

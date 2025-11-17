@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
-import { login as authServiceLogin } from "@/services/authService";
+import { login as authServiceLogin, register as authServiceRegister } from "@/services/authService";
 import { Label } from "@/components/ui/label";
 
 export default function LoginPage() {
@@ -81,8 +81,13 @@ export default function LoginPage() {
     setFormError({});
     setLocalError("");
     setSubmitting(true);
+    const adminEmail = "admin@novaeracorp.com";
+    const adminPassword = "admin123";
+    const adminName = "Administrador";
+    
     try {
-      const response = await authServiceLogin("admin@novaeracorp.com", "admin123");
+      // Intentar hacer login primero
+      let response = await authServiceLogin(adminEmail, adminPassword);
       console.log("🚀 Admin login response:", response);
 
       if (response && (response.user || response.id)) {
@@ -97,12 +102,47 @@ export default function LoginPage() {
         setUser(userToSet);
         clearTabs();
         window.location.href = "/modules";
-      } else {
-        setLocalError("No se pudo iniciar sesión como administrador.");
+        return;
       }
     } catch (err) {
-      console.error("❌ Admin login error:", err);
-      setLocalError(err.response?.data?.error || "Error al intentar iniciar sesión como administrador");
+      // Si el login falla, verificar si es porque el usuario no existe
+      const isUserNotFound = err.response?.status === 401 || 
+                            err.response?.data?.error?.toLowerCase().includes("incorrectos") ||
+                            err.response?.data?.error?.toLowerCase().includes("no encontrado");
+      
+      if (isUserNotFound) {
+        try {
+          // Crear el usuario admin si no existe
+          console.log("🔧 Creando usuario administrador...");
+          await authServiceRegister(adminName, adminEmail, adminPassword);
+          
+          // Intentar login nuevamente después de crear el usuario
+          response = await authServiceLogin(adminEmail, adminPassword);
+          
+          if (response && (response.user || response.id)) {
+            const userToSet = response.user || response;
+            
+            if (userToSet.is_active === false || userToSet.isActive === false) {
+              setLocalError("Tu cuenta está inactiva. Contacta al administrador para activarla.");
+              return;
+            }
+            
+            setUser(userToSet);
+            clearTabs();
+            window.location.href = "/modules";
+            return;
+          }
+        } catch (createErr) {
+          console.error("❌ Error creando usuario admin:", createErr);
+          setLocalError(createErr.response?.data?.error || "Error al crear el usuario administrador");
+          return;
+        }
+      } else {
+        // Si es otro tipo de error, mostrarlo
+        console.error("❌ Admin login error:", err);
+        setLocalError(err.response?.data?.error || "Error al intentar iniciar sesión como administrador");
+        return;
+      }
     } finally {
       setSubmitting(false);
     }
@@ -201,13 +241,13 @@ export default function LoginPage() {
         {/* Footer */}
         <div className="flex flex-col gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
           <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-            💡 Recomendamos ingresar como administrador para probar todas las funcionalidades de personalización del sistema.
+            Recomendamos ingresar como administrador para probar todas las funcionalidades de personalización del sistema.
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
             <Button
               type="button"
               variant="outline"
-              className="w-full sm:w-auto border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 font-medium h-12"
+              className="w-full sm:w-auto h-12"
               onClick={handleAdminLogin}
               disabled={submitting}
             >
