@@ -1,6 +1,6 @@
 # Novaera SaaS ERP - Web Application
 
-![Next.js](https://img.shields.io/badge/Next.js-15.3.3-000000?style=for-the-badge&logo=next.js&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-15.3.6-000000?style=for-the-badge&logo=next.js&logoColor=white)
 ![React](https://img.shields.io/badge/React-19.0.0-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.1.10-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)
@@ -28,7 +28,7 @@ The application features a dynamic, metadata-driven architecture that allows use
 
 ## 🚀 Technologies Used
 
-- **Framework**: Next.js 15.3.3 (App Router)
+- **Framework**: Next.js 15.3.6 (App Router)
 - **UI Library**: React 19.0.0
 - **Styling**: Tailwind CSS 4.1.10
 - **UI Components**: Radix UI primitives
